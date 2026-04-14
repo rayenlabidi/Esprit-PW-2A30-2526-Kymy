@@ -1,25 +1,28 @@
 <?php
+session_start();
+
+$controllerName = isset($_GET['controller']) ? $_GET['controller'] : 'formation';
 $action = isset($_GET['action']) ? $_GET['action'] : 'index';
 
-require_once 'controllers/FormationController.php';
-
-$controller = new FormationController();
-
-switch($action) {
-    case 'index':
-        $controller->index();
+switch($controllerName) {
+    case 'utilisateur':
+        require_once 'controllers/UtilisateurController.php';
+        $controller = new UtilisateurController();
         break;
-    case 'create':
-        $controller->create();
+    case 'auth':
+        require_once 'controllers/AuthController.php';
+        $controller = new AuthController();
         break;
-    case 'edit':
-        $controller->edit();
-        break;
-    case 'delete':
-        $controller->delete();
-        break;
+    case 'formation':
     default:
-        $controller->index();
+        require_once 'controllers/FormationController.php';
+        $controller = new FormationController();
         break;
+}
+
+if (method_exists($controller, $action)) {
+    $controller->$action();
+} else {
+    $controller->index();
 }
 ?>

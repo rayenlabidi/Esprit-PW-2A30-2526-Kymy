@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Workify - Gestion des Formations</title>
+    <title>Workify - Administration</title>
     <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
@@ -16,11 +16,14 @@
         </div>
         
         <div class="nav-links">
-            <a href="#" class="nav-link">Home</a>
-            <a href="index.php" class="nav-link active">Formations</a>
-            <a href="#" class="nav-link">Browse jobs</a>
-            <a href="#" class="nav-link">Post job</a>
-            <a href="#" class="btn btn-primary" style="margin-left: 2rem;">Log in</a>
+            <a href="index.php?controller=formation" class="nav-link <?= (!isset($_GET['controller']) || $_GET['controller'] == 'formation') ? 'active' : '' ?>">Formations</a>
+            <a href="index.php?controller=utilisateur" class="nav-link <?= (isset($_GET['controller']) && $_GET['controller'] == 'utilisateur') ? 'active' : '' ?>">Utilisateurs</a>
+            
+            <?php if(isset($_SESSION['user_id'])): ?>
+                <a href="index.php?controller=auth&action=logout" class="btn btn-secondary" style="margin-left: 2rem;">Log out</a>
+            <?php else: ?>
+                <a href="index.php?controller=auth&action=login" class="btn btn-primary" style="margin-left: 2rem;">Log in</a>
+            <?php endif; ?>
         </div>
     </div>
 </nav>
