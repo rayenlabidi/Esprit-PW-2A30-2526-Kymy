@@ -131,3 +131,32 @@ INSERT INTO jobs (title, description, budget, category_id, location, is_remote, 
 
 INSERT INTO candidatures (user_id, job_id, cover_letter, status) VALUES
 (2, 1, 'Je peux prendre en charge le projet Workify, integrer les modules et optimiser le rendu pour une demo professeur.', 'reviewed');
+
+CREATE TABLE publication (
+    id INT(11) AUTO_INCREMENT PRIMARY KEY,
+    user_id VARCHAR(50) DEFAULT 'current_user',
+    user_name VARCHAR(100) NOT NULL,
+    user_init VARCHAR(5) NOT NULL,
+    user_role ENUM('Freelancer', 'Client') DEFAULT 'Freelancer',
+    user_avatar VARCHAR(50) DEFAULT 'av-blue',
+    content TEXT NOT NULL,
+    has_image TINYINT(1) DEFAULT 0,
+    image_url VARCHAR(255) DEFAULT NULL,
+    likes INT(11) DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE TABLE comments (
+    id INT(11) AUTO_INCREMENT PRIMARY KEY,
+    publication_id INT(11) NOT NULL,
+    user_name VARCHAR(100) NOT NULL,
+    user_init VARCHAR(5) NOT NULL,
+    user_avatar VARCHAR(50) DEFAULT 'av-blue',
+    comment TEXT NOT NULL,
+    likes INT(11) DEFAULT 0,
+    parent_id INT(11) DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (publication_id) REFERENCES publication(id) ON DELETE CASCADE,
+    FOREIGN KEY (parent_id) REFERENCES comments(id) ON DELETE CASCADE
+);
