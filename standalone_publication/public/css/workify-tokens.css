@@ -1,0 +1,144 @@
+/* ============================================================
+   WORKIFY — Shared Design Tokens
+   Import this in every page: <link rel="stylesheet" href="workify-tokens.css">
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  /* Brand */
+  --blue:        #1a56e8;
+  --blue-dark:   #1445cc;
+  --blue-hover:  #1040c0;
+  --blue-light:  #e8f0fe;
+  --blue-mid:    #b8ccfa;
+
+  /* Neutrals */
+  --white:       #ffffff;
+  --bg:          #f4f4f2;
+  --bg-card:     #ffffff;
+  --bg-hover:    #f0f0ee;
+  --border:      #e3e3e0;
+  --border-dark: #cececa;
+
+  /* Text */
+  --text-1:      #0f0f0f;
+  --text-2:      #444;
+  --text-3:      #888;
+  --text-4:      #bbb;
+
+  /* Status */
+  --green:       #16a34a;
+  --green-light: #dcfce7;
+  --red:         #dc2626;
+  --red-light:   #fee2e2;
+  --amber:       #d97706;
+  --amber-light: #fef3c7;
+
+  /* Sizing */
+  --nav-h:       58px;
+  --radius-sm:   6px;
+  --radius-md:   10px;
+  --radius-lg:   14px;
+  --radius-xl:   20px;
+  --shadow-sm:   0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+  --shadow-md:   0 4px 12px rgba(0,0,0,.08), 0 1px 3px rgba(0,0,0,.04);
+  --shadow-lg:   0 8px 24px rgba(0,0,0,.10), 0 2px 6px rgba(0,0,0,.04);
+
+  /* Font */
+  --font: 'DM Sans', system-ui, sans-serif;
+  --font-mono: 'DM Mono', monospace;
+}
+
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text-1);
+  font-size: 14px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── NAVBAR ─────────────────────────────────── */
+.wf-nav {
+  height: var(--nav-h);
+  background: var(--white);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 28px;
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 200;
+}
+
+.wf-nav-logo {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 17px; font-weight: 700; color: var(--text-1);
+  text-decoration: none; letter-spacing: -.3px;
+}
+.wf-nav-logo-box {
+  width: 30px; height: 30px;
+  background: var(--blue); border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+}
+.wf-nav-logo-box svg { width: 16px; height: 16px; fill: white; }
+
+.wf-nav-links { display: flex; gap: 4px; list-style: none; }
+.wf-nav-links a {
+  font-size: 14px; font-weight: 500; color: var(--text-3);
+  text-decoration: none; padding: 6px 12px; border-radius: var(--radius-sm);
+  transition: color .15s, background .15s;
+}
+.wf-nav-links a:hover { color: var(--text-1); background: var(--bg-hover); }
+.wf-nav-links a.active { color: var(--blue); background: var(--blue-light); }
+
+.wf-nav-right { display: flex; align-items: center; gap: 10px; }
+
+.wf-nav-icon-btn {
+  background: none; border: none; cursor: pointer; color: var(--text-3);
+  width: 36px; height: 36px; border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center;
+  transition: color .15s, background .15s; position: relative;
+}
+.wf-nav-icon-btn:hover { color: var(--text-1); background: var(--bg-hover); }
+.wf-nav-icon-btn .badge {
+  position: absolute; top: 4px; right: 4px;
+  width: 16px; height: 16px; border-radius: 50%;
+  background: var(--red); color: white;
+  font-size: 9px; font-weight: 700; border: 2px solid white;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.wf-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 18px; border-radius: var(--radius-md);
+  font-family: var(--font); font-size: 14px; font-weight: 600;
+  cursor: pointer; border: none; transition: all .15s; text-decoration: none;
+}
+.wf-btn-primary { background: var(--blue); color: white; }
+.wf-btn-primary:hover { background: var(--blue-dark); }
+.wf-btn-ghost {
+  background: none; color: var(--text-2);
+  border: 1px solid var(--border);
+}
+.wf-btn-ghost:hover { background: var(--bg-hover); }
+
+/* Avatar */
+.wf-avatar {
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-weight: 700; flex-shrink: 0; font-size: 13px;
+}
+.wf-avatar-40 { width: 40px; height: 40px; }
+.wf-avatar-36 { width: 36px; height: 36px; font-size: 12px; }
+.wf-avatar-32 { width: 32px; height: 32px; font-size: 11px; }
+.av-blue   { background: #dbeafe; color: #1d4ed8; }
+.av-green  { background: #dcfce7; color: #15803d; }
+.av-orange { background: #ffedd5; color: #c2410c; }
+.av-purple { background: #ede9fe; color: #6d28d9; }
+.av-pink   { background: #fce7f3; color: #be185d; }
+.av-teal   { background: #ccfbf1; color: #0f766e; }
+.av-amber  { background: #fef3c7; color: #b45309; }
