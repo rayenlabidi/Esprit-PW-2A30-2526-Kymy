@@ -18,8 +18,8 @@ $posts = $controller->getAll();
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Publications – Workify</title>
-<link rel="stylesheet" href="/standalone_publication/public/css/workify-tokens.css">
-<link rel="stylesheet" href="/standalone_publication/public/css/publications.css">
+<link rel="stylesheet" href="../../public/css/workify-tokens.css">
+<link rel="stylesheet" href="../../public/css/publications.css">
 </head>
 <body>
 
@@ -87,9 +87,8 @@ $posts = $controller->getAll();
 
       <div id="postsContainer">
         <?php foreach($posts as $post): 
-          $commentsData = $controller->getComments($post['id']);
-          $commentCount = $commentsData['count'];
-          $comments = $commentsData['comments'];
+          $comments = $controller->getComments($post['id']);
+          $commentCount = count($comments);
           $isOwner = ($post['user_id'] == $current_user_id);
         ?>
         <div class="pub-post-card" data-post-id="<?php echo $post['id']; ?>">
@@ -136,12 +135,63 @@ $posts = $controller->getAll();
             </div>
             <div class="pub-comments-list" id="comments-list-<?php echo $post['id']; ?>">
               <?php foreach($comments as $comment): ?>
-              <div class="pub-comment">
-                <div class="wf-avatar wf-avatar-32 av-blue"><?php echo htmlspecialchars(substr($comment['user'], 0, 2)); ?></div>
-                <div class="pub-comment-content">
-                  <div class="pub-comment-author"><?php echo htmlspecialchars($comment['user']); ?></div>
-                  <div class="pub-comment-text"><?php echo nl2br(htmlspecialchars($comment['comment'])); ?></div>
+              <div class="comment-wrapper" data-comment-id="<?php echo $comment['id']; ?>">
+                <div class="pub-comment">
+                  <div class="wf-avatar wf-avatar-32 <?php echo $comment['user_avatar']; ?>"><?php echo htmlspecialchars($comment['user_init']); ?></div>
+                  <div class="pub-comment-content">
+                    <div class="pub-comment-author"><?php echo htmlspecialchars($comment['user_name']); ?></div>
+                    <div class="pub-comment-text" id="comment-text-<?php echo $comment['id']; ?>"><?php echo nl2br(htmlspecialchars($comment['comment'])); ?></div>
+                    <div class="pub-comment-actions">
+                      <button class="comment-like-btn" onclick="toggleCommentLike(this, <?php echo $comment['id']; ?>, <?php echo $comment['likes']; ?>)">
+                        👍 <span class="comment-like-count-<?php echo $comment['id']; ?>"><?php echo $comment['likes']; ?></span>
+                      </button>
+                      <button class="comment-reply-btn" onclick="showReplyForm(<?php echo $post['id']; ?>, <?php echo $comment['id']; ?>)">
+                        💬 Reply
+                      </button>
+                      <?php if($comment['user_name'] == $current_user_name): ?>
+                      <button class="comment-edit-btn" onclick="editComment(<?php echo $comment['id']; ?>, '<?php echo htmlspecialchars(addslashes($comment['comment'])); ?>')">
+                        ✏️ Edit
+                      </button>
+                      <button class="comment-delete-btn" onclick="deleteComment(<?php echo $comment['id']; ?>)">
+                        🗑️ Delete
+                      </button>
+                      <?php endif; ?>
+                    </div>
+                    <div class="reply-form-container" id="reply-form-<?php echo $comment['id']; ?>" style="display:none; margin-top:10px;">
+                      <div class="pub-add-comment" style="padding-left: 40px;">
+                        <div class="wf-avatar wf-avatar-32 <?php echo $current_user_avatar; ?>"><?php echo $current_user_init; ?></div>
+                        <input type="text" class="pub-comment-input" id="reply-input-<?php echo $comment['id']; ?>" placeholder="Write a reply...">
+                        <button class="pub-comment-send" onclick="addReply(<?php echo $post['id']; ?>, <?php echo $comment['id']; ?>)">Send</button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
+                <?php if(!empty($comment['replies'])): ?>
+                <div class="comment-replies" style="margin-left: 50px; margin-top: 10px;">
+                  <?php foreach($comment['replies'] as $reply): ?>
+                  <div class="pub-comment" style="margin-bottom: 8px;">
+                    <div class="wf-avatar wf-avatar-32 <?php echo $reply['user_avatar']; ?>"><?php echo htmlspecialchars($reply['user_init']); ?></div>
+                    <div class="pub-comment-content">
+                      <div class="pub-comment-author"><?php echo htmlspecialchars($reply['user_name']); ?></div>
+                      <div class="pub-comment-text" id="comment-text-<?php echo $reply['id']; ?>"><?php echo nl2br(htmlspecialchars($reply['comment'])); ?></div>
+                      <div class="pub-comment-actions">
+                        <button class="comment-like-btn" onclick="toggleCommentLike(this, <?php echo $reply['id']; ?>, <?php echo $reply['likes']; ?>)">
+                          👍 <span class="comment-like-count-<?php echo $reply['id']; ?>"><?php echo $reply['likes']; ?></span>
+                        </button>
+                        <?php if($reply['user_name'] == $current_user_name): ?>
+                        <button class="comment-edit-btn" onclick="editComment(<?php echo $reply['id']; ?>, '<?php echo htmlspecialchars(addslashes($reply['comment'])); ?>')">
+                          ✏️ Edit
+                        </button>
+                        <button class="comment-delete-btn" onclick="deleteComment(<?php echo $reply['id']; ?>)">
+                          🗑️ Delete
+                        </button>
+                        <?php endif; ?>
+                      </div>
+                    </div>
+                  </div>
+                  <?php endforeach; ?>
+                </div>
+                <?php endif; ?>
               </div>
               <?php endforeach; ?>
             </div>
@@ -196,8 +246,9 @@ $posts = $controller->getAll();
 
 <script>
 const CURRENT_USER_ID = '<?php echo $current_user_id; ?>';
-const BASE_URL = '/standalone_publication/views/front/publications.php';
+const CURRENT_USER_NAME = '<?php echo $current_user_name; ?>';
+const BASE_URL = window.location.href;
 </script>
-<script src="/standalone_publication/public/js/publications.js"></script>
+<script src="../../public/js/publications.js"></script>
 </body>
 </html>

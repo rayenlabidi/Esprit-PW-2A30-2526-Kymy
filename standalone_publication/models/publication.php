@@ -4,6 +4,7 @@ require_once __DIR__ . '/../config/database.php';
 class Publication {
     private $conn;
     private $table = "publication";
+    private $commentsTable = "comments";
 
     public function __construct() {
         $this->conn = Database::getConnexion();
@@ -59,6 +60,7 @@ class Publication {
     }
 
     public function updateLikes($id, $likes) {
+        $likes = max(0, (int)$likes);
         $query = "UPDATE " . $this->table . " SET likes = :likes WHERE id = :id";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(':likes', $likes, PDO::PARAM_INT);
@@ -66,62 +68,75 @@ class Publication {
         return $stmt->execute();
     }
 
-    public function addComment($publication_id, $user_name, $user_init, $user_avatar, $comment) {
-        $query = "SELECT comments, comments_count FROM " . $this->table . " WHERE id = :id";
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':id', $publication_id, PDO::PARAM_INT);
-        $stmt->execute();
-        $result = $stmt->fetch();
-        
-        $currentComments = $result['comments'];
-        $currentCount = (int)$result['comments_count'];
-        
-        $newComment = $user_name . " (" . $user_init . "): " . $comment;
-        $updatedComments = $currentComments ? $currentComments . "\n" . $newComment : $newComment;
-        $newCount = $currentCount + 1;
-        
-        $updateQuery = "UPDATE " . $this->table . " 
-                        SET comments = :comments, comments_count = :comments_count 
-                        WHERE id = :id";
-        $updateStmt = $this->conn->prepare($updateQuery);
-        $updateStmt->bindParam(':comments', $updatedComments);
-        $updateStmt->bindParam(':comments_count', $newCount, PDO::PARAM_INT);
-        $updateStmt->bindParam(':id', $publication_id, PDO::PARAM_INT);
-        
-        return $updateStmt->execute();
-    }
-    
     public function getComments($publication_id) {
-        $query = "SELECT comments, comments_count FROM " . $this->table . " WHERE id = :id";
+        $query = "SELECT * FROM " . $this->commentsTable . " 
+                  WHERE publication_id = :publication_id AND parent_id IS NULL 
+                  ORDER BY created_at ASC";
         $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':id', $publication_id, PDO::PARAM_INT);
+        $stmt->bindParam(':publication_id', $publication_id, PDO::PARAM_INT);
         $stmt->execute();
-        $result = $stmt->fetch();
+        $comments = $stmt->fetchAll();
         
-        $commentsArray = [];
-        if ($result && $result['comments']) {
-            $commentLines = explode("\n", $result['comments']);
-            foreach ($commentLines as $line) {
-                if (preg_match('/^(.+?)\s\((.+?)\):\s(.+)$/', $line, $matches)) {
-                    $commentsArray[] = [
-                        'user' => $matches[1],
-                        'init' => $matches[2],
-                        'comment' => $matches[3]
-                    ];
-                } elseif (preg_match('/^(.+?): (.+)$/', $line, $matches)) {
-                    $commentsArray[] = [
-                        'user' => $matches[1],
-                        'init' => substr($matches[1], 0, 2),
-                        'comment' => $matches[2]
-                    ];
-                }
-            }
+        foreach ($comments as &$comment) {
+            $query2 = "SELECT * FROM " . $this->commentsTable . " 
+                       WHERE parent_id = :parent_id ORDER BY created_at ASC";
+            $stmt2 = $this->conn->prepare($query2);
+            $stmt2->bindParam(':parent_id', $comment['id'], PDO::PARAM_INT);
+            $stmt2->execute();
+            $comment['replies'] = $stmt2->fetchAll();
         }
         
-        return [
-            'count' => $result ? (int)$result['comments_count'] : 0,
-            'comments' => $commentsArray
-        ];
+        return $comments;
+    }
+
+    public function addComment($publication_id, $user_name, $user_init, $user_avatar, $comment, $parent_id = null) {
+        $query = "INSERT INTO " . $this->commentsTable . " 
+                  (publication_id, user_name, user_init, user_avatar, comment, parent_id) 
+                  VALUES 
+                  (:publication_id, :user_name, :user_init, :user_avatar, :comment, :parent_id)";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':publication_id', $publication_id, PDO::PARAM_INT);
+        $stmt->bindParam(':user_name', $user_name);
+        $stmt->bindParam(':user_init', $user_init);
+        $stmt->bindParam(':user_avatar', $user_avatar);
+        $stmt->bindParam(':comment', $comment);
+        $stmt->bindParam(':parent_id', $parent_id);
+        return $stmt->execute();
+    }
+    
+    public function updateCommentLikes($comment_id, $likes) {
+        $likes = max(0, (int)$likes);
+        $query = "UPDATE " . $this->commentsTable . " SET likes = :likes WHERE id = :id";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':likes', $likes, PDO::PARAM_INT);
+        $stmt->bindParam(':id', $comment_id, PDO::PARAM_INT);
+        return $stmt->execute();
+    }
+    
+    public function deleteComment($comment_id) {
+        $query = "DELETE FROM " . $this->commentsTable . " WHERE id = :id";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':id', $comment_id, PDO::PARAM_INT);
+        return $stmt->execute();
+    }
+    
+    public function editComment($comment_id, $comment, $user_name) {
+        $query = "UPDATE " . $this->commentsTable . " SET comment = :comment WHERE id = :id AND user_name = :user_name";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':comment', $comment);
+        $stmt->bindParam(':id', $comment_id, PDO::PARAM_INT);
+        $stmt->bindParam(':user_name', $user_name);
+        return $stmt->execute();
+    }
+    
+    public function getAllComments() {
+        $query = "SELECT c.*, p.user_name as post_author 
+                  FROM " . $this->commentsTable . " c 
+                  JOIN " . $this->table . " p ON c.publication_id = p.id 
+                  ORDER BY c.created_at DESC";
+        $stmt = $this->conn->prepare($query);
+        $stmt->execute();
+        return $stmt->fetchAll();
     }
 }
 ?>

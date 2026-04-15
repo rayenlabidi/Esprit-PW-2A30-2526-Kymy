@@ -53,6 +53,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $error = 'Publication not found';
                 }
                 break;
+            case 'delete_comment':
+                $result = $controller->deleteComment($_POST['comment_id']);
+                if ($result['success']) {
+                    $message = 'Comment deleted successfully!';
+                    header('Location: admin.php?success=1');
+                    exit;
+                } else {
+                    $error = 'Error deleting comment';
+                }
+                break;
+            case 'edit_comment':
+                $result = $controller->editComment($_POST['comment_id'], $_POST['comment'], $_POST['user_name']);
+                if ($result['success']) {
+                    $message = 'Comment updated successfully!';
+                    header('Location: admin.php?success=1');
+                    exit;
+                } else {
+                    $error = $result['error'] ?? 'Error updating comment';
+                }
+                break;
         }
     }
 }
@@ -62,9 +82,20 @@ if (isset($_GET['success'])) {
 }
 
 $posts = $controller->getAll();
+$comments = $controller->getAllComments();
 $editPost = null;
+$editComment = null;
+
 if (isset($_GET['edit'])) {
     $editPost = $controller->getOne($_GET['edit']);
+}
+if (isset($_GET['edit_comment'])) {
+    foreach ($comments as $c) {
+        if ($c['id'] == $_GET['edit_comment']) {
+            $editComment = $c;
+            break;
+        }
+    }
 }
 ?>
 <!DOCTYPE html>
@@ -73,8 +104,8 @@ if (isset($_GET['edit'])) {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin Panel - Complete CRUD | Workify</title>
-<link rel="stylesheet" href="/standalone_publication/public/css/workify-tokens.css">
-<link rel="stylesheet" href="/standalone_publication/public/css/admin.css">
+<link rel="stylesheet" href="../../public/css/workify-tokens.css">
+<link rel="stylesheet" href="../../public/css/admin.css">
 </head>
 <body>
 
@@ -93,7 +124,7 @@ if (isset($_GET['edit'])) {
 <div class="admin-container">
   <div class="admin-header">
     <h1>📋 Complete Publication Management</h1>
-    <p>Total posts: <?php echo count($posts); ?></p>
+    <p>Total posts: <?php echo count($posts); ?> | Total comments: <?php echo count($comments); ?></p>
   </div>
 
   <?php if($message): ?>
@@ -178,17 +209,44 @@ if (isset($_GET['edit'])) {
   </div>
   <?php endif; ?>
 
+  <?php if($editComment): ?>
+  <div class="crud-section">
+    <h2>✏️ Edit Comment #<?php echo $editComment['id']; ?></h2>
+    <form method="POST" action="" class="crud-form" id="editCommentForm">
+      <input type="hidden" name="action" value="edit_comment">
+      <input type="hidden" name="comment_id" value="<?php echo $editComment['id']; ?>">
+      <input type="hidden" name="user_name" value="<?php echo htmlspecialchars($editComment['user_name']); ?>">
+      <div class="form-group">
+        <label>Author:</label>
+        <div class="author-info">
+          <div class="wf-avatar wf-avatar-32 <?php echo $editComment['user_avatar']; ?>"><?php echo htmlspecialchars($editComment['user_init']); ?></div>
+          <strong><?php echo htmlspecialchars($editComment['user_name']); ?></strong>
+          <span>on post: <?php echo htmlspecialchars($editComment['post_author']); ?></span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Comment:</label>
+        <textarea name="comment" id="edit_comment_content" rows="4"><?php echo htmlspecialchars($editComment['comment']); ?></textarea>
+        <small class="error-message" id="editCommentError"></small>
+        <small>Minimum 2 characters, maximum 5000 characters</small>
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn-update">💾 Update Comment</button>
+        <a href="admin.php" class="btn-cancel">Cancel Edit</a>
+      </div>
+    </form>
+  </div>
+  <?php endif; ?>
+
   <div class="crud-section">
     <h2>📄 All Publications</h2>
     <div class="admin-table-wrapper">
       <table class="admin-table">
         <thead>
-          <tr><th>ID</th><th>Author</th><th>Content</th><th>Likes</th><th>Comments</th><th>Created</th><th>Actions</th></tr>
+          <tr><th>ID</th><th>Author</th><th>Content</th><th>Likes</th><th>Created</th><th>Actions</th></tr>
         </thead>
         <tbody>
-          <?php foreach($posts as $post): 
-            $commentsData = $controller->getComments($post['id']);
-          ?>
+          <?php foreach($posts as $post): ?>
           <tr>
             <td><?php echo $post['id']; ?></td>
             <td>
@@ -196,10 +254,9 @@ if (isset($_GET['edit'])) {
                 <div class="wf-avatar wf-avatar-32 <?php echo $post['user_avatar']; ?>"><?php echo htmlspecialchars($post['user_init']); ?></div>
                 <span><?php echo htmlspecialchars($post['user_name']); ?></span>
               </div>
-            </td>
+            </div>
             <td class="content-cell"><?php echo htmlspecialchars(substr($post['content'], 0, 80)) . (strlen($post['content']) > 80 ? '...' : ''); ?></td>
             <td><?php echo $post['likes']; ?></td>
-            <td><?php echo $commentsData['count']; ?></td>
             <td><?php echo date('M d, Y', strtotime($post['created_at'])); ?></td>
             <td>
               <div class="action-buttons">
@@ -211,7 +268,45 @@ if (isset($_GET['edit'])) {
                 </form>
               </div>
             </td>
-          </tr>
+           </tr>
+          <?php endforeach; ?>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="crud-section">
+    <h2>💬 All Comments</h2>
+    <div class="admin-table-wrapper">
+      <table class="admin-table">
+        <thead>
+          <tr><th>ID</th><th>User</th><th>Comment</th><th>On Post</th><th>Likes</th><th>Created</th><th>Actions</th></tr>
+        </thead>
+        <tbody>
+          <?php foreach($comments as $comment): ?>
+          <tr>
+            <td><?php echo $comment['id']; ?></td>
+            <td>
+              <div class="author-cell">
+                <div class="wf-avatar wf-avatar-32 <?php echo $comment['user_avatar']; ?>"><?php echo htmlspecialchars($comment['user_init']); ?></div>
+                <span><?php echo htmlspecialchars($comment['user_name']); ?></span>
+              </div>
+            </td>
+            <td class="content-cell"><?php echo htmlspecialchars(substr($comment['comment'], 0, 80)) . (strlen($comment['comment']) > 80 ? '...' : ''); ?></td>
+            <td><?php echo htmlspecialchars($comment['post_author']); ?></td>
+            <td><?php echo $comment['likes']; ?></td>
+            <td><?php echo date('M d, Y', strtotime($comment['created_at'])); ?></td>
+            <td>
+              <div class="action-buttons">
+                <a href="?edit_comment=<?php echo $comment['id']; ?>" class="btn-edit">✏️ Edit</a>
+                <form method="POST" action="" style="display:inline;" onsubmit="return confirm('Delete this comment?')">
+                  <input type="hidden" name="action" value="delete_comment">
+                  <input type="hidden" name="comment_id" value="<?php echo $comment['id']; ?>">
+                  <button type="submit" class="btn-delete">🗑️ Delete</button>
+                </form>
+              </div>
+            </td>
+           </tr>
           <?php endforeach; ?>
         </tbody>
       </table>
@@ -275,6 +370,26 @@ if (editForm) {
             e.preventDefault();
         } else if (content.length > 5000) {
             document.getElementById('editContentError').textContent = 'Content cannot exceed 5000 characters';
+            e.preventDefault();
+        }
+    });
+}
+
+const editCommentForm = document.getElementById('editCommentForm');
+if (editCommentForm) {
+    editCommentForm.addEventListener('submit', function(e) {
+        const comment = document.getElementById('edit_comment_content').value.trim();
+        
+        document.getElementById('editCommentError').textContent = '';
+        
+        if (comment.length === 0) {
+            document.getElementById('editCommentError').textContent = 'Comment cannot be empty';
+            e.preventDefault();
+        } else if (comment.length < 2) {
+            document.getElementById('editCommentError').textContent = 'Comment must be at least 2 characters';
+            e.preventDefault();
+        } else if (comment.length > 5000) {
+            document.getElementById('editCommentError').textContent = 'Comment cannot exceed 5000 characters';
             e.preventDefault();
         }
     });

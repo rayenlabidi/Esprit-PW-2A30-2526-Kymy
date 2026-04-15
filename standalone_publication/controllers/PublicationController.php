@@ -79,17 +79,47 @@ class PublicationController {
         return ['success' => $result, 'likes' => $likes];
     }
 
-    public function addComment($publication_id, $user_name, $user_init, $user_avatar, $comment) {
+    public function getComments($publication_id) {
+        return $this->publication->getComments($publication_id);
+    }
+
+    public function addComment($publication_id, $user_name, $user_init, $user_avatar, $comment, $parent_id = null) {
         if (empty($comment) || strlen($comment) < 2) {
             return ['success' => false, 'error' => 'Comment must be at least 2 characters'];
         }
         
-        $result = $this->publication->addComment($publication_id, $user_name, $user_init, $user_avatar, $comment);
+        $result = $this->publication->addComment($publication_id, $user_name, $user_init, $user_avatar, $comment, $parent_id);
         return ['success' => $result];
     }
     
-    public function getComments($publication_id) {
-        return $this->publication->getComments($publication_id);
+    public function updateCommentLikes($comment_id, $likes) {
+        $result = $this->publication->updateCommentLikes($comment_id, $likes);
+        return ['success' => $result, 'likes' => $likes];
+    }
+    
+    public function deleteComment($comment_id) {
+        $result = $this->publication->deleteComment($comment_id);
+        return ['success' => $result];
+    }
+    
+    public function editComment($comment_id, $comment, $user_name) {
+        if (empty($comment) || strlen($comment) < 2) {
+            return ['success' => false, 'error' => 'Comment must be at least 2 characters'];
+        }
+        if (strlen($comment) > 5000) {
+            return ['success' => false, 'error' => 'Comment cannot exceed 5000 characters'];
+        }
+        
+        $result = $this->publication->editComment($comment_id, $comment, $user_name);
+        if ($result) {
+            return ['success' => true];
+        } else {
+            return ['success' => false, 'error' => 'You can only edit your own comments'];
+        }
+    }
+    
+    public function getAllComments() {
+        return $this->publication->getAllComments();
     }
 
     private function validateData($data) {
@@ -142,18 +172,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
             $response = $controller->updateLikes($_POST['id'], $_POST['likes']);
             break;
             
+        case 'get_comments':
+            $comments = $controller->getComments($_POST['publication_id']);
+            $response = ['success' => true, 'comments' => $comments];
+            break;
+            
         case 'add_comment':
+            $parent_id = isset($_POST['parent_id']) && $_POST['parent_id'] ? (int)$_POST['parent_id'] : null;
             $response = $controller->addComment(
                 $_POST['publication_id'],
                 $_POST['user_name'],
                 $_POST['user_init'],
                 $_POST['user_avatar'],
-                $_POST['comment']
+                $_POST['comment'],
+                $parent_id
             );
             break;
             
-        case 'get_comments':
-            $comments = $controller->getComments($_POST['publication_id']);
+        case 'update_comment_likes':
+            $response = $controller->updateCommentLikes($_POST['comment_id'], $_POST['likes']);
+            break;
+            
+        case 'delete_comment':
+            $response = $controller->deleteComment($_POST['comment_id']);
+            break;
+            
+        case 'edit_comment':
+            $response = $controller->editComment($_POST['comment_id'], $_POST['comment'], $_POST['user_name']);
+            break;
+            
+        case 'get_all_comments':
+            $comments = $controller->getAllComments();
             $response = ['success' => true, 'comments' => $comments];
             break;
             

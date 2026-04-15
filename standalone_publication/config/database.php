@@ -16,7 +16,7 @@ class Database {
                     ]
                 );
             } catch (Exception $e) {
-                die('Erreur: ' . $e->getMessage());
+                die('Connection Error: ' . $e->getMessage());
             }
         }
         return self::$pdo;

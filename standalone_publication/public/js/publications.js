@@ -2,6 +2,7 @@ let pendingImg = null;
 let currentSharePostId = null;
 let currentShareContent = '';
 let isLiking = false;
+let isCommentLiking = false;
 let postLikeStates = {};
 
 function autoResize(el) {
@@ -40,27 +41,36 @@ function submitPost() {
     const formData = new FormData();
     formData.append('action', 'create');
     formData.append('user_id', CURRENT_USER_ID);
-    formData.append('user_name', 'You');
+    formData.append('user_name', CURRENT_USER_NAME);
     formData.append('user_init', 'YO');
     formData.append('user_role', 'Freelancer');
     formData.append('user_avatar', 'av-blue');
     formData.append('content', content);
-    formData.append('has_image', pendingImg ? '1' : '0');
     
     fetch(BASE_URL, {
         method: 'POST',
-        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        },
         body: formData
     })
-    .then(response => response.json())
-    .then(data => {
+    .then(function(response) {
+        return response.json();
+    })
+    .then(function(data) {
         if (data.success) {
             location.reload();
         } else {
-            alert('Error: ' + (data.errors ? data.errors.join(', ') : 'Could not create post'));
+            let errorMsg = 'Error: ';
+            if (data.errors) {
+                errorMsg += data.errors.join(', ');
+            } else {
+                errorMsg += 'Could not create post';
+            }
+            alert(errorMsg);
         }
     })
-    .catch(error => {
+    .catch(function(error) {
         console.error('Error:', error);
         alert('An error occurred while creating the post');
     });
@@ -92,11 +102,15 @@ function toggleLike(btn, postId, currentLikes) {
     
     fetch(BASE_URL, {
         method: 'POST',
-        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        },
         body: formData
     })
-    .then(response => response.json())
-    .then(data => {
+    .then(function(response) {
+        return response.json();
+    })
+    .then(function(data) {
         isLiking = false;
         if (data.success) {
             postLikeStates[postId] = !isCurrentlyLiked;
@@ -111,30 +125,74 @@ function toggleLike(btn, postId, currentLikes) {
                 btn.style.background = 'none';
             }
             
-            const likeSpan = document.querySelector(`.like-count-${postId}`);
+            const likeSpan = document.querySelector('.like-count-' + postId);
             if (likeSpan) {
                 likeSpan.textContent = data.likes;
             }
         }
     })
-    .catch(error => {
+    .catch(function(error) {
         isLiking = false;
         console.error('Error:', error);
     });
 }
 
+function toggleCommentLike(btn, commentId, currentLikes) {
+    if (isCommentLiking) return;
+    isCommentLiking = true;
+    
+    const isLiked = btn.classList.contains('liked');
+    let newLikes = isLiked ? currentLikes - 1 : currentLikes + 1;
+    newLikes = Math.max(0, newLikes);
+    
+    const formData = new FormData();
+    formData.append('action', 'update_comment_likes');
+    formData.append('comment_id', commentId);
+    formData.append('likes', newLikes);
+    
+    fetch(BASE_URL, {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: formData
+    })
+    .then(function(response) {
+        return response.json();
+    })
+    .then(function(data) {
+        isCommentLiking = false;
+        if (data.success) {
+            btn.classList.toggle('liked');
+            const likeSpan = document.querySelector('.comment-like-count-' + commentId);
+            if (likeSpan) {
+                likeSpan.textContent = data.likes;
+            }
+            
+            if (isLiked) {
+                btn.style.color = 'var(--text-3)';
+            } else {
+                btn.style.color = 'var(--blue)';
+            }
+        }
+    })
+    .catch(function(error) {
+        isCommentLiking = false;
+        console.error('Error:', error);
+    });
+}
+
 function toggleComments(postId) {
-    const commentsSection = document.getElementById(`comments-${postId}`);
+    const commentsSection = document.getElementById('comments-' + postId);
     if (commentsSection.style.display === 'none' || commentsSection.style.display === '') {
         commentsSection.style.display = 'block';
-        loadComments(postId);
     } else {
         commentsSection.style.display = 'none';
     }
 }
 
 function addComment(postId) {
-    const input = document.getElementById(`comment-input-${postId}`);
+    const input = document.getElementById('comment-input-' + postId);
     const comment = input.value.trim();
     
     if (!comment) {
@@ -150,69 +208,151 @@ function addComment(postId) {
     const formData = new FormData();
     formData.append('action', 'add_comment');
     formData.append('publication_id', postId);
-    formData.append('user_name', 'You');
+    formData.append('user_name', CURRENT_USER_NAME);
     formData.append('user_init', 'YO');
     formData.append('user_avatar', 'av-blue');
     formData.append('comment', comment);
     
     fetch(BASE_URL, {
         method: 'POST',
-        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        },
         body: formData
     })
-    .then(response => response.json())
-    .then(data => {
+    .then(function(response) {
+        return response.json();
+    })
+    .then(function(data) {
         if (data.success) {
             input.value = '';
-            loadComments(postId);
+            location.reload();
         } else {
             alert('Error: ' + (data.error || 'Could not add comment'));
         }
     })
-    .catch(error => console.error('Error:', error));
+    .catch(function(error) {
+        console.error('Error:', error);
+    });
 }
 
-function loadComments(postId) {
+function addReply(postId, parentCommentId) {
+    const input = document.getElementById('reply-input-' + parentCommentId);
+    const comment = input.value.trim();
+    
+    if (!comment) {
+        alert('Please enter a reply');
+        return;
+    }
+    
+    if (comment.length < 2) {
+        alert('Reply must be at least 2 characters');
+        return;
+    }
+    
     const formData = new FormData();
-    formData.append('action', 'get_comments');
+    formData.append('action', 'add_comment');
     formData.append('publication_id', postId);
+    formData.append('user_name', CURRENT_USER_NAME);
+    formData.append('user_init', 'YO');
+    formData.append('user_avatar', 'av-blue');
+    formData.append('comment', comment);
+    formData.append('parent_id', parentCommentId);
     
     fetch(BASE_URL, {
         method: 'POST',
-        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        },
         body: formData
     })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success && data.comments) {
-            const commentsList = document.getElementById(`comments-list-${postId}`);
-            const commentSpan = document.querySelector(`.comment-count-${postId}`);
-            
-            if (commentsList) {
-                commentsList.innerHTML = '';
-                
-                if (data.comments.comments && data.comments.comments.length > 0) {
-                    data.comments.comments.forEach(comment => {
-                        const commentHtml = `
-                            <div class="pub-comment">
-                                <div class="wf-avatar wf-avatar-32 av-blue">${escapeHtml(comment.user.substring(0, 2))}</div>
-                                <div class="pub-comment-content">
-                                    <div class="pub-comment-author">${escapeHtml(comment.user)}</div>
-                                    <div class="pub-comment-text">${escapeHtml(comment.comment)}</div>
-                                </div>
-                            </div>
-                        `;
-                        commentsList.innerHTML += commentHtml;
-                    });
-                } else {
-                    commentsList.innerHTML = '<div class="pub-comment"><div class="pub-comment-content"><em>No comments yet. Be the first to comment!</em></div></div>';
-                }
-            }
-            
-            if (commentSpan) commentSpan.textContent = data.comments.count;
+    .then(function(response) {
+        return response.json();
+    })
+    .then(function(data) {
+        if (data.success) {
+            input.value = '';
+            location.reload();
+        } else {
+            alert('Error: ' + (data.error || 'Could not add reply'));
         }
     })
-    .catch(error => console.error('Error:', error));
+    .catch(function(error) {
+        console.error('Error:', error);
+    });
+}
+
+function showReplyForm(postId, commentId) {
+    const replyForm = document.getElementById('reply-form-' + commentId);
+    if (replyForm.style.display === 'none' || replyForm.style.display === '') {
+        replyForm.style.display = 'block';
+        document.getElementById('reply-input-' + commentId).focus();
+    } else {
+        replyForm.style.display = 'none';
+    }
+}
+
+function editComment(commentId, currentText) {
+    const newText = prompt('Edit your comment:', currentText);
+    if (newText && newText.trim().length >= 2) {
+        const formData = new FormData();
+        formData.append('action', 'edit_comment');
+        formData.append('comment_id', commentId);
+        formData.append('comment', newText.trim());
+        formData.append('user_name', CURRENT_USER_NAME);
+        
+        fetch(BASE_URL, {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: formData
+        })
+        .then(function(response) {
+            return response.json();
+        })
+        .then(function(data) {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error: ' + (data.error || 'Could not edit comment'));
+            }
+        })
+        .catch(function(error) {
+            console.error('Error:', error);
+        });
+    } else if (newText && newText.trim().length < 2) {
+        alert('Comment must be at least 2 characters');
+    }
+}
+
+function deleteComment(commentId) {
+    if (confirm('Are you sure you want to delete this comment? This action cannot be undone!')) {
+        const formData = new FormData();
+        formData.append('action', 'delete_comment');
+        formData.append('comment_id', commentId);
+        
+        fetch(BASE_URL, {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: formData
+        })
+        .then(function(response) {
+            return response.json();
+        })
+        .then(function(data) {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error: Could not delete comment');
+            }
+        })
+        .catch(function(error) {
+            console.error('Error:', error);
+        });
+    }
 }
 
 function sharePost(postId, content) {
@@ -221,17 +361,17 @@ function sharePost(postId, content) {
     const modal = document.getElementById('shareModal');
     const sharePreview = document.getElementById('sharePreview');
     if (sharePreview) {
-        sharePreview.innerHTML = `<p>${escapeHtml(content.substring(0, 150))}${content.length > 150 ? '...' : ''}</p>`;
+        sharePreview.innerHTML = '<p>' + escapeHtml(content.substring(0, 150)) + (content.length > 150 ? '...' : '') + '</p>';
     }
     if (modal) modal.style.display = 'block';
 }
 
 function copyToClipboard() {
     const url = window.location.href;
-    navigator.clipboard.writeText(url).then(() => {
+    navigator.clipboard.writeText(url).then(function() {
         alert('Link copied to clipboard!');
         closeShareModal();
-    }).catch(() => {
+    }).catch(function() {
         alert('Could not copy link. Please copy manually: ' + url);
     });
 }
@@ -239,19 +379,19 @@ function copyToClipboard() {
 function shareOnTwitter() {
     const text = encodeURIComponent('Check out this post on Workify!');
     const url = encodeURIComponent(window.location.href);
-    window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, '_blank', 'width=600,height=400');
+    window.open('https://twitter.com/intent/tweet?text=' + text + '&url=' + url, '_blank', 'width=600,height=400');
     closeShareModal();
 }
 
 function shareOnFacebook() {
     const url = encodeURIComponent(window.location.href);
-    window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank', 'width=600,height=400');
+    window.open('https://www.facebook.com/sharer/sharer.php?u=' + url, '_blank', 'width=600,height=400');
     closeShareModal();
 }
 
 function shareOnLinkedIn() {
     const url = encodeURIComponent(window.location.href);
-    window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${url}`, '_blank', 'width=600,height=400');
+    window.open('https://www.linkedin.com/sharing/share-offsite/?url=' + url, '_blank', 'width=600,height=400');
     closeShareModal();
 }
 
@@ -261,7 +401,7 @@ function closeShareModal() {
 }
 
 function editPost(postId) {
-    const contentElement = document.getElementById(`post-content-${postId}`);
+    const contentElement = document.getElementById('post-content-' + postId);
     if (contentElement) {
         const currentContent = contentElement.innerText;
         document.getElementById('editId').value = postId;
@@ -291,18 +431,24 @@ function saveEdit() {
     
     fetch(BASE_URL, {
         method: 'POST',
-        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        },
         body: formData
     })
-    .then(response => response.json())
-    .then(data => {
+    .then(function(response) {
+        return response.json();
+    })
+    .then(function(data) {
         if (data.success) {
             location.reload();
         } else {
             alert('Error: ' + (data.errors ? data.errors.join(', ') : 'Could not update post'));
         }
     })
-    .catch(error => console.error('Error:', error));
+    .catch(function(error) {
+        console.error('Error:', error);
+    });
 }
 
 function deletePost(postId) {
@@ -314,18 +460,24 @@ function deletePost(postId) {
         
         fetch(BASE_URL, {
             method: 'POST',
-            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            },
             body: formData
         })
-        .then(response => response.json())
-        .then(data => {
+        .then(function(response) {
+            return response.json();
+        })
+        .then(function(data) {
             if (data.success) {
                 location.reload();
             } else {
                 alert('Error: ' + (data.errors ? data.errors.join(', ') : 'You can only delete your own posts'));
             }
         })
-        .catch(error => console.error('Error:', error));
+        .catch(function(error) {
+            console.error('Error:', error);
+        });
     }
 }
 
@@ -366,11 +518,12 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     const likeButtons = document.querySelectorAll('.like-btn');
-    likeButtons.forEach(btn => {
+    for (let i = 0; i < likeButtons.length; i++) {
+        const btn = likeButtons[i];
         const postCard = btn.closest('.pub-post-card');
         if (postCard) {
             const postId = postCard.dataset.postId;
             postLikeStates[postId] = btn.classList.contains('liked');
         }
-    });
+    }
 });
