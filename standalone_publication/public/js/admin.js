@@ -100,6 +100,31 @@ if (editForm) {
     });
 }
 
+const editCommentForm = document.getElementById('editCommentForm');
+if (editCommentForm) {
+    editCommentForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const comment = document.getElementById('edit_comment_content').value;
+        
+        document.getElementById('editCommentError').textContent = '';
+        
+        if (!comment || comment.trim().length < 2) {
+            document.getElementById('editCommentError').textContent = 'Comment must be at least 2 characters';
+            document.getElementById('editCommentError').style.color = 'var(--red)';
+            return;
+        }
+        
+        if (comment.trim().length > 5000) {
+            document.getElementById('editCommentError').textContent = 'Comment cannot exceed 5000 characters';
+            document.getElementById('editCommentError').style.color = 'var(--red)';
+            return;
+        }
+        
+        this.submit();
+    });
+}
+
 const nameInput = document.getElementById('user_name');
 const initialsInput = document.getElementById('user_init');
 const contentInput = document.getElementById('create_content');
@@ -134,48 +159,6 @@ if (contentInput) {
     contentInput.addEventListener('input', function() {
         const validation = validateContent(this.value);
         const errorSpan = document.getElementById('contentError');
-        if (!validation.valid) {
-            errorSpan.textContent = validation.message;
-            errorSpan.style.color = 'var(--red)';
-        } else {
-            errorSpan.textContent = '';
-        }
-    });
-}
-
-function deletePublication(id) {
-    if (confirm('Are you sure you want to delete this publication? This action cannot be undone!')) {
-        const formData = new FormData();
-        formData.append('action', 'delete');
-        formData.append('id', id);
-        
-        fetch(window.location.href, {
-            method: 'POST',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            },
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                location.reload();
-            } else {
-                alert('Error deleting publication: ' + (data.errors ? data.errors.join(', ') : 'Unknown error'));
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('An error occurred while deleting the publication');
-        });
-    }
-}
-
-const editContent = document.getElementById('edit_content');
-if (editContent) {
-    editContent.addEventListener('input', function() {
-        const validation = validateContent(this.value);
-        const errorSpan = document.getElementById('editContentError');
         if (!validation.valid) {
             errorSpan.textContent = validation.message;
             errorSpan.style.color = 'var(--red)';

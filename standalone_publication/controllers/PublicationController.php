@@ -15,6 +15,10 @@ class PublicationController {
         return $this->publication->getAll();
     }
 
+    public function getByUserId($user_id) {
+        return $this->publication->getByUserId($user_id);
+    }
+
     public function getOne($id) {
         return $this->publication->getById($id);
     }
@@ -122,6 +126,34 @@ class PublicationController {
         return $this->publication->getAllComments();
     }
 
+    public function uploadImage($file) {
+        $target_dir = __DIR__ . '/../uploads/';
+        
+        if (!file_exists($target_dir)) {
+            mkdir($target_dir, 0777, true);
+        }
+        
+        $file_extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        $allowed_extensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+        
+        if (!in_array($file_extension, $allowed_extensions)) {
+            return ['success' => false, 'error' => 'Invalid file type. Only JPG, PNG, GIF, WEBP allowed.'];
+        }
+        
+        if ($file['size'] > 5000000) {
+            return ['success' => false, 'error' => 'File is too large. Max 5MB.'];
+        }
+        
+        $new_filename = uniqid() . '.' . $file_extension;
+        $target_file = $target_dir . $new_filename;
+        
+        if (move_uploaded_file($file['tmp_name'], $target_file)) {
+            return ['success' => true, 'filename' => '/workify/standalone_publication/uploads/' . $new_filename];
+        }
+        
+        return ['success' => false, 'error' => 'Failed to upload image'];
+    }
+
     private function validateData($data) {
         $errors = [];
         
@@ -204,6 +236,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
         case 'get_all_comments':
             $comments = $controller->getAllComments();
             $response = ['success' => true, 'comments' => $comments];
+            break;
+            
+        case 'get_user_posts':
+            $posts = $controller->getByUserId($_POST['user_id']);
+            $response = ['success' => true, 'posts' => $posts];
+            break;
+            
+        case 'upload_image':
+            if (isset($_FILES['image'])) {
+                $response = $controller->uploadImage($_FILES['image']);
+            } else {
+                $response = ['success' => false, 'error' => 'No image uploaded'];
+            }
             break;
             
         default:

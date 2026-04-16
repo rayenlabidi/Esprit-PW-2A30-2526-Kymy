@@ -17,6 +17,14 @@ class Publication {
         return $stmt->fetchAll();
     }
 
+    public function getByUserId($user_id) {
+        $query = "SELECT * FROM " . $this->table . " WHERE user_id = :user_id ORDER BY created_at DESC";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':user_id', $user_id);
+        $stmt->execute();
+        return $stmt->fetchAll();
+    }
+
     public function getById($id) {
         $query = "SELECT * FROM " . $this->table . " WHERE id = :id";
         $stmt = $this->conn->prepare($query);
@@ -27,9 +35,9 @@ class Publication {
 
     public function create($data) {
         $query = "INSERT INTO " . $this->table . " 
-                  (user_id, user_name, user_init, user_role, user_avatar, content) 
+                  (user_id, user_name, user_init, user_role, user_avatar, content, image_url) 
                   VALUES 
-                  (:user_id, :user_name, :user_init, :user_role, :user_avatar, :content)";
+                  (:user_id, :user_name, :user_init, :user_role, :user_avatar, :content, :image_url)";
         
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(':user_id', $data['user_id']);
@@ -38,6 +46,7 @@ class Publication {
         $stmt->bindParam(':user_role', $data['user_role']);
         $stmt->bindParam(':user_avatar', $data['user_avatar']);
         $stmt->bindParam(':content', $data['content']);
+        $stmt->bindParam(':image_url', $data['image_url']);
         
         return $stmt->execute();
     }
