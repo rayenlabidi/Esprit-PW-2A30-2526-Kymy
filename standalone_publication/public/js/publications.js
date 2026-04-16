@@ -285,31 +285,71 @@ function loadComments(postId) {
             const commentsList = document.getElementById('comments-list-' + postId);
             const commentSpan = document.querySelector('.comment-count-' + postId);
             commentsList.innerHTML = '';
-            data.comments.forEach(comment => {
-                const commentHtml = `
-                <div class="pub-comment">
-                  <div class="wf-avatar wf-avatar-32 ${comment.user_avatar}">${comment.user_init}</div>
-                  <div class="pub-comment-content">
-                    <div class="pub-comment-author">${escapeHtml(comment.user_name)}</div>
-                    <div class="pub-comment-text">${escapeHtml(comment.comment).replace(/\n/g, '<br>')}</div>
-                    <div class="pub-comment-actions">
-                      <button class="comment-like-btn" onclick="toggleCommentLike(this, ${comment.id}, ${comment.likes})">👍 <span class="comment-like-count-${comment.id}">${comment.likes}</span></button>
-                      <button class="comment-reply-btn" onclick="showReplyForm(${postId}, ${comment.id})">💬 Reply</button>
-                      ${comment.user_name == CURRENT_USER_NAME ? `<button class="comment-edit-btn" onclick="editComment(${comment.id}, '${escapeHtml(comment.comment)}')">✏️ Edit</button>
-                      <button class="comment-delete-btn" onclick="deleteComment(${comment.id})">🗑️ Delete</button>` : ''}
-                    </div>
-                    <div class="reply-form-container" id="reply-form-${comment.id}" style="display:none; margin-top:10px;">
-                      <div class="pub-add-comment" style="padding-left: 40px;">
-                        <div class="wf-avatar wf-avatar-32 av-blue">YO</div>
-                        <input type="text" class="pub-comment-input" id="reply-input-${comment.id}" placeholder="Write a reply...">
-                        <button class="pub-comment-send" onclick="addReply(${postId}, ${comment.id})">Send</button>
-                      </div>
-                    </div>
-                  </div>
-                </div>`;
-                commentsList.innerHTML += commentHtml;
-            });
-            if (commentSpan) commentSpan.textContent = data.comments.length;
+            
+            let totalComments = 0;
+            
+            if (data.comments.length === 0) {
+                commentsList.innerHTML = '<div class="pub-comment"><div class="pub-comment-content"><em>No comments yet. Be the first to comment!</em></div></div>';
+            } else {
+                data.comments.forEach(comment => {
+                    totalComments++;
+                    
+                    let repliesHtml = '';
+                    if (comment.replies && comment.replies.length > 0) {
+                        repliesHtml = '<div class="comment-replies" style="margin-left: 50px; margin-top: 10px;">';
+                        comment.replies.forEach(reply => {
+                            totalComments++;
+                            repliesHtml += `
+                            <div class="pub-comment" data-comment-id="${reply.id}" style="margin-bottom: 8px;">
+                                <div class="wf-avatar wf-avatar-32 ${reply.user_avatar}">${escapeHtml(reply.user_init)}</div>
+                                <div class="pub-comment-content">
+                                    <div class="pub-comment-author">${escapeHtml(reply.user_name)}</div>
+                                    <div class="pub-comment-text">${escapeHtml(reply.comment).replace(/\n/g, '<br>')}</div>
+                                    <div class="pub-comment-actions">
+                                        <button class="comment-like-btn" onclick="toggleCommentLike(this, ${reply.id}, ${reply.likes})">
+                                            👍 <span class="comment-like-count-${reply.id}">${reply.likes}</span>
+                                        </button>
+                                        ${reply.user_name == CURRENT_USER_NAME ? `
+                                        <button class="comment-edit-btn" onclick="editComment(${reply.id}, '${escapeHtml(reply.comment)}')">✏️ Edit</button>
+                                        <button class="comment-delete-btn" onclick="deleteComment(${reply.id})">🗑️ Delete</button>` : ''}
+                                    </div>
+                                </div>
+                            </div>`;
+                        });
+                        repliesHtml += '</div>';
+                    }
+                    
+                    const commentHtml = `
+                    <div class="comment-wrapper" data-comment-id="${comment.id}">
+                        <div class="pub-comment">
+                            <div class="wf-avatar wf-avatar-32 ${comment.user_avatar}">${escapeHtml(comment.user_init)}</div>
+                            <div class="pub-comment-content">
+                                <div class="pub-comment-author">${escapeHtml(comment.user_name)}</div>
+                                <div class="pub-comment-text" id="comment-text-${comment.id}">${escapeHtml(comment.comment).replace(/\n/g, '<br>')}</div>
+                                <div class="pub-comment-actions">
+                                    <button class="comment-like-btn" onclick="toggleCommentLike(this, ${comment.id}, ${comment.likes})">
+                                        👍 <span class="comment-like-count-${comment.id}">${comment.likes}</span>
+                                    </button>
+                                    <button class="comment-reply-btn" onclick="showReplyForm(${postId}, ${comment.id})">💬 Reply</button>
+                                    ${comment.user_name == CURRENT_USER_NAME ? `
+                                    <button class="comment-edit-btn" onclick="editComment(${comment.id}, '${escapeHtml(comment.comment)}')">✏️ Edit</button>
+                                    <button class="comment-delete-btn" onclick="deleteComment(${comment.id})">🗑️ Delete</button>` : ''}
+                                </div>
+                                <div class="reply-form-container" id="reply-form-${comment.id}" style="display:none; margin-top:10px;">
+                                    <div class="pub-add-comment" style="padding-left: 40px;">
+                                        <div class="wf-avatar wf-avatar-32 av-blue">YO</div>
+                                        <input type="text" class="pub-comment-input" id="reply-input-${comment.id}" placeholder="Write a reply...">
+                                        <button class="pub-comment-send" onclick="addReply(${postId}, ${comment.id})">Send</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        ${repliesHtml}
+                    </div>`;
+                    commentsList.innerHTML += commentHtml;
+                });
+            }
+            if (commentSpan) commentSpan.textContent = totalComments;
         }
     });
 }
@@ -328,6 +368,7 @@ function addComment(postId) {
     formData.append('user_init', 'YO');
     formData.append('user_avatar', 'av-blue');
     formData.append('comment', comment);
+    
     fetch(BASE_URL, {
         method: 'POST',
         headers: { 'X-Requested-With': 'XMLHttpRequest' },
@@ -337,7 +378,7 @@ function addComment(postId) {
     .then(data => {
         if (data.success) {
             input.value = '';
-            location.reload();
+            loadComments(postId);
         } else {
             alert('Error: ' + (data.error || 'Could not add comment'));
         }
@@ -359,6 +400,7 @@ function addReply(postId, parentCommentId) {
     formData.append('user_avatar', 'av-blue');
     formData.append('comment', comment);
     formData.append('parent_id', parentCommentId);
+    
     fetch(BASE_URL, {
         method: 'POST',
         headers: { 'X-Requested-With': 'XMLHttpRequest' },
@@ -368,7 +410,7 @@ function addReply(postId, parentCommentId) {
     .then(data => {
         if (data.success) {
             input.value = '';
-            location.reload();
+            loadComments(postId);
         } else {
             alert('Error: ' + (data.error || 'Could not add reply'));
         }
@@ -401,7 +443,10 @@ function editComment(commentId, currentText) {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                location.reload();
+                const postCard = document.querySelector(`.comment-wrapper[data-comment-id="${commentId}"]`).closest('.pub-post-card');
+                if (postCard) {
+                    loadComments(postCard.dataset.postId);
+                }
             } else {
                 alert('Error: ' + (data.error || 'Could not edit comment'));
             }
@@ -421,8 +466,17 @@ function deleteComment(commentId) {
         })
         .then(response => response.json())
         .then(data => {
-            if (data.success) location.reload();
-            else alert('Error deleting comment');
+            if (data.success) {
+                const commentWrapper = document.querySelector(`.comment-wrapper[data-comment-id="${commentId}"]`);
+                if (commentWrapper) {
+                    const postCard = commentWrapper.closest('.pub-post-card');
+                    if (postCard) {
+                        loadComments(postCard.dataset.postId);
+                    }
+                }
+            } else {
+                alert('Error deleting comment');
+            }
         });
     }
 }

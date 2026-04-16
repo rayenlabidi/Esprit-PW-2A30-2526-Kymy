@@ -79,7 +79,7 @@ class Publication {
 
     public function getComments($publication_id) {
         $query = "SELECT * FROM " . $this->commentsTable . " 
-                  WHERE publication_id = :publication_id AND parent_id IS NULL 
+                  WHERE publication_id = :publication_id AND (parent_id IS NULL OR parent_id = 0)
                   ORDER BY created_at ASC";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(':publication_id', $publication_id, PDO::PARAM_INT);

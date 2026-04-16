@@ -766,3 +766,17 @@
     max-height: 200px;
     object-fit: contain;
 }
+.comment-replies {
+    border-left: 2px solid var(--border);
+    padding-left: 15px;
+    margin-top: 10px;
+}
+
+.reply-form-container {
+    animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
+}

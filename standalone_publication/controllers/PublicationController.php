@@ -210,7 +210,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
             break;
             
         case 'add_comment':
-            $parent_id = isset($_POST['parent_id']) && $_POST['parent_id'] ? (int)$_POST['parent_id'] : null;
+            $parent_id = isset($_POST['parent_id']) && $_POST['parent_id'] !== '' && $_POST['parent_id'] !== 'null' ? (int)$_POST['parent_id'] : null;
             $response = $controller->addComment(
                 $_POST['publication_id'],
                 $_POST['user_name'],
