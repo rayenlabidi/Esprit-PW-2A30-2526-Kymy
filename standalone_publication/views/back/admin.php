@@ -137,7 +137,7 @@ if (isset($_GET['edit_comment'])) {
 
   <div class="crud-section">
     <h2>➕ Create New Publication</h2>
-    <form method="POST" action="" class="crud-form" id="createForm">
+    <form method="POST" action="" class="crud-form" id="createForm" enctype="multipart/form-data">
       <input type="hidden" name="action" value="create">
       <div class="form-row">
         <div class="form-group">
@@ -177,6 +177,14 @@ if (isset($_GET['edit_comment'])) {
         <small class="error-message" id="contentError"></small>
         <small>Minimum 5 characters, maximum 5000 characters</small>
       </div>
+      <div class="form-group">
+        <label>Image (optional):</label>
+        <input type="file" name="image" id="create_image" accept="image/*">
+        <small class="error-message" id="imageError"></small>
+        <div id="imagePreviewWrap" style="display:none; margin-top:10px;">
+          <img id="imagePreview" style="max-width:200px; max-height:150px; border-radius:8px;">
+        </div>
+      </div>
       <button type="submit" class="btn-create">📝 Create Publication</button>
     </form>
   </div>
@@ -201,6 +209,14 @@ if (isset($_GET['edit_comment'])) {
         <small class="error-message" id="editContentError"></small>
         <small>Minimum 5 characters, maximum 5000 characters</small>
       </div>
+      <?php if($editPost['image_url']): ?>
+      <div class="form-group">
+        <label>Current Image:</label>
+        <div>
+          <img src="<?php echo htmlspecialchars($editPost['image_url']); ?>" style="max-width:200px; border-radius:8px;">
+        </div>
+      </div>
+      <?php endif; ?>
       <div class="form-actions">
         <button type="submit" class="btn-update">💾 Update Publication</button>
         <a href="admin.php" class="btn-cancel">Cancel Edit</a>
@@ -243,7 +259,7 @@ if (isset($_GET['edit_comment'])) {
     <div class="admin-table-wrapper">
       <table class="admin-table">
         <thead>
-          <tr><th>ID</th><th>Author</th><th>Content</th><th>Likes</th><th>Created</th><th>Actions</th></tr>
+          <tr><th>ID</th><th>Author</th><th>Content</th><th>Likes</th><th>Image</th><th>Created</th><th>Actions</th></tr>
         </thead>
         <tbody>
           <?php foreach($posts as $post): ?>
@@ -254,9 +270,16 @@ if (isset($_GET['edit_comment'])) {
                 <div class="wf-avatar wf-avatar-32 <?php echo $post['user_avatar']; ?>"><?php echo htmlspecialchars($post['user_init']); ?></div>
                 <span><?php echo htmlspecialchars($post['user_name']); ?></span>
               </div>
-            </div>
+            </td>
             <td class="content-cell"><?php echo htmlspecialchars(substr($post['content'], 0, 80)) . (strlen($post['content']) > 80 ? '...' : ''); ?></td>
             <td><?php echo $post['likes']; ?></td>
+            <td>
+              <?php if($post['image_url']): ?>
+                <img src="<?php echo htmlspecialchars($post['image_url']); ?>" style="width:50px; height:50px; object-fit:cover; border-radius:5px;">
+              <?php else: ?>
+                -
+              <?php endif; ?>
+            </td>
             <td><?php echo date('M d, Y', strtotime($post['created_at'])); ?></td>
             <td>
               <div class="action-buttons">
@@ -268,7 +291,7 @@ if (isset($_GET['edit_comment'])) {
                 </form>
               </div>
             </td>
-           </tr>
+          </tr>
           <?php endforeach; ?>
         </tbody>
       </table>
@@ -306,7 +329,7 @@ if (isset($_GET['edit_comment'])) {
                 </form>
               </div>
             </td>
-           </tr>
+          </tr>
           <?php endforeach; ?>
         </tbody>
       </table>
@@ -314,86 +337,6 @@ if (isset($_GET['edit_comment'])) {
   </div>
 </div>
 
-<script>
-const createForm = document.getElementById('createForm');
-if (createForm) {
-    createForm.addEventListener('submit', function(e) {
-        const name = document.getElementById('user_name').value.trim();
-        const initials = document.getElementById('user_init').value.trim();
-        const content = document.getElementById('create_content').value.trim();
-        
-        document.getElementById('nameError').textContent = '';
-        document.getElementById('initError').textContent = '';
-        document.getElementById('contentError').textContent = '';
-        
-        let isValid = true;
-        
-        if (name.length < 2) {
-            document.getElementById('nameError').textContent = 'Name must be at least 2 characters';
-            isValid = false;
-        }
-        
-        if (initials.length === 0 || initials.length > 5) {
-            document.getElementById('initError').textContent = 'Initials must be 1-5 characters';
-            isValid = false;
-        }
-        
-        if (content.length === 0) {
-            document.getElementById('contentError').textContent = 'Content cannot be empty';
-            isValid = false;
-        } else if (content.length < 5) {
-            document.getElementById('contentError').textContent = 'Content must be at least 5 characters';
-            isValid = false;
-        } else if (content.length > 5000) {
-            document.getElementById('contentError').textContent = 'Content cannot exceed 5000 characters';
-            isValid = false;
-        }
-        
-        if (!isValid) {
-            e.preventDefault();
-        }
-    });
-}
-
-const editForm = document.getElementById('editForm');
-if (editForm) {
-    editForm.addEventListener('submit', function(e) {
-        const content = document.getElementById('edit_content').value.trim();
-        
-        document.getElementById('editContentError').textContent = '';
-        
-        if (content.length === 0) {
-            document.getElementById('editContentError').textContent = 'Content cannot be empty';
-            e.preventDefault();
-        } else if (content.length < 5) {
-            document.getElementById('editContentError').textContent = 'Content must be at least 5 characters';
-            e.preventDefault();
-        } else if (content.length > 5000) {
-            document.getElementById('editContentError').textContent = 'Content cannot exceed 5000 characters';
-            e.preventDefault();
-        }
-    });
-}
-
-const editCommentForm = document.getElementById('editCommentForm');
-if (editCommentForm) {
-    editCommentForm.addEventListener('submit', function(e) {
-        const comment = document.getElementById('edit_comment_content').value.trim();
-        
-        document.getElementById('editCommentError').textContent = '';
-        
-        if (comment.length === 0) {
-            document.getElementById('editCommentError').textContent = 'Comment cannot be empty';
-            e.preventDefault();
-        } else if (comment.length < 2) {
-            document.getElementById('editCommentError').textContent = 'Comment must be at least 2 characters';
-            e.preventDefault();
-        } else if (comment.length > 5000) {
-            document.getElementById('editCommentError').textContent = 'Comment cannot exceed 5000 characters';
-            e.preventDefault();
-        }
-    });
-}
-</script>
+<script src="../../public/js/admin.js"></script>
 </body>
 </html>

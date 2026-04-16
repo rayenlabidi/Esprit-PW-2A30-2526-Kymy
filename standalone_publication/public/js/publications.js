@@ -1,17 +1,30 @@
-let pendingImg = null;
-let currentSharePostId = null;
-let currentShareContent = '';
+let pendingImage = null;
+let postLikeStates = {};
 let isLiking = false;
 let isCommentLiking = false;
-let postLikeStates = {};
 
 function autoResize(el) {
     el.style.height = 'auto';
     el.style.height = Math.min(el.scrollHeight, 200) + 'px';
 }
 
-function triggerImgUpload() {
-    document.getElementById('imgUploadInput').click();
+function previewImage(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('imgPreview').src = e.target.result;
+            document.getElementById('imgPreviewWrap').style.display = 'block';
+            pendingImage = input.files[0];
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+function removeImage() {
+    document.getElementById('imgPreviewWrap').style.display = 'none';
+    document.getElementById('imgPreview').src = '';
+    document.getElementById('imgUploadInput').value = '';
+    pendingImage = null;
 }
 
 function validatePost(content) {
@@ -38,6 +51,34 @@ function submitPost() {
         return;
     }
     
+    if (pendingImage) {
+        const imageFormData = new FormData();
+        imageFormData.append('action', 'upload_image');
+        imageFormData.append('image', pendingImage);
+        
+        fetch(BASE_URL, {
+            method: 'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            body: imageFormData
+        })
+        .then(response => response.json())
+        .then(imageData => {
+            if (imageData.success) {
+                sendPostWithImage(content, imageData.filename);
+            } else {
+                alert('Image upload failed: ' + imageData.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Image upload failed');
+        });
+    } else {
+        sendPostWithImage(content, '');
+    }
+}
+
+function sendPostWithImage(content, imageUrl) {
     const formData = new FormData();
     formData.append('action', 'create');
     formData.append('user_id', CURRENT_USER_ID);
@@ -46,33 +87,96 @@ function submitPost() {
     formData.append('user_role', 'Freelancer');
     formData.append('user_avatar', 'av-blue');
     formData.append('content', content);
+    formData.append('image_url', imageUrl);
     
     fetch(BASE_URL, {
         method: 'POST',
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest'
-        },
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
         body: formData
     })
-    .then(function(response) {
-        return response.json();
-    })
-    .then(function(data) {
+    .then(response => response.json())
+    .then(data => {
         if (data.success) {
             location.reload();
         } else {
-            let errorMsg = 'Error: ';
-            if (data.errors) {
-                errorMsg += data.errors.join(', ');
-            } else {
-                errorMsg += 'Could not create post';
-            }
-            alert(errorMsg);
+            alert('Error: ' + (data.errors ? data.errors.join(', ') : 'Could not create post'));
         }
     })
-    .catch(function(error) {
+    .catch(error => {
         console.error('Error:', error);
         alert('An error occurred while creating the post');
+    });
+}
+
+function filterMyPosts() {
+    const formData = new FormData();
+    formData.append('action', 'get_user_posts');
+    formData.append('user_id', CURRENT_USER_ID);
+    
+    fetch(BASE_URL, {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            displayPosts(data.posts);
+            document.getElementById('totalPosts').textContent = data.posts.length;
+        }
+    });
+}
+
+function filterFeed(type) {
+    if (type === 'all') {
+        location.reload();
+    }
+}
+
+function displayPosts(posts) {
+    const container = document.getElementById('postsContainer');
+    container.innerHTML = '';
+    
+    posts.forEach(post => {
+        const isOwner = (post.user_id == CURRENT_USER_ID);
+        const postHtml = `
+        <div class="pub-post-card" data-post-id="${post.id}">
+          <div class="pub-post-header">
+            <div class="pub-post-author">
+              <div class="wf-avatar wf-avatar-40 ${post.user_avatar}">${escapeHtml(post.user_init)}</div>
+              <div class="pub-author-info">
+                <div class="pub-author-name">${escapeHtml(post.user_name)}</div>
+                <div class="pub-author-meta">
+                  <span class="pub-role-badge ${post.user_role === 'Client' ? 'badge-client' : 'badge-freelancer'}">${post.user_role}</span>
+                  · <span>${new Date(post.created_at).toLocaleString()}</span>
+                  ${isOwner ? '· <span class="owner-badge">(You)</span>' : ''}
+                </div>
+              </div>
+            </div>
+            ${isOwner ? `<button class="pub-post-menu-btn" onclick="showPostOptions(${post.id})">⋮</button>` : ''}
+          </div>
+          <div class="pub-post-body">
+            <p class="pub-post-text">${escapeHtml(post.content).replace(/\n/g, '<br>')}</p>
+            ${post.image_url ? `<div class="pub-post-image"><img src="${post.image_url}" style="max-width:100%; border-radius:10px; margin-top:10px;"></div>` : ''}
+          </div>
+          <div class="pub-post-actions">
+            <button class="pub-action-btn like-btn" onclick="toggleLike(this, ${post.id}, ${post.likes})">
+              👍 <span class="like-count-${post.id}">${post.likes}</span> Likes
+            </button>
+            <button class="pub-action-btn" onclick="toggleComments(${post.id})">💬 0 Comments</button>
+            <button class="pub-action-btn" onclick="sharePost(${post.id}, '${escapeHtml(post.content)}', '${post.image_url || ''}')">📤 Share</button>
+          </div>
+          <div class="pub-comments-section" id="comments-${post.id}" style="display:none;">
+            <div class="pub-add-comment">
+              <div class="wf-avatar wf-avatar-32 av-blue">YO</div>
+              <input type="text" class="pub-comment-input" id="comment-input-${post.id}" placeholder="Write a comment...">
+              <button class="pub-comment-send" onclick="addComment(${post.id})">Send</button>
+            </div>
+            <div class="pub-comments-list" id="comments-list-${post.id}"></div>
+          </div>
+        </div>
+        `;
+        container.innerHTML += postHtml;
     });
 }
 
@@ -81,19 +185,8 @@ function toggleLike(btn, postId, currentLikes) {
     isLiking = true;
     
     const isCurrentlyLiked = postLikeStates[postId] || false;
-    let newLikes;
-    
-    if (isCurrentlyLiked) {
-        newLikes = currentLikes - 1;
-    } else {
-        newLikes = currentLikes + 1;
-    }
-    
-    if (newLikes < 0) {
-        newLikes = 0;
-        isLiking = false;
-        return;
-    }
+    let newLikes = isCurrentlyLiked ? currentLikes - 1 : currentLikes + 1;
+    newLikes = Math.max(0, newLikes);
     
     const formData = new FormData();
     formData.append('action', 'update_likes');
@@ -102,36 +195,27 @@ function toggleLike(btn, postId, currentLikes) {
     
     fetch(BASE_URL, {
         method: 'POST',
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest'
-        },
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
         body: formData
     })
-    .then(function(response) {
-        return response.json();
-    })
-    .then(function(data) {
+    .then(response => response.json())
+    .then(data => {
         isLiking = false;
         if (data.success) {
             postLikeStates[postId] = !isCurrentlyLiked;
-            
+            btn.classList.toggle('liked');
+            const likeSpan = document.querySelector('.like-count-' + postId);
+            if (likeSpan) likeSpan.textContent = data.likes;
             if (!isCurrentlyLiked) {
-                btn.classList.add('liked');
                 btn.style.color = 'var(--blue)';
                 btn.style.background = 'var(--blue-light)';
             } else {
-                btn.classList.remove('liked');
                 btn.style.color = 'var(--text-3)';
                 btn.style.background = 'none';
             }
-            
-            const likeSpan = document.querySelector('.like-count-' + postId);
-            if (likeSpan) {
-                likeSpan.textContent = data.likes;
-            }
         }
     })
-    .catch(function(error) {
+    .catch(error => {
         isLiking = false;
         console.error('Error:', error);
     });
@@ -152,23 +236,16 @@ function toggleCommentLike(btn, commentId, currentLikes) {
     
     fetch(BASE_URL, {
         method: 'POST',
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest'
-        },
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
         body: formData
     })
-    .then(function(response) {
-        return response.json();
-    })
-    .then(function(data) {
+    .then(response => response.json())
+    .then(data => {
         isCommentLiking = false;
         if (data.success) {
             btn.classList.toggle('liked');
             const likeSpan = document.querySelector('.comment-like-count-' + commentId);
-            if (likeSpan) {
-                likeSpan.textContent = data.likes;
-            }
-            
+            if (likeSpan) likeSpan.textContent = data.likes;
             if (isLiked) {
                 btn.style.color = 'var(--text-3)';
             } else {
@@ -176,7 +253,7 @@ function toggleCommentLike(btn, commentId, currentLikes) {
             }
         }
     })
-    .catch(function(error) {
+    .catch(error => {
         isCommentLiking = false;
         console.error('Error:', error);
     });
@@ -186,25 +263,64 @@ function toggleComments(postId) {
     const commentsSection = document.getElementById('comments-' + postId);
     if (commentsSection.style.display === 'none' || commentsSection.style.display === '') {
         commentsSection.style.display = 'block';
+        loadComments(postId);
     } else {
         commentsSection.style.display = 'none';
     }
 }
 
+function loadComments(postId) {
+    const formData = new FormData();
+    formData.append('action', 'get_comments');
+    formData.append('publication_id', postId);
+    
+    fetch(BASE_URL, {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success && data.comments) {
+            const commentsList = document.getElementById('comments-list-' + postId);
+            const commentSpan = document.querySelector('.comment-count-' + postId);
+            commentsList.innerHTML = '';
+            data.comments.forEach(comment => {
+                const commentHtml = `
+                <div class="pub-comment">
+                  <div class="wf-avatar wf-avatar-32 ${comment.user_avatar}">${comment.user_init}</div>
+                  <div class="pub-comment-content">
+                    <div class="pub-comment-author">${escapeHtml(comment.user_name)}</div>
+                    <div class="pub-comment-text">${escapeHtml(comment.comment).replace(/\n/g, '<br>')}</div>
+                    <div class="pub-comment-actions">
+                      <button class="comment-like-btn" onclick="toggleCommentLike(this, ${comment.id}, ${comment.likes})">👍 <span class="comment-like-count-${comment.id}">${comment.likes}</span></button>
+                      <button class="comment-reply-btn" onclick="showReplyForm(${postId}, ${comment.id})">💬 Reply</button>
+                      ${comment.user_name == CURRENT_USER_NAME ? `<button class="comment-edit-btn" onclick="editComment(${comment.id}, '${escapeHtml(comment.comment)}')">✏️ Edit</button>
+                      <button class="comment-delete-btn" onclick="deleteComment(${comment.id})">🗑️ Delete</button>` : ''}
+                    </div>
+                    <div class="reply-form-container" id="reply-form-${comment.id}" style="display:none; margin-top:10px;">
+                      <div class="pub-add-comment" style="padding-left: 40px;">
+                        <div class="wf-avatar wf-avatar-32 av-blue">YO</div>
+                        <input type="text" class="pub-comment-input" id="reply-input-${comment.id}" placeholder="Write a reply...">
+                        <button class="pub-comment-send" onclick="addReply(${postId}, ${comment.id})">Send</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>`;
+                commentsList.innerHTML += commentHtml;
+            });
+            if (commentSpan) commentSpan.textContent = data.comments.length;
+        }
+    });
+}
+
 function addComment(postId) {
     const input = document.getElementById('comment-input-' + postId);
     const comment = input.value.trim();
-    
-    if (!comment) {
-        alert('Please enter a comment');
-        return;
-    }
-    
-    if (comment.length < 2) {
+    if (!comment || comment.length < 2) {
         alert('Comment must be at least 2 characters');
         return;
     }
-    
     const formData = new FormData();
     formData.append('action', 'add_comment');
     formData.append('publication_id', postId);
@@ -212,44 +328,29 @@ function addComment(postId) {
     formData.append('user_init', 'YO');
     formData.append('user_avatar', 'av-blue');
     formData.append('comment', comment);
-    
     fetch(BASE_URL, {
         method: 'POST',
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest'
-        },
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
         body: formData
     })
-    .then(function(response) {
-        return response.json();
-    })
-    .then(function(data) {
+    .then(response => response.json())
+    .then(data => {
         if (data.success) {
             input.value = '';
             location.reload();
         } else {
             alert('Error: ' + (data.error || 'Could not add comment'));
         }
-    })
-    .catch(function(error) {
-        console.error('Error:', error);
     });
 }
 
 function addReply(postId, parentCommentId) {
     const input = document.getElementById('reply-input-' + parentCommentId);
     const comment = input.value.trim();
-    
-    if (!comment) {
-        alert('Please enter a reply');
-        return;
-    }
-    
-    if (comment.length < 2) {
+    if (!comment || comment.length < 2) {
         alert('Reply must be at least 2 characters');
         return;
     }
-    
     const formData = new FormData();
     formData.append('action', 'add_comment');
     formData.append('publication_id', postId);
@@ -258,27 +359,19 @@ function addReply(postId, parentCommentId) {
     formData.append('user_avatar', 'av-blue');
     formData.append('comment', comment);
     formData.append('parent_id', parentCommentId);
-    
     fetch(BASE_URL, {
         method: 'POST',
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest'
-        },
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
         body: formData
     })
-    .then(function(response) {
-        return response.json();
-    })
-    .then(function(data) {
+    .then(response => response.json())
+    .then(data => {
         if (data.success) {
             input.value = '';
             location.reload();
         } else {
             alert('Error: ' + (data.error || 'Could not add reply'));
         }
-    })
-    .catch(function(error) {
-        console.error('Error:', error);
     });
 }
 
@@ -300,112 +393,88 @@ function editComment(commentId, currentText) {
         formData.append('comment_id', commentId);
         formData.append('comment', newText.trim());
         formData.append('user_name', CURRENT_USER_NAME);
-        
         fetch(BASE_URL, {
             method: 'POST',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            },
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
             body: formData
         })
-        .then(function(response) {
-            return response.json();
-        })
-        .then(function(data) {
+        .then(response => response.json())
+        .then(data => {
             if (data.success) {
                 location.reload();
             } else {
                 alert('Error: ' + (data.error || 'Could not edit comment'));
             }
-        })
-        .catch(function(error) {
-            console.error('Error:', error);
         });
-    } else if (newText && newText.trim().length < 2) {
-        alert('Comment must be at least 2 characters');
     }
 }
 
 function deleteComment(commentId) {
-    if (confirm('Are you sure you want to delete this comment? This action cannot be undone!')) {
+    if (confirm('Are you sure you want to delete this comment?')) {
         const formData = new FormData();
         formData.append('action', 'delete_comment');
         formData.append('comment_id', commentId);
-        
         fetch(BASE_URL, {
             method: 'POST',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            },
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
             body: formData
         })
-        .then(function(response) {
-            return response.json();
-        })
-        .then(function(data) {
-            if (data.success) {
-                location.reload();
-            } else {
-                alert('Error: Could not delete comment');
-            }
-        })
-        .catch(function(error) {
-            console.error('Error:', error);
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) location.reload();
+            else alert('Error deleting comment');
         });
     }
 }
 
-function sharePost(postId, content) {
-    currentSharePostId = postId;
-    currentShareContent = content;
+function sharePost(postId, content, imageUrl) {
     const modal = document.getElementById('shareModal');
     const sharePreview = document.getElementById('sharePreview');
-    if (sharePreview) {
-        sharePreview.innerHTML = '<p>' + escapeHtml(content.substring(0, 150)) + (content.length > 150 ? '...' : '') + '</p>';
+    let previewHtml = '<div style="max-height: 250px; overflow-y: auto;"><p>' + escapeHtml(content.substring(0, 200)) + (content.length > 200 ? '...' : '') + '</p>';
+    if (imageUrl && imageUrl !== 'null' && imageUrl !== '') {
+        previewHtml += '<img src="' + imageUrl + '" style="max-width:100%; max-height:200px; object-fit:contain; border-radius:8px; margin-top:10px;">';
     }
-    if (modal) modal.style.display = 'block';
+    previewHtml += '</div>';
+    sharePreview.innerHTML = previewHtml;
+    modal.style.display = 'block';
 }
 
 function copyToClipboard() {
     const url = window.location.href;
-    navigator.clipboard.writeText(url).then(function() {
+    navigator.clipboard.writeText(url).then(() => {
         alert('Link copied to clipboard!');
         closeShareModal();
-    }).catch(function() {
-        alert('Could not copy link. Please copy manually: ' + url);
     });
 }
 
 function shareOnTwitter() {
     const text = encodeURIComponent('Check out this post on Workify!');
     const url = encodeURIComponent(window.location.href);
-    window.open('https://twitter.com/intent/tweet?text=' + text + '&url=' + url, '_blank', 'width=600,height=400');
+    window.open('https://twitter.com/intent/tweet?text=' + text + '&url=' + url, '_blank');
     closeShareModal();
 }
 
 function shareOnFacebook() {
     const url = encodeURIComponent(window.location.href);
-    window.open('https://www.facebook.com/sharer/sharer.php?u=' + url, '_blank', 'width=600,height=400');
+    window.open('https://www.facebook.com/sharer/sharer.php?u=' + url, '_blank');
     closeShareModal();
 }
 
 function shareOnLinkedIn() {
     const url = encodeURIComponent(window.location.href);
-    window.open('https://www.linkedin.com/sharing/share-offsite/?url=' + url, '_blank', 'width=600,height=400');
+    window.open('https://www.linkedin.com/sharing/share-offsite/?url=' + url, '_blank');
     closeShareModal();
 }
 
 function closeShareModal() {
-    const modal = document.getElementById('shareModal');
-    if (modal) modal.style.display = 'none';
+    document.getElementById('shareModal').style.display = 'none';
 }
 
 function editPost(postId) {
     const contentElement = document.getElementById('post-content-' + postId);
     if (contentElement) {
-        const currentContent = contentElement.innerText;
         document.getElementById('editId').value = postId;
-        document.getElementById('editContent').value = currentContent;
+        document.getElementById('editContent').value = contentElement.innerText;
         document.getElementById('editModal').style.display = 'block';
     }
 }
@@ -413,81 +482,50 @@ function editPost(postId) {
 function saveEdit() {
     const postId = document.getElementById('editId').value;
     const newContent = document.getElementById('editContent').value.trim();
-    
     if (newContent.length < 5) {
         alert('Content must be at least 5 characters');
         return;
     }
-    if (newContent.length > 5000) {
-        alert('Content cannot exceed 5000 characters');
-        return;
-    }
-    
     const formData = new FormData();
     formData.append('action', 'update');
     formData.append('id', postId);
     formData.append('content', newContent);
     formData.append('user_id', CURRENT_USER_ID);
-    
     fetch(BASE_URL, {
         method: 'POST',
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest'
-        },
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
         body: formData
     })
-    .then(function(response) {
-        return response.json();
-    })
-    .then(function(data) {
-        if (data.success) {
-            location.reload();
-        } else {
-            alert('Error: ' + (data.errors ? data.errors.join(', ') : 'Could not update post'));
-        }
-    })
-    .catch(function(error) {
-        console.error('Error:', error);
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) location.reload();
+        else alert('Error: ' + (data.errors ? data.errors.join(', ') : 'Could not update post'));
     });
 }
 
 function deletePost(postId) {
-    if (confirm('Are you sure you want to delete this post? This action cannot be undone!')) {
+    if (confirm('Are you sure you want to delete this post?')) {
         const formData = new FormData();
         formData.append('action', 'delete');
         formData.append('id', postId);
         formData.append('user_id', CURRENT_USER_ID);
-        
         fetch(BASE_URL, {
             method: 'POST',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            },
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
             body: formData
         })
-        .then(function(response) {
-            return response.json();
-        })
-        .then(function(data) {
-            if (data.success) {
-                location.reload();
-            } else {
-                alert('Error: ' + (data.errors ? data.errors.join(', ') : 'You can only delete your own posts'));
-            }
-        })
-        .catch(function(error) {
-            console.error('Error:', error);
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) location.reload();
+            else alert('Error: ' + (data.errors ? data.errors.join(', ') : 'Cannot delete'));
         });
     }
 }
 
 function showPostOptions(postId) {
     const choice = confirm('Edit this post?\n\nOK = Edit\nCancel = Delete');
-    if (choice) {
-        editPost(postId);
-    } else {
-        deletePost(postId);
-    }
+    if (choice) editPost(postId);
+    else deletePost(postId);
 }
 
 function closeModal() {
@@ -503,20 +541,13 @@ function escapeHtml(text) {
 window.onclick = function(event) {
     const editModal = document.getElementById('editModal');
     const shareModal = document.getElementById('shareModal');
-    if (event.target == editModal) {
-        editModal.style.display = 'none';
-    }
-    if (event.target == shareModal) {
-        shareModal.style.display = 'none';
-    }
+    if (event.target == editModal) editModal.style.display = 'none';
+    if (event.target == shareModal) shareModal.style.display = 'none';
 }
 
 document.addEventListener('DOMContentLoaded', function() {
     const textarea = document.getElementById('newPostText');
-    if (textarea) {
-        autoResize(textarea);
-    }
-    
+    if (textarea) autoResize(textarea);
     const likeButtons = document.querySelectorAll('.like-btn');
     for (let i = 0; i < likeButtons.length; i++) {
         const btn = likeButtons[i];
