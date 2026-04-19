@@ -2,9 +2,9 @@
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
-require_once __DIR__ . '/../../controllers/PublicationController.php';
+require_once __DIR__ . '/../../controllers/PublicationC.php';
 
-$controller = new PublicationController();
+$controller = new PublicationC();
 
 $message = '';
 $error = '';
@@ -13,36 +13,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['action'])) {
         switch ($_POST['action']) {
             case 'create':
-                $_POST['user_id'] = 'admin';
-                $result = $controller->create($_POST);
-                if ($result['success']) {
+                $pub = new publication(
+                    $_POST['user_name'],
+                    $_POST['user_init'],
+                    $_POST['user_role'],
+                    $_POST['user_avatar'],
+                    $_POST['content'],
+                    $_POST['image_url'] ?? ''
+                );
+                $pub->setUserId('admin');
+                $result = $controller->AddPublication($pub);
+                if ($result) {
                     $message = 'Publication created successfully!';
                     header('Location: admin.php?success=1');
                     exit;
                 } else {
-                    $error = implode(', ', $result['errors']);
+                    $error = 'Error creating publication';
                 }
                 break;
             case 'update':
-                $post = $controller->getOne($_POST['id']);
+                $post = $controller->GetPublicationById($_POST['id']);
                 if ($post) {
-                    $result = $controller->update($_POST['id'], $_POST['content'], $post['user_id']);
-                    if ($result['success']) {
+                    $pub = new publication('', '', '', '', $_POST['content']);
+                    $result = $controller->UpdatePublication($pub, $_POST['id'], $post['user_id']);
+                    if ($result) {
                         $message = 'Publication updated successfully!';
                         header('Location: admin.php?success=1');
                         exit;
                     } else {
-                        $error = implode(', ', $result['errors']);
+                        $error = 'Update failed';
                     }
                 } else {
                     $error = 'Publication not found';
                 }
                 break;
             case 'delete':
-                $post = $controller->getOne($_POST['id']);
+                $post = $controller->GetPublicationById($_POST['id']);
                 if ($post) {
-                    $result = $controller->delete($_POST['id'], $post['user_id']);
-                    if ($result['success']) {
+                    $result = $controller->DeletePublication($_POST['id'], $post['user_id']);
+                    if ($result) {
                         $message = 'Publication deleted successfully!';
                         header('Location: admin.php?success=1');
                         exit;
@@ -54,8 +63,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
                 break;
             case 'delete_comment':
-                $result = $controller->deleteComment($_POST['comment_id']);
-                if ($result['success']) {
+                $result = $controller->DeleteComment($_POST['comment_id']);
+                if ($result) {
                     $message = 'Comment deleted successfully!';
                     header('Location: admin.php?success=1');
                     exit;
@@ -64,13 +73,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
                 break;
             case 'edit_comment':
-                $result = $controller->editComment($_POST['comment_id'], $_POST['comment'], $_POST['user_name']);
-                if ($result['success']) {
+                $result = $controller->EditComment($_POST['comment_id'], $_POST['comment'], $_POST['user_name']);
+                if ($result) {
                     $message = 'Comment updated successfully!';
                     header('Location: admin.php?success=1');
                     exit;
                 } else {
-                    $error = $result['error'] ?? 'Error updating comment';
+                    $error = 'Error updating comment';
                 }
                 break;
         }
@@ -81,13 +90,13 @@ if (isset($_GET['success'])) {
     $message = 'Operation completed successfully!';
 }
 
-$posts = $controller->getAll();
-$comments = $controller->getAllComments();
+$posts = $controller->ListePublications();
+$comments = $controller->ListeAllComments();
 $editPost = null;
 $editComment = null;
 
 if (isset($_GET['edit'])) {
-    $editPost = $controller->getOne($_GET['edit']);
+    $editPost = $controller->GetPublicationById($_GET['edit']);
 }
 if (isset($_GET['edit_comment'])) {
     foreach ($comments as $c) {

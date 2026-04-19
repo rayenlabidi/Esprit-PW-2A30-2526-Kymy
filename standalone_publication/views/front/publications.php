@@ -2,15 +2,15 @@
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
-require_once __DIR__ . '/../../controllers/PublicationController.php';
+require_once __DIR__ . '/../../controllers/PublicationC.php';
 
 $current_user_id = 'current_user';
 $current_user_name = 'You';
 $current_user_init = 'YO';
 $current_user_avatar = 'av-blue';
 
-$controller = new PublicationController();
-$posts = $controller->getAll();
+$controller = new PublicationC();
+$posts = $controller->ListePublications();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -94,7 +94,7 @@ $posts = $controller->getAll();
 
       <div id="postsContainer">
         <?php foreach($posts as $post): 
-          $comments = $controller->getComments($post['id']);
+          $comments = $controller->ListeComments($post['id']);
           $commentCount = 0;
           foreach($comments as $c) {
               $commentCount++;
