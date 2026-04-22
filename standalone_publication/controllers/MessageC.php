@@ -8,41 +8,65 @@ class MessageC
     {
         $db = config::getConnexion();
         try {
-            $sql = "SELECT DISTINCT 
-                        CASE 
-                            WHEN sender_id = :user_id THEN receiver_id
-                            ELSE sender_id
-                        END as other_user_id,
-                        CASE 
-                            WHEN sender_id = :user_id THEN receiver_name
-                            ELSE sender_name
-                        END as other_user_name,
-                        CASE 
-                            WHEN sender_id = :user_id THEN receiver_init
-                            ELSE sender_init
-                        END as other_user_init,
-                        CASE 
-                            WHEN sender_id = :user_id THEN receiver_avatar
-                            ELSE sender_avatar
-                        END as other_user_avatar,
-                        (SELECT content FROM messages m2 
-                         WHERE (m2.sender_id = :user_id AND m2.receiver_id = other_user_id)
-                            OR (m2.sender_id = other_user_id AND m2.receiver_id = :user_id)
-                         ORDER BY m2.created_at DESC LIMIT 1) as last_message,
-                        (SELECT created_at FROM messages m2 
-                         WHERE (m2.sender_id = :user_id AND m2.receiver_id = other_user_id)
-                            OR (m2.sender_id = other_user_id AND m2.receiver_id = :user_id)
-                         ORDER BY m2.created_at DESC LIMIT 1) as last_time,
-                        (SELECT COUNT(*) FROM messages 
-                         WHERE receiver_id = :user_id AND sender_id = other_user_id AND is_read = 0) as unread_count
-                    FROM messages 
-                    WHERE sender_id = :user_id OR receiver_id = :user_id
+            // Fixed query - properly handles conversation listing
+            $sql = "SELECT 
+                        DISTINCT other_user_id,
+                        other_user_name,
+                        other_user_init,
+                        other_user_avatar,
+                        last_message,
+                        last_time,
+                        unread_count
+                    FROM (
+                        SELECT 
+                            CASE 
+                                WHEN sender_id = :user_id THEN receiver_id
+                                ELSE sender_id
+                            END as other_user_id,
+                            CASE 
+                                WHEN sender_id = :user_id THEN receiver_name
+                                ELSE sender_name
+                            END as other_user_name,
+                            CASE 
+                                WHEN sender_id = :user_id THEN receiver_init
+                                ELSE sender_init
+                            END as other_user_init,
+                            CASE 
+                                WHEN sender_id = :user_id THEN receiver_avatar
+                                ELSE sender_avatar
+                            END as other_user_avatar,
+                            (
+                                SELECT content FROM messages m2 
+                                WHERE (m2.sender_id = :user_id AND m2.receiver_id = other_user_id)
+                                    OR (m2.sender_id = other_user_id AND m2.receiver_id = :user_id)
+                                ORDER BY m2.created_at DESC LIMIT 1
+                            ) as last_message,
+                            (
+                                SELECT created_at FROM messages m2 
+                                WHERE (m2.sender_id = :user_id AND m2.receiver_id = other_user_id)
+                                    OR (m2.sender_id = other_user_id AND m2.receiver_id = :user_id)
+                                ORDER BY m2.created_at DESC LIMIT 1
+                            ) as last_time,
+                            (
+                                SELECT COUNT(*) FROM messages 
+                                WHERE receiver_id = :user_id AND sender_id = other_user_id AND is_read = 0
+                            ) as unread_count,
+                            messages.created_at as msg_created_at
+                        FROM messages 
+                        WHERE sender_id = :user_id OR receiver_id = :user_id
+                    ) as conv
                     ORDER BY last_time DESC";
             
             $query = $db->prepare($sql);
             $query->execute(['user_id' => $user_id]);
-            return $query->fetchAll();
+            $results = $query->fetchAll();
+            
+            // Filter out null other_user_id (shouldn't happen but just in case)
+            return array_filter($results, function($conv) {
+                return !empty($conv['other_user_id']);
+            });
         } catch (Exception $e) {
+            error_log("ListeConversations error: " . $e->getMessage());
             return [];
         }
     }
@@ -51,6 +75,7 @@ class MessageC
     {
         $db = config::getConnexion();
         try {
+            // First mark messages as read
             $updateSql = "UPDATE messages SET is_read = 1 
                           WHERE receiver_id = :user_id AND sender_id = :other_user_id";
             $updateQuery = $db->prepare($updateSql);
@@ -59,6 +84,7 @@ class MessageC
                 'other_user_id' => $other_user_id
             ]);
             
+            // Then fetch all messages
             $sql = "SELECT * FROM messages 
                     WHERE (sender_id = :user_id AND receiver_id = :other_user_id)
                        OR (sender_id = :other_user_id AND receiver_id = :user_id)
@@ -70,6 +96,7 @@ class MessageC
             ]);
             return $query->fetchAll();
         } catch (Exception $e) {
+            error_log("ListeMessages error: " . $e->getMessage());
             return [];
         }
     }
@@ -93,6 +120,7 @@ class MessageC
                 'content' => $m->getContent()
             ]);
         } catch (Exception $e) {
+            error_log("AddMessage error: " . $e->getMessage());
             return false;
         }
     }
@@ -107,6 +135,7 @@ class MessageC
         try {
             return $req->execute();
         } catch (Exception $e) {
+            error_log("DeleteMessage error: " . $e->getMessage());
             return false;
         }
     }
@@ -123,6 +152,7 @@ class MessageC
         try {
             return $req->execute();
         } catch (Exception $e) {
+            error_log("DeleteConversation error: " . $e->getMessage());
             return false;
         }
     }
@@ -138,6 +168,7 @@ class MessageC
                 'sender_id' => $sender_id
             ]);
         } catch (Exception $e) {
+            error_log("EditMessage error: " . $e->getMessage());
             return false;
         }
     }
@@ -151,6 +182,7 @@ class MessageC
             $result = $query->fetch();
             return $result['total'];
         } catch (Exception $e) {
+            error_log("GetUnreadCount error: " . $e->getMessage());
             return 0;
         }
     }
@@ -163,6 +195,7 @@ class MessageC
             $query->execute();
             return $query->fetchAll();
         } catch (Exception $e) {
+            error_log("GetAllUsers error: " . $e->getMessage());
             return [];
         }
     }
@@ -175,6 +208,7 @@ class MessageC
             $query->execute(['user_id' => $user_id]);
             return $query->fetch();
         } catch (Exception $e) {
+            error_log("GetUserById error: " . $e->getMessage());
             return null;
         }
     }
@@ -194,6 +228,7 @@ class MessageC
                 'role' => $role
             ]);
         } catch (Exception $e) {
+            error_log("AddUser error: " . $e->getMessage());
             return false;
         }
     }
@@ -207,6 +242,7 @@ class MessageC
             $query->execute();
             return $query->fetchAll();
         } catch (Exception $e) {
+            error_log("GetAllMessagesAdmin error: " . $e->getMessage());
             return [];
         }
     }
@@ -220,6 +256,7 @@ class MessageC
         try {
             return $req->execute();
         } catch (Exception $e) {
+            error_log("DeleteMessageAdmin error: " . $e->getMessage());
             return false;
         }
     }
@@ -234,11 +271,13 @@ class MessageC
                 'id' => $id
             ]);
         } catch (Exception $e) {
+            error_log("EditMessageAdmin error: " . $e->getMessage());
             return false;
         }
     }
 }
 
+// AJAX Handler
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WITH'])) {
     header('Content-Type: application/json');
     
@@ -249,7 +288,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
     switch ($action) {
         case 'get_conversations':
             $conversations = $controller->ListeConversations($_POST['user_id']);
-            $response = ['success' => true, 'conversations' => $conversations];
+            $response = ['success' => true, 'conversations' => array_values($conversations)];
             break;
             
         case 'get_messages':

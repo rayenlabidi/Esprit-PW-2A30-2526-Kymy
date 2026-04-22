@@ -1,8 +1,6 @@
 /* ============================================================
    messages.js  –  Workify Messaging
-   - All validation via modal (no alert / confirm)
-   - Opens conversation from URL params (?open_user=...)
-   - Clean module, no inline JS
+   Fixed loading state and conversation switching
    ============================================================ */
 
 'use strict';
@@ -77,7 +75,7 @@ function loadConversations(callback) {
     .then(r => r.json())
     .then(data => {
       if (data.success) {
-        conversations = data.conversations;
+        conversations = data.conversations || [];
         renderConversations();
         updateNavBadge();
         if (callback) callback();
@@ -92,7 +90,7 @@ function renderConversations(filter) {
   const q = (filter !== undefined ? filter : (document.getElementById('convSearchInput') ? document.getElementById('convSearchInput').value : '')).toLowerCase();
 
   const filtered = conversations.filter(c =>
-    !q || c.other_user_name.toLowerCase().includes(q)
+    !q || (c.other_user_name && c.other_user_name.toLowerCase().includes(q))
   );
 
   if (filtered.length === 0) {
@@ -102,13 +100,14 @@ function renderConversations(filter) {
 
   list.innerHTML = filtered.map(c => `
     <div class="msg-conv-item${activeConvId === c.other_user_id ? ' active' : ''}"
-         onclick="openConversation('${c.other_user_id}','${escHtml(c.other_user_name)}','${escHtml(c.other_user_init)}','${escHtml(c.other_user_avatar)}')">
+         data-conv-id="${c.other_user_id}"
+         onclick="openConversation('${c.other_user_id}','${escHtml(c.other_user_name || '')}','${escHtml(c.other_user_init || '')}','${escHtml(c.other_user_avatar || 'av-blue')}')">
       <div class="msg-conv-avatar-wrap">
-        <div class="wf-avatar wf-avatar-40 ${c.other_user_avatar}">${escHtml(c.other_user_init)}</div>
+        <div class="wf-avatar wf-avatar-40 ${c.other_user_avatar || 'av-blue'}">${escHtml(c.other_user_init || '?')}</div>
       </div>
       <div class="msg-conv-body">
         <div class="msg-conv-row1">
-          <span class="msg-conv-name">${escHtml(c.other_user_name)}</span>
+          <span class="msg-conv-name">${escHtml(c.other_user_name || 'Unknown')}</span>
           <span class="msg-conv-time">${formatTime(c.last_time)}</span>
         </div>
         <div class="msg-conv-row2">
@@ -125,16 +124,22 @@ function filterConversations(q) {
 }
 
 /* ============================================================
-   OPEN CONVERSATION
+   OPEN CONVERSATION - INSTANT SWITCHING
    ============================================================ */
 function openConversation(otherUserId, name, init, avatar) {
+  // Don't reload same conversation
+  if (activeConvId === otherUserId) return;
+  
+  // Update active conversation IMMEDIATELY
   activeConvId     = otherUserId;
   activeConvName   = name;
   activeConvInit   = init;
   activeConvAvatar = avatar;
 
+  // INSTANTLY update active conversation highlight in sidebar
   renderConversations();
 
+  // INSTANTLY update chat header
   const header = document.getElementById('chatHeader');
   header.style.display = 'flex';
   header.innerHTML = `
@@ -155,16 +160,34 @@ function openConversation(otherUserId, name, init, avatar) {
       </button>
     </div>`;
 
+  // Show input bar and hide empty state
   document.getElementById('emptyState').style.display = 'none';
   document.getElementById('inputBar').style.display   = 'block';
   document.getElementById('msgTextarea').focus();
 
+  // Clear chat body and show loading state
+  const chatBody = document.getElementById('chatBody');
+  chatBody.innerHTML = `
+    <div style="flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;color:var(--text-4);">
+      <div class="msg-empty-icon" style="width:48px;height:48px;">
+        <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M12 8v4M12 16h.01"/>
+        </svg>
+      </div>
+      <span>Loading messages...</span>
+    </div>
+  `;
+
+  // Load messages asynchronously
   loadMessages(otherUserId);
 
-  // Poll for new messages every 5 s
-  clearInterval(pollTimer);
+  // Reset polling for new messages
+  if (pollTimer) clearInterval(pollTimer);
   pollTimer = setInterval(() => {
-    if (activeConvId) loadMessages(activeConvId, true);
+    if (activeConvId) {
+      loadMessages(activeConvId, true);
+    }
   }, 5000);
 }
 
@@ -172,6 +195,10 @@ function openConversation(otherUserId, name, init, avatar) {
    MESSAGES
    ============================================================ */
 function loadMessages(otherUserId, silent) {
+  if (!otherUserId) return;
+  
+  const requestedUserId = otherUserId;
+
   const fd = new FormData();
   fd.append('action',        'get_messages');
   fd.append('user_id',       CURRENT_USER_ID);
@@ -180,20 +207,48 @@ function loadMessages(otherUserId, silent) {
   fetch(MSG_URL, { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' }, body: fd })
     .then(r => r.json())
     .then(data => {
-      if (data.success && data.messages) {
-        renderMessages(data.messages);
-        if (!silent) loadConversations();
+      // Only process if this is still the active conversation
+      if (activeConvId === requestedUserId) {
+        if (data.success && data.messages) {
+          renderMessages(data.messages);
+          if (!silent) loadConversations();
+        } else {
+          // Show empty state if no messages
+          renderMessages([]);
+        }
       }
     })
-    .catch(console.error);
+    .catch(error => {
+      console.error('Load messages error:', error);
+      // Only show error if still the active conversation
+      if (activeConvId === requestedUserId) {
+        const chatBody = document.getElementById('chatBody');
+        if (chatBody) {
+          chatBody.innerHTML = `
+            <div style="flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;color:var(--red);">
+              <div class="msg-empty-icon" style="width:48px;height:48px;">
+                <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="12" y1="8" x2="12" y2="12"/>
+                  <line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+              </div>
+              <span>Error loading messages. Please try again.</span>
+            </div>
+          `;
+        }
+      }
+    });
 }
 
 function renderMessages(messages) {
   const body = document.getElementById('chatBody');
-  const wasAtBottom = body.scrollHeight - body.scrollTop - body.clientHeight < 80;
+  if (!body) return;
+  
+  const wasAtBottom = body.scrollHeight - body.scrollTop - body.clientHeight < 100;
   body.innerHTML = '';
 
-  if (messages.length === 0) {
+  if (!messages || messages.length === 0) {
     body.innerHTML = '<div style="flex:1;display:flex;align-items:center;justify-content:center;color:var(--text-4);font-size:13px;">No messages yet – say hello!</div>';
     return;
   }
@@ -204,21 +259,22 @@ function renderMessages(messages) {
     row.className = 'msg-row ' + (isMine ? 'mine' : 'their');
     row.dataset.messageId = msg.id;
 
-    const editAttr = isMine ? 'ondblclick="openEditMessageModal(' + msg.id + ',\'' + escAttr(msg.content) + '\')"' : '';
-    const bubble   = '<div class="msg-bubble" ' + editAttr + ' title="' + (isMine ? 'Double-click to edit' : '') + '">' + escHtml(msg.content) + '</div>';
-    const time     = '<div class="msg-bubble-time">' + formatTime(msg.created_at) + '</div>';
+    const editAttr = isMine ? `ondblclick="openEditMessageModal(${msg.id}, '${escAttr(msg.content)}')"` : '';
+    const bubble   = `<div class="msg-bubble" ${editAttr} title="${isMine ? 'Double-click to edit' : ''}">${escHtml(msg.content)}</div>`;
+    const time     = `<div class="msg-bubble-time">${formatTime(msg.created_at)}</div>`;
 
     if (isMine) {
-      row.innerHTML = '<div class="msg-bubble-stack">' + bubble + time +
-        '<button class="msg-delete-btn" onclick="confirmDeleteMessage(' + msg.id + ')">Delete</button></div>';
+      row.innerHTML = `<div class="msg-bubble-stack">${bubble}${time}<button class="msg-delete-btn" onclick="confirmDeleteMessage(${msg.id})">Delete</button></div>`;
     } else {
-      row.innerHTML = '<div class="wf-avatar wf-avatar-32 ' + activeConvAvatar + '">' + escHtml(activeConvInit) + '</div>' +
-        '<div class="msg-bubble-stack">' + bubble + time + '</div>';
+      row.innerHTML = `<div class="wf-avatar wf-avatar-32 ${activeConvAvatar}">${escHtml(activeConvInit)}</div><div class="msg-bubble-stack">${bubble}${time}</div>`;
     }
     body.appendChild(row);
   });
 
-  if (wasAtBottom) body.scrollTop = body.scrollHeight;
+  // Auto-scroll to bottom
+  setTimeout(() => {
+    body.scrollTop = body.scrollHeight;
+  }, 50);
 }
 
 /* ============================================================
@@ -233,7 +289,12 @@ function sendMessage() {
 
   _doSendMessage(CURRENT_USER_ID, activeConvId, CURRENT_USER_NAME, activeConvName,
     CURRENT_USER_INIT, activeConvInit, CURRENT_USER_AVATAR, activeConvAvatar, content,
-    function () { ta.value = ''; ta.style.height = 'auto'; loadMessages(activeConvId); });
+    function () { 
+      ta.value = ''; 
+      ta.style.height = 'auto'; 
+      loadMessages(activeConvId);
+      loadConversations();
+    });
 }
 
 function _doSendMessage(senderId, receiverId, senderName, receiverName,
@@ -293,7 +354,7 @@ function saveEditMessage() {
   fetch(MSG_URL, { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' }, body: fd })
     .then(r => r.json())
     .then(data => {
-      if (data.success) { closeEditMessageModal(); loadMessages(activeConvId); }
+      if (data.success) { closeEditMessageModal(); loadMessages(activeConvId); loadConversations(); }
       else showValidationModal([data.error || 'Error editing message']);
     })
     .catch(function () { showValidationModal(['Network error']); });
@@ -320,7 +381,7 @@ function deleteMessage(messageId) {
   fetch(MSG_URL, { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' }, body: fd })
     .then(r => r.json())
     .then(data => {
-      if (data.success) loadMessages(activeConvId);
+      if (data.success) { loadMessages(activeConvId); loadConversations(); }
       else showValidationModal(['Error deleting message']);
     })
     .catch(function () { showValidationModal(['Network error']); });
@@ -349,7 +410,7 @@ function confirmDeleteConversation() {
       if (data.success) {
         closeDeleteConvModal();
         activeConvId = null;
-        clearInterval(pollTimer);
+        if (pollTimer) clearInterval(pollTimer);
         document.getElementById('chatHeader').style.display  = 'none';
         document.getElementById('inputBar').style.display    = 'none';
         document.getElementById('chatBody').innerHTML        = '';
@@ -406,12 +467,11 @@ function updateNavBadge() {
   const badge = document.getElementById('navMsgBadge');
   if (!badge) return;
   badge.textContent   = total;
-  badge.style.display = total > 0 ? '' : 'none';
+  badge.style.display = total > 0 ? 'inline-flex' : 'none';
 }
 
 /* ============================================================
    URL PARAMS → open conversation on load
-   (called from publications page avatar click)
    ============================================================ */
 function checkUrlParams() {
   const params     = new URLSearchParams(window.location.search);
@@ -426,11 +486,9 @@ function checkUrlParams() {
   if (existing) {
     openConversation(openUser, existing.other_user_name, existing.other_user_init, existing.other_user_avatar);
   } else {
-    // No existing conv: open the empty chat panel so user can type first message
     openConversation(openUser, openName, openInit, openAvatar);
   }
 
-  // Clean URL
   window.history.replaceState({}, '', window.location.pathname);
 }
 
@@ -441,7 +499,8 @@ function formatTime(ts) {
   if (!ts) return '';
   const d   = new Date(ts);
   const now = new Date();
-  const min = Math.floor((now - d) / 60000);
+  const diff = now - d;
+  const min = Math.floor(diff / 60000);
   if (min < 1)  return 'Just now';
   if (min < 60) return min + 'm';
   const h = Math.floor(min / 60);
