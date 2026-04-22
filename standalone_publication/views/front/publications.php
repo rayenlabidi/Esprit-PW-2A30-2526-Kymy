@@ -34,7 +34,7 @@ $posts = $controller->ListePublications();
     <li><a href="#" onclick="filterFeed('all'); return false;">Home</a></li>
     <li><a href="#" onclick="filterFeed('browse'); return false;">Browse jobs</a></li>
     <li><a href="#" class="active" onclick="filterFeed('all'); return false;">Publications</a></li>
-    <li><a href="#" onclick="filterFeed('messages'); return false;">Messages</a></li>
+    <li><a href="../front/messages.php" onclick="filterFeed('messages'); return false;">Messages</a></li>
   </ul>
   <div class="wf-nav-right">
     <a href="../back/admin.php" class="wf-nav-icon-btn" style="text-decoration:none;">

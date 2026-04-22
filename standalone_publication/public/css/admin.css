@@ -453,3 +453,203 @@
 .admin-table-wrapper::-webkit-scrollbar-thumb:hover {
     background: var(--text-3);
 }
+.validation-modal {
+    display: none;
+    position: fixed;
+    z-index: 9999;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    animation: fadeIn 0.2s ease;
+}
+
+.validation-modal-content {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: var(--bg-card);
+    padding: 30px;
+    border-radius: var(--radius-lg);
+    width: 400px;
+    max-width: 90%;
+    text-align: center;
+    box-shadow: var(--shadow-lg);
+    animation: slideIn 0.3s ease;
+}
+
+.validation-modal-content .validation-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: var(--red-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+}
+
+.validation-modal-content .validation-icon svg {
+    width: 30px;
+    height: 30px;
+    stroke: var(--red);
+}
+
+.validation-modal-content h3 {
+    color: var(--text-1);
+    margin-bottom: 15px;
+    font-size: 20px;
+}
+
+.validation-modal-content .validation-errors {
+    background: var(--bg);
+    padding: 15px;
+    border-radius: var(--radius-md);
+    margin-bottom: 25px;
+    text-align: left;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.validation-modal-content .validation-errors ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.validation-modal-content .validation-errors li {
+    color: var(--red);
+    margin: 8px 0;
+    font-size: 13px;
+}
+
+.validation-modal-content button {
+    padding: 10px 24px;
+    background: var(--blue);
+    color: white;
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.validation-modal-content button:hover {
+    background: var(--blue-dark);
+    transform: translateY(-1px);
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -60%);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, -50%);
+    }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+/* Modal Styles for Admin */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 9999;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(3px);
+    animation: fadeInModal 0.2s ease;
+}
+
+.modal-content {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: var(--bg-card);
+    padding: 30px;
+    border-radius: var(--radius-lg);
+    width: 450px;
+    max-width: 90%;
+    text-align: center;
+    box-shadow: var(--shadow-lg);
+    animation: slideInModal 0.3s ease;
+}
+
+.modal-content h3 {
+    font-size: 20px;
+    margin-bottom: 20px;
+    color: var(--text-1);
+}
+
+.modal-content .form-group {
+    text-align: left;
+    margin-bottom: 20px;
+}
+
+.modal-content textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-md);
+    font-family: var(--font);
+    font-size: 14px;
+    resize: vertical;
+}
+
+.modal-content textarea:focus {
+    outline: none;
+    border-color: var(--blue);
+}
+
+.modal-buttons {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    margin-top: 20px;
+}
+
+.btn-delete {
+    background: var(--red);
+    color: white;
+    padding: 10px 24px;
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s;
+}
+
+.btn-delete:hover {
+    background: #b91c1c;
+    transform: translateY(-1px);
+}
+
+.validation-icon {
+    margin: 0 auto 20px;
+}
+
+@keyframes fadeInModal {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideInModal {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -60%);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, -50%);
+    }
+}
