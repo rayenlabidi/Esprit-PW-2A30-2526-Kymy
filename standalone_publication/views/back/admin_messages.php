@@ -3,10 +3,13 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 require_once __DIR__ . '/../../controllers/MessageC.php';
+require_once __DIR__ . '/../../controllers/PublicationC.php';
 
 $controller = new MessageC();
+$pubController = new PublicationC();
 $messages = $controller->GetAllMessagesAdmin();
 $users = $controller->GetAllUsers();
+$posts = $pubController->ListePublications();
 $message = '';
 $error = '';
 ?>
@@ -18,11 +21,121 @@ $error = '';
 <title>Admin Panel - Messages | Workify</title>
 <link rel="stylesheet" href="../../public/css/workify-tokens.css">
 <link rel="stylesheet" href="../../public/css/admin.css">
+<style>
+.admin-layout {
+    display: flex;
+    margin-top: var(--nav-h);
+    min-height: calc(100vh - var(--nav-h));
+}
+
+.admin-sidebar {
+    width: 280px;
+    background: var(--bg-card);
+    border-right: 1px solid var(--border);
+    padding: 24px 0;
+    position: fixed;
+    height: calc(100vh - var(--nav-h));
+    overflow-y: auto;
+}
+
+.admin-sidebar-header {
+    padding: 0 20px 20px 20px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 20px;
+}
+
+.admin-sidebar-header h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-1);
+    margin-bottom: 4px;
+}
+
+.admin-sidebar-header p {
+    font-size: 12px;
+    color: var(--text-3);
+}
+
+.admin-nav {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.admin-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 20px;
+    color: var(--text-2);
+    text-decoration: none;
+    transition: all 0.2s;
+    border-left: 3px solid transparent;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.admin-nav-item:hover {
+    background: var(--bg-hover);
+    color: var(--text-1);
+}
+
+.admin-nav-item.active {
+    background: var(--blue-light);
+    color: var(--blue);
+    border-left-color: var(--blue);
+}
+
+.admin-nav-item .nav-icon {
+    width: 20px;
+    text-align: center;
+    font-size: 18px;
+}
+
+.admin-nav-item .nav-badge {
+    margin-left: auto;
+    background: var(--red-light);
+    color: var(--red);
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.admin-main {
+    flex: 1;
+    margin-left: 280px;
+    padding: 30px;
+    background: var(--bg);
+    min-height: calc(100vh - var(--nav-h));
+}
+
+@media (max-width: 768px) {
+    .admin-sidebar {
+        width: 80px;
+    }
+    .admin-sidebar-header h3,
+    .admin-sidebar-header p,
+    .admin-nav-item span:not(.nav-icon) {
+        display: none;
+    }
+    .admin-main {
+        margin-left: 80px;
+    }
+    .admin-nav-item {
+        justify-content: center;
+        padding: 12px;
+    }
+    .admin-nav-item .nav-icon {
+        font-size: 22px;
+    }
+}
+</style>
 </head>
 <body>
 
 <nav class="wf-nav">
-  <a href="../front/publications.php" class="wf-nav-logo">
+  <a href="admin_dashboard.php" class="wf-nav-logo">
     <div class="wf-nav-logo-box">
       <svg viewBox="0 0 16 16"><rect x="2" y="4" width="5" height="8" rx="1"/><rect x="9" y="4" width="5" height="8" rx="1"/><rect x="2" y="1" width="12" height="2" rx="1"/></svg>
     </div>
@@ -33,99 +146,126 @@ $error = '';
   </div>
 </nav>
 
-<div class="admin-container">
-  <div class="admin-header">
-    <h1>💬 Message Management</h1>
-    <p>Total messages: <?php echo count($messages); ?> | Total users: <?php echo count($users); ?></p>
-  </div>
+<div class="admin-layout">
+  <!-- Left Sidebar Dashboard -->
+  <aside class="admin-sidebar">
+    <div class="admin-sidebar-header">
+      <h3>Admin Panel</h3>
+      <p>Manage your platform</p>
+    </div>
+    <ul class="admin-nav">
+      <li><a href="admin_dashboard.php" class="admin-nav-item">
+        <span class="nav-icon">📊</span>
+        <span>Dashboard</span>
+      </a></li>
+      <li><a href="admin.php" class="admin-nav-item">
+        <span class="nav-icon">📝</span>
+        <span>Publications</span>
+        <span class="nav-badge"><?php echo count($posts); ?></span>
+      </a></li>
+      <li><a href="admin_messages.php" class="admin-nav-item active">
+        <span class="nav-icon">💬</span>
+        <span>Messages</span>
+        <span class="nav-badge"><?php echo count($messages); ?></span>
+      </a></li>
+    </ul>
+  </aside>
 
-  <div id="messageAlert"></div>
-  <div id="errorAlert"></div>
+  <!-- Main Content -->
+  <main class="admin-main">
+    <div class="admin-header">
+      <h1>💬 Message Management</h1>
+      <p>Total messages: <?php echo count($messages); ?> | Total users: <?php echo count($users); ?></p>
+    </div>
 
-  <!-- Add User Section -->
-  <div class="crud-section">
-    <h2>➕ Add New User</h2>
-    <div class="form-row">
-      <div class="form-group">
-        <label>User ID:</label>
-        <input type="text" id="adminUserId" placeholder="e.g., john_doe">
-        <small class="error-message" id="adminUserIdError"></small>
-      </div>
-      <div class="form-group">
-        <label>Name:</label>
-        <input type="text" id="adminUserName" placeholder="Full name">
-        <small class="error-message" id="adminUserNameError"></small>
-      </div>
-    </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label>Initials:</label>
-        <input type="text" id="adminUserInit" maxlength="5" placeholder="JD">
-        <small class="error-message" id="adminUserInitError"></small>
-      </div>
-      <div class="form-group">
-        <label>Avatar Color:</label>
-        <select id="adminUserAvatar">
-          <option value="av-blue">Blue</option>
-          <option value="av-green">Green</option>
-          <option value="av-orange">Orange</option>
-          <option value="av-purple">Purple</option>
-          <option value="av-pink">Pink</option>
-          <option value="av-teal">Teal</option>
-        </select>
-      </div>
-    </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label>Role:</label>
-        <select id="adminUserRole">
-          <option value="Freelancer">Freelancer</option>
-          <option value="Client">Client</option>
-        </select>
-      </div>
-    </div>
-    <button class="btn-create" onclick="adminAddUser()">➕ Add User</button>
-  </div>
+    <div id="messageAlert"></div>
+    <div id="errorAlert"></div>
 
-  <!-- All Messages Table -->
-  <div class="crud-section">
-    <h2>📄 All Messages</h2>
-    <div class="admin-table-wrapper">
-      <table class="admin-table" id="messagesTable">
-        <thead>
-          <tr><th>ID</th><th>From</th><th>To</th><th>Message</th><th>Read</th><th>Created</th><th>Actions</th></tr>
-        </thead>
-        <tbody id="messagesTableBody">
-          <?php foreach($messages as $msg): ?>
-          <tr>
-            <td><?php echo $msg['id']; ?></td>
-            <td>
-              <div class="author-cell">
-                <div class="wf-avatar wf-avatar-32 <?php echo $msg['sender_avatar']; ?>"><?php echo htmlspecialchars($msg['sender_init']); ?></div>
-                <span><?php echo htmlspecialchars($msg['sender_name']); ?></span>
-              </div>
-             </div>
-            <td>
-              <div class="author-cell">
-                <div class="wf-avatar wf-avatar-32 <?php echo $msg['receiver_avatar']; ?>"><?php echo htmlspecialchars($msg['receiver_init']); ?></div>
-                <span><?php echo htmlspecialchars($msg['receiver_name']); ?></span>
-              </div>
-             </div>
-            <td class="content-cell"><?php echo htmlspecialchars(substr($msg['content'], 0, 80)) . (strlen($msg['content']) > 80 ? '...' : ''); ?> </div>
-            <td><?php echo $msg['is_read'] ? '✅ Yes' : '❌ No'; ?> </div>
-            <td><?php echo date('M d, Y H:i', strtotime($msg['created_at'])); ?> </div>
-            <td>
-              <div class="action-buttons">
-                <button class="btn-edit" onclick="adminEditMessage(<?php echo $msg['id']; ?>, '<?php echo htmlspecialchars(addslashes($msg['content'])); ?>')">✏️ Edit</button>
-                <button class="btn-delete" onclick="adminDeleteMessage(<?php echo $msg['id']; ?>)">🗑️ Delete</button>
-              </div>
-             </div>
-           </div>
-          <?php endforeach; ?>
-        </tbody>
-       </div>
+    <!-- Add User Section -->
+    <div class="crud-section">
+      <h2>➕ Add New User</h2>
+      <div class="form-row">
+        <div class="form-group">
+          <label>User ID:</label>
+          <input type="text" id="adminUserId" placeholder="e.g., john_doe">
+          <small class="error-message" id="adminUserIdError"></small>
+        </div>
+        <div class="form-group">
+          <label>Name:</label>
+          <input type="text" id="adminUserName" placeholder="Full name">
+          <small class="error-message" id="adminUserNameError"></small>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Initials:</label>
+          <input type="text" id="adminUserInit" maxlength="5" placeholder="JD">
+          <small class="error-message" id="adminUserInitError"></small>
+        </div>
+        <div class="form-group">
+          <label>Avatar Color:</label>
+          <select id="adminUserAvatar">
+            <option value="av-blue">Blue</option>
+            <option value="av-green">Green</option>
+            <option value="av-orange">Orange</option>
+            <option value="av-purple">Purple</option>
+            <option value="av-pink">Pink</option>
+            <option value="av-teal">Teal</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Role:</label>
+          <select id="adminUserRole">
+            <option value="Freelancer">Freelancer</option>
+            <option value="Client">Client</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn-create" onclick="adminAddUser()">➕ Add User</button>
     </div>
-  </div>
+
+    <!-- All Messages Table -->
+    <div class="crud-section">
+      <h2>📄 All Messages</h2>
+      <div class="admin-table-wrapper">
+        <table class="admin-table" id="messagesTable">
+          <thead>
+            <tr><th>ID</th><th>From</th><th>To</th><th>Message</th><th>Read</th><th>Created</th><th>Actions</th></tr>
+          </thead>
+          <tbody id="messagesTableBody">
+            <?php foreach($messages as $msg): ?>
+            <tr>
+              <td><?php echo $msg['id']; ?></td>
+              <td>
+                <div class="author-cell">
+                  <div class="wf-avatar wf-avatar-32 <?php echo $msg['sender_avatar']; ?>"><?php echo htmlspecialchars($msg['sender_init']); ?></div>
+                  <span><?php echo htmlspecialchars($msg['sender_name']); ?></span>
+                </div>
+              </td>
+              <td>
+                <div class="author-cell">
+                  <div class="wf-avatar wf-avatar-32 <?php echo $msg['receiver_avatar']; ?>"><?php echo htmlspecialchars($msg['receiver_init']); ?></div>
+                  <span><?php echo htmlspecialchars($msg['receiver_name']); ?></span>
+                </div>
+              </td>
+              <td class="content-cell"><?php echo htmlspecialchars(substr($msg['content'], 0, 80)) . (strlen($msg['content']) > 80 ? '...' : ''); ?></td>
+              <td><?php echo $msg['is_read'] ? '✅ Yes' : '❌ No'; ?></td>
+              <td><?php echo date('M d, Y H:i', strtotime($msg['created_at'])); ?></td>
+              <td>
+                <div class="action-buttons">
+                  <button class="btn-edit" onclick="adminEditMessage(<?php echo $msg['id']; ?>, '<?php echo htmlspecialchars(addslashes($msg['content'])); ?>')">✏️ Edit</button>
+                  <button class="btn-delete" onclick="adminDeleteMessage(<?php echo $msg['id']; ?>)">🗑️ Delete</button>
+                </div>
+              </td>
+            </tr>
+            <?php endforeach; ?>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
 </div>
 
 <!-- Edit Message Modal -->
