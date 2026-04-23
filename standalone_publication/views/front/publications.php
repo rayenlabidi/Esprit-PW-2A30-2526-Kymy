@@ -21,11 +21,9 @@ $posts      = $controller->ListePublications();
 <link rel="stylesheet" href="../../public/css/workify-tokens.css">
 <link rel="stylesheet" href="../../public/css/publications.css">
 <style>
-/* Shared modal overrides for publications page */
-.clickable-avatar { transition: box-shadow .15s; }
+.clickable-avatar { transition: box-shadow .15s; cursor: pointer; }
 .clickable-avatar:hover { box-shadow: 0 0 0 3px var(--blue-mid); }
 
-/* Minimal extra modals not in publications.css */
 .post-options-modal-content {
   position: fixed; top: 50%; left: 50%;
   transform: translate(-50%, -50%);
@@ -50,7 +48,6 @@ $posts      = $controller->ListePublications();
 .btn-opt-delete:hover { background: var(--red);  color: white; }
 .btn-opt-cancel { background: var(--bg); color: var(--text-3); border: 1px solid var(--border) !important; }
 .btn-opt-cancel:hover { background: var(--bg-hover); }
-/* edit comment modal textarea */
 #editCommentModal .modal-content textarea {
   width: 100%; padding: 10px 12px;
   border: 1.5px solid var(--border); border-radius: var(--radius-md);
@@ -162,8 +159,8 @@ $posts      = $controller->ListePublications();
             <div class="pub-post-author">
               <div class="wf-avatar wf-avatar-40 <?php echo $post['user_avatar']; ?><?php echo $isOtherUser ? ' clickable-avatar' : ''; ?>"
                    <?php if($isOtherUser): ?>
-                   onclick="startChatFromAvatar('<?php echo htmlspecialchars($post['user_id']); ?>','<?php echo htmlspecialchars(addslashes($post['user_name'])); ?>','<?php echo htmlspecialchars($post['user_init']); ?>','<?php echo $post['user_avatar']; ?>')"
-                   title="Message <?php echo htmlspecialchars($post['user_name']); ?>"
+                   onclick="startChatFromAvatar('<?php echo htmlspecialchars($post['user_id']); ?>','<?php echo htmlspecialchars(addslashes($post['user_name'])); ?>','<?php echo htmlspecialchars($post['user_init']); ?>','<?php echo $post['user_avatar']; ?>', <?php echo $post['id']; ?>)"
+                   title="Message <?php echo htmlspecialchars($post['user_name']); ?> about this post"
                    style="cursor:pointer;"
                    <?php endif; ?>>
                 <?php echo htmlspecialchars($post['user_init']); ?>
@@ -352,7 +349,7 @@ $posts      = $controller->ListePublications();
   </div>
 </div>
 
-<!-- JS constants (no logic here) -->
+<!-- JS constants -->
 <script>
 const CURRENT_USER_ID   = '<?php echo $current_user_id; ?>';
 const CURRENT_USER_NAME = '<?php echo $current_user_name; ?>';

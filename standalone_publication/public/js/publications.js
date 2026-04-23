@@ -1,8 +1,6 @@
 /* ============================================================
    publications.js  –  Workify Publications
-   - Modal-based validation (no alert / confirm / prompt)
-   - Avatar click → start chat (redirect to messages page)
-   - Post options via modal (edit / delete)
+   - Avatar click passes post ID to messages page
    ============================================================ */
 
 'use strict';
@@ -18,13 +16,12 @@ let currentEditPostId   = null;
 let currentEditCommentId = null;
 
 /* ============================================================
-   VALIDATION MODAL  (reusable, shared with messages page)
+   VALIDATION MODAL
    ============================================================ */
 function showValidationModal(errors) {
   const modal   = document.getElementById('validationModal');
   const list    = document.getElementById('validationErrorList');
   if (!modal || !list) return;
-
   list.innerHTML = '';
   const items = Array.isArray(errors) ? errors : [errors];
   items.forEach(msg => {
@@ -41,18 +38,15 @@ function closeValidationModal() {
 }
 
 /* ============================================================
-   CONFIRM MODAL  (replaces confirm())
+   CONFIRM MODAL
    ============================================================ */
 function showConfirmModal(message, onConfirm) {
   const modal = document.getElementById('confirmModal');
   const msg   = document.getElementById('confirmMessage');
   const btn   = document.getElementById('confirmOkBtn');
   if (!modal || !msg || !btn) { onConfirm(); return; }
-
   msg.textContent = message;
   modal.style.display = 'block';
-
-  // replace handler each time
   btn.onclick = function () {
     closeConfirmModal();
     onConfirm();
@@ -65,7 +59,7 @@ function closeConfirmModal() {
 }
 
 /* ============================================================
-   POST-OPTION MODAL  (replaces showPostOptions confirm)
+   POST-OPTION MODAL
    ============================================================ */
 function showPostOptions(postId) {
   currentEditPostId = postId;
@@ -92,7 +86,7 @@ function postOptionsDelete() {
 }
 
 /* ============================================================
-   EDIT COMMENT MODAL  (replaces prompt())
+   EDIT COMMENT MODAL
    ============================================================ */
 function editComment(commentId, currentText) {
   currentEditCommentId = commentId;
@@ -112,7 +106,6 @@ function closeEditCommentModal() {
 function saveEditComment() {
   const ta      = document.getElementById('editCommentText');
   const newText = ta ? ta.value.trim() : '';
-
   if (!newText || newText.length < 2) {
     showValidationModal(['Comment must be at least 2 characters']);
     return;
@@ -121,19 +114,16 @@ function saveEditComment() {
     showValidationModal(['Comment cannot exceed 5000 characters']);
     return;
   }
-
   const fd = new FormData();
   fd.append('action',     'edit_comment');
   fd.append('comment_id', currentEditCommentId);
   fd.append('comment',    newText);
   fd.append('user_name',  CURRENT_USER_NAME);
-
   fetch(BASE_URL, { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' }, body: fd })
     .then(r => r.json())
     .then(data => {
       if (data.success) {
         closeEditCommentModal();
-        // reload comments for the relevant post
         const wrapper = document.querySelector(`.comment-wrapper[data-comment-id="${currentEditCommentId}"]`)
                      || document.querySelector(`[data-comment-id="${currentEditCommentId}"]`);
         if (wrapper) {
@@ -148,29 +138,17 @@ function saveEditComment() {
 }
 
 /* ============================================================
-   AVATAR CLICK → START CHAT
+   AVATAR CLICK → START CHAT WITH POST ID
    ============================================================ */
-
-/**
- * Called when clicking any user avatar on the feed.
- * userId     – the post author's user_id
- * userName   – display name
- * userInit   – initials
- * userAvatar – avatar class
- */
-function startChatFromAvatar(userId, userName, userInit, userAvatar) {
-  // Don't open chat with yourself
+function startChatFromAvatar(userId, userName, userInit, userAvatar, postId) {
   if (userId === CURRENT_USER_ID) return;
-
-  // Build URL to messages page, passing target user as query params
   const params = new URLSearchParams({
     open_user:   userId,
     open_name:   userName,
     open_init:   userInit,
-    open_avatar: userAvatar
+    open_avatar: userAvatar,
+    post_id:     postId
   });
-
-  // Adjust path to messages.php relative to publications.php
   window.location.href = 'messages.php?' + params.toString();
 }
 
@@ -229,7 +207,6 @@ function submitPost() {
   const content  = textarea.value.trim();
   const errors   = validatePostContent(content);
   if (errors.length) { showValidationModal(errors); return; }
-
   if (pendingImage) {
     const fd = new FormData();
     fd.append('action', 'upload_image');
@@ -256,7 +233,6 @@ function sendPostWithImage(content, imageUrl) {
   fd.append('user_avatar', 'av-blue');
   fd.append('content',     content);
   fd.append('image_url',   imageUrl);
-
   fetch(BASE_URL, { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' }, body: fd })
     .then(r => r.json())
     .then(data => {
@@ -279,13 +255,11 @@ function saveEdit() {
   const newContent = document.getElementById('editContent').value.trim();
   const errors     = validatePostContent(newContent);
   if (errors.length) { showValidationModal(errors); return; }
-
   const fd = new FormData();
   fd.append('action',  'update');
   fd.append('id',      postId);
   fd.append('content', newContent);
   fd.append('user_id', CURRENT_USER_ID);
-
   fetch(BASE_URL, { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' }, body: fd })
     .then(r => r.json())
     .then(data => {
@@ -300,7 +274,6 @@ function deletePost(postId) {
   fd.append('action',  'delete');
   fd.append('id',      postId);
   fd.append('user_id', CURRENT_USER_ID);
-
   fetch(BASE_URL, { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' }, body: fd })
     .then(r => r.json())
     .then(data => {
@@ -322,12 +295,10 @@ function toggleLike(btn, postId, currentLikes) {
   isLiking = true;
   const wasLiked = postLikeStates[postId] || false;
   const newLikes = Math.max(0, wasLiked ? currentLikes - 1 : currentLikes + 1);
-
   const fd = new FormData();
   fd.append('action', 'update_likes');
   fd.append('id',     postId);
   fd.append('likes',  newLikes);
-
   fetch(BASE_URL, { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' }, body: fd })
     .then(r => r.json())
     .then(data => {
@@ -349,12 +320,10 @@ function toggleCommentLike(btn, commentId, currentLikes) {
   isCommentLiking = true;
   const wasLiked = btn.classList.contains('liked');
   const newLikes = Math.max(0, wasLiked ? currentLikes - 1 : currentLikes + 1);
-
   const fd = new FormData();
   fd.append('action',     'update_comment_likes');
   fd.append('comment_id', commentId);
   fd.append('likes',      newLikes);
-
   fetch(BASE_URL, { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' }, body: fd })
     .then(r => r.json())
     .then(data => {
@@ -384,7 +353,6 @@ function loadComments(postId) {
   const fd = new FormData();
   fd.append('action',         'get_comments');
   fd.append('publication_id', postId);
-
   fetch(BASE_URL, { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' }, body: fd })
     .then(r => r.json())
     .then(data => {
@@ -394,7 +362,6 @@ function loadComments(postId) {
       if (!list) return;
       list.innerHTML = '';
       let total = 0;
-
       if (!data.comments || data.comments.length === 0) {
         list.innerHTML = '<div class="pub-comment"><div class="pub-comment-content"><em>No comments yet.</em></div></div>';
       } else {
@@ -422,11 +389,9 @@ function buildCommentHtml(c, postId, isReply) {
     ? `<button class="comment-edit-btn"   onclick="editComment(${c.id}, ${JSON.stringify(c.comment)})">✏️ Edit</button>
        <button class="comment-delete-btn" onclick="confirmDeleteComment(${c.id})">🗑️ Delete</button>`
     : '';
-
   const replyBtn = !isReply
     ? `<button class="comment-reply-btn" onclick="showReplyForm(${postId}, ${c.id})">💬 Reply</button>`
     : '';
-
   const replyForm = !isReply ? `
     <div class="reply-form-container" id="reply-form-${c.id}" style="display:none; margin-top:10px;">
       <div class="pub-add-comment" style="padding-left:40px;">
@@ -435,7 +400,6 @@ function buildCommentHtml(c, postId, isReply) {
         <button class="pub-comment-send" onclick="addReply(${postId}, ${c.id})">Send</button>
       </div>
     </div>` : '';
-
   return `
     <div class="pub-comment" data-comment-id="${c.id}">
       <div class="wf-avatar wf-avatar-32 ${c.user_avatar}">${escapeHtml(c.user_init)}</div>
@@ -487,7 +451,6 @@ function _postComment(postId, comment, parentId, input) {
   fd.append('user_avatar',    'av-blue');
   fd.append('comment',        comment);
   if (parentId) fd.append('parent_id', parentId);
-
   fetch(BASE_URL, { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' }, body: fd })
     .then(r => r.json())
     .then(data => {
@@ -511,7 +474,6 @@ function deleteComment(commentId) {
   const fd = new FormData();
   fd.append('action',     'delete_comment');
   fd.append('comment_id', commentId);
-
   fetch(BASE_URL, { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' }, body: fd })
     .then(r => r.json())
     .then(data => {
@@ -560,7 +522,6 @@ function closeShareModal() {
 function copyToClipboard() {
   navigator.clipboard.writeText(window.location.href).then(() => {
     closeShareModal();
-    // brief toast instead of alert
     _toast('Link copied to clipboard!');
   });
 }
@@ -589,7 +550,6 @@ function filterMyPosts() {
   const fd = new FormData();
   fd.append('action',  'get_user_posts');
   fd.append('user_id', CURRENT_USER_ID);
-
   fetch(BASE_URL, { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' }, body: fd })
     .then(r => r.json())
     .then(data => {
@@ -614,9 +574,9 @@ function displayPosts(posts) {
       <div class="pub-post-header">
         <div class="pub-post-author">
           <div class="wf-avatar wf-avatar-40 ${post.user_avatar} clickable-avatar"
-               onclick="startChatFromAvatar('${post.user_id}','${escapeAttr(post.user_name)}','${escapeAttr(post.user_init)}','${post.user_avatar}')"
-               title="Message ${escapeAttr(post.user_name)}"
-               style="${post.user_id !== CURRENT_USER_ID ? 'cursor:pointer;' : ''}">
+               onclick="startChatFromAvatar('${post.user_id}','${escapeAttr(post.user_name)}','${escapeAttr(post.user_init)}','${post.user_avatar}', ${post.id})"
+               title="Message ${escapeAttr(post.user_name)} about this post"
+               style="cursor:pointer;">
             ${escapeHtml(post.user_init)}
           </div>
           <div class="pub-author-info">
@@ -654,7 +614,7 @@ function displayPosts(posts) {
 }
 
 /* ============================================================
-   TOAST (lightweight, no alert)
+   TOAST
    ============================================================ */
 function _toast(msg) {
   let t = document.getElementById('wf-toast');
@@ -694,33 +654,12 @@ function escapeAttr(text) {
    INIT
    ============================================================ */
 document.addEventListener('DOMContentLoaded', function () {
-  // auto-resize create textarea
   const ta = document.getElementById('newPostText');
   if (ta) autoResize(ta);
-
-  // track initial like states
   document.querySelectorAll('.like-btn').forEach(btn => {
     const card = btn.closest('.pub-post-card');
     if (card) postLikeStates[card.dataset.postId] = btn.classList.contains('liked');
   });
-
-  // wire up avatar clicks on server-rendered posts
-  document.querySelectorAll('.pub-post-card').forEach(card => {
-    const userId   = card.dataset.userId;
-    if (!userId || userId === CURRENT_USER_ID) return;
-    const avatar   = card.querySelector('.wf-avatar.wf-avatar-40');
-    const nameEl   = card.querySelector('.pub-author-name');
-    const initText = avatar ? avatar.textContent.trim() : '';
-    const cls      = avatar ? [...avatar.classList].find(c => c.startsWith('av-')) || 'av-blue' : 'av-blue';
-    const name     = nameEl ? nameEl.textContent.trim() : '';
-    if (avatar) {
-      avatar.style.cursor = 'pointer';
-      avatar.title = `Message ${name}`;
-      avatar.addEventListener('click', () => startChatFromAvatar(userId, name, initText, cls));
-    }
-  });
-
-  /* close modals when clicking backdrop */
   window.addEventListener('click', function (e) {
     ['editModal','shareModal','validationModal','confirmModal','postOptionsModal','editCommentModal'].forEach(id => {
       const m = document.getElementById(id);

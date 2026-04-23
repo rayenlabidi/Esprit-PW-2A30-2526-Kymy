@@ -4,11 +4,13 @@ include_once __DIR__ . '/../models/message.php';
 
 class MessageC
 {
+    // ==================== CONVERSATIONS WITH PUBLICATION INFO ====================
+    
     public function ListeConversations($user_id)
     {
         $db = config::getConnexion();
         try {
-            // Fixed query - properly handles conversation listing
+            // JOIN with publication to show related post info in conversations
             $sql = "SELECT 
                         DISTINCT other_user_id,
                         other_user_name,
@@ -16,7 +18,11 @@ class MessageC
                         other_user_avatar,
                         last_message,
                         last_time,
-                        unread_count
+                        unread_count,
+                        -- Publication info from JOIN
+                        p.id as related_publication_id,
+                        p.content as related_publication_content,
+                        p.image_url as related_publication_image
                     FROM (
                         SELECT 
                             CASE 
@@ -35,6 +41,7 @@ class MessageC
                                 WHEN sender_id = :user_id THEN receiver_avatar
                                 ELSE sender_avatar
                             END as other_user_avatar,
+                            m.publication_id,
                             (
                                 SELECT content FROM messages m2 
                                 WHERE (m2.sender_id = :user_id AND m2.receiver_id = other_user_id)
@@ -51,17 +58,17 @@ class MessageC
                                 SELECT COUNT(*) FROM messages 
                                 WHERE receiver_id = :user_id AND sender_id = other_user_id AND is_read = 0
                             ) as unread_count,
-                            messages.created_at as msg_created_at
-                        FROM messages 
-                        WHERE sender_id = :user_id OR receiver_id = :user_id
+                            m.created_at as msg_created_at
+                        FROM messages m
+                        WHERE m.sender_id = :user_id OR m.receiver_id = :user_id
                     ) as conv
+                    LEFT JOIN publication p ON conv.publication_id = p.id
                     ORDER BY last_time DESC";
             
             $query = $db->prepare($sql);
             $query->execute(['user_id' => $user_id]);
             $results = $query->fetchAll();
             
-            // Filter out null other_user_id (shouldn't happen but just in case)
             return array_filter($results, function($conv) {
                 return !empty($conv['other_user_id']);
             });
@@ -70,6 +77,8 @@ class MessageC
             return [];
         }
     }
+    
+    // ==================== MESSAGES WITH PUBLICATION INFO ====================
     
     public function ListeMessages($user_id, $other_user_id)
     {
@@ -84,11 +93,20 @@ class MessageC
                 'other_user_id' => $other_user_id
             ]);
             
-            // Then fetch all messages
-            $sql = "SELECT * FROM messages 
-                    WHERE (sender_id = :user_id AND receiver_id = :other_user_id)
-                       OR (sender_id = :other_user_id AND receiver_id = :user_id)
-                    ORDER BY created_at ASC";
+            // JOIN with publication to show related post info for each message
+            $sql = "SELECT 
+                        m.*,
+                        p.id as publication_id,
+                        p.content as publication_content,
+                        p.user_name as publication_author,
+                        p.image_url as publication_image,
+                        p.likes as publication_likes
+                    FROM messages m
+                    LEFT JOIN publication p ON m.publication_id = p.id
+                    WHERE (m.sender_id = :user_id AND m.receiver_id = :other_user_id)
+                       OR (m.sender_id = :other_user_id AND m.receiver_id = :user_id)
+                    ORDER BY m.created_at ASC";
+            
             $query = $db->prepare($sql);
             $query->execute([
                 'user_id' => $user_id,
@@ -101,10 +119,141 @@ class MessageC
         }
     }
     
-    public function AddMessage($m)
+    // ==================== GET MESSAGES FOR A SPECIFIC PUBLICATION ====================
+    
+    public function GetMessagesByPublication($publication_id)
     {
-        $sql = "INSERT INTO messages (sender_id, receiver_id, sender_name, receiver_name, sender_init, receiver_init, sender_avatar, receiver_avatar, content, is_read) 
-                VALUES (:sender_id, :receiver_id, :sender_name, :receiver_name, :sender_init, :receiver_init, :sender_avatar, :receiver_avatar, :content, 0)";
+        $db = config::getConnexion();
+        try {
+            // JOIN messages with users and publication
+            $sql = "SELECT 
+                        m.*,
+                        u.name as user_name,
+                        u.init as user_init,
+                        u.avatar as user_avatar,
+                        p.content as publication_content,
+                        p.user_name as publication_author_name
+                    FROM messages m
+                    INNER JOIN users u ON m.sender_id = u.user_id
+                    INNER JOIN publication p ON m.publication_id = p.id
+                    WHERE m.publication_id = :publication_id
+                    ORDER BY m.created_at DESC";
+            
+            $query = $db->prepare($sql);
+            $query->execute(['publication_id' => $publication_id]);
+            return $query->fetchAll();
+        } catch (Exception $e) {
+            error_log("GetMessagesByPublication error: " . $e->getMessage());
+            return [];
+        }
+    }
+    
+    // ==================== GET CONVERSATION WITH PUBLICATION DETAILS ====================
+    
+    public function GetConversationWithPublication($user_id, $other_user_id)
+    {
+        $db = config::getConnexion();
+        try {
+            // Complex JOIN to get conversation with publication details
+            $sql = "SELECT 
+                        m.*,
+                        p.id as related_post_id,
+                        p.content as related_post_content,
+                        p.image_url as related_post_image,
+                        p.created_at as post_created_at,
+                        COUNT(DISTINCT m2.id) as total_messages_in_conversation
+                    FROM messages m
+                    LEFT JOIN publication p ON m.publication_id = p.id
+                    LEFT JOIN messages m2 ON (
+                        (m2.sender_id = m.sender_id AND m2.receiver_id = m.receiver_id)
+                        OR (m2.sender_id = m.receiver_id AND m2.receiver_id = m.sender_id)
+                    )
+                    WHERE (m.sender_id = :user_id AND m.receiver_id = :other_user_id)
+                       OR (m.sender_id = :other_user_id AND m.receiver_id = :user_id)
+                    GROUP BY m.id
+                    ORDER BY m.created_at DESC";
+            
+            $query = $db->prepare($sql);
+            $query->execute([
+                'user_id' => $user_id,
+                'other_user_id' => $other_user_id
+            ]);
+            return $query->fetchAll();
+        } catch (Exception $e) {
+            error_log("GetConversationWithPublication error: " . $e->getMessage());
+            return [];
+        }
+    }
+    
+    // ==================== STATISTICS USING JOINS ====================
+    
+    public function GetUserMessageStats($user_id)
+    {
+        $db = config::getConnexion();
+        try {
+            // Multiple JOINs to get comprehensive stats
+            $sql = "SELECT 
+                        u.user_id,
+                        u.name,
+                        COUNT(DISTINCT m.id) as total_messages_sent,
+                        COUNT(DISTINCT CASE WHEN m.receiver_id = :user_id THEN m.sender_id END) as unique_conversations,
+                        COUNT(DISTINCT m.publication_id) as publications_discussed,
+                        AVG(LENGTH(m.content)) as avg_message_length,
+                        SUM(CASE WHEN m.is_read = 0 AND m.receiver_id = :user_id THEN 1 ELSE 0 END) as unread_count
+                    FROM users u
+                    LEFT JOIN messages m ON u.user_id = m.sender_id OR u.user_id = m.receiver_id
+                    WHERE u.user_id = :user_id
+                    GROUP BY u.user_id";
+            
+            $query = $db->prepare($sql);
+            $query->execute(['user_id' => $user_id]);
+            return $query->fetch();
+        } catch (Exception $e) {
+            error_log("GetUserMessageStats error: " . $e->getMessage());
+            return null;
+        }
+    }
+    
+    // ==================== GET POPULAR PUBLICATIONS BASED ON MESSAGES ====================
+    
+    public function GetPopularPublicationsFromMessages()
+    {
+        $db = config::getConnexion();
+        try {
+            // JOIN to find which publications are most discussed in messages
+            $sql = "SELECT 
+                        p.id,
+                        p.content,
+                        p.user_name as author,
+                        p.likes,
+                        COUNT(m.id) as message_count,
+                        COUNT(DISTINCT m.sender_id) as unique_senders,
+                        MAX(m.created_at) as last_discussed
+                    FROM publication p
+                    INNER JOIN messages m ON p.id = m.publication_id
+                    GROUP BY p.id
+                    HAVING message_count > 0
+                    ORDER BY message_count DESC, last_discussed DESC
+                    LIMIT 10";
+            
+            $query = $db->prepare($sql);
+            $query->execute();
+            return $query->fetchAll();
+        } catch (Exception $e) {
+            error_log("GetPopularPublicationsFromMessages error: " . $e->getMessage());
+            return [];
+        }
+    }
+    
+    // ==================== ADD MESSAGE WITH PUBLICATION REFERENCE ====================
+    
+    public function AddMessageWithPublication($m, $publication_id = null)
+    {
+        $sql = "INSERT INTO messages (sender_id, receiver_id, sender_name, receiver_name, 
+                sender_init, receiver_init, sender_avatar, receiver_avatar, publication_id, content, is_read) 
+                VALUES (:sender_id, :receiver_id, :sender_name, :receiver_name, 
+                :sender_init, :receiver_init, :sender_avatar, :receiver_avatar, :publication_id, :content, 0)";
+        
         $db = config::getConnexion();
         try {
             $query = $db->prepare($sql);
@@ -117,13 +266,16 @@ class MessageC
                 'receiver_init' => $m->getReceiverInit(),
                 'sender_avatar' => $m->getSenderAvatar(),
                 'receiver_avatar' => $m->getReceiverAvatar(),
+                'publication_id' => $publication_id,
                 'content' => $m->getContent()
             ]);
         } catch (Exception $e) {
-            error_log("AddMessage error: " . $e->getMessage());
+            error_log("AddMessageWithPublication error: " . $e->getMessage());
             return false;
         }
     }
+    
+    // ==================== EXISTING METHODS (kept for backward compatibility) ====================
     
     public function DeleteMessage($id, $sender_id)
     {
@@ -237,7 +389,15 @@ class MessageC
     {
         $db = config::getConnexion();
         try {
-            $sql = "SELECT * FROM messages ORDER BY created_at DESC";
+            // JOIN with publication for admin view
+            $sql = "SELECT 
+                        m.*,
+                        p.id as pub_id,
+                        p.content as pub_content,
+                        p.user_name as pub_author
+                    FROM messages m
+                    LEFT JOIN publication p ON m.publication_id = p.id
+                    ORDER BY m.created_at DESC";
             $query = $db->prepare($sql);
             $query->execute();
             return $query->fetchAll();
@@ -296,6 +456,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
             $response = ['success' => true, 'messages' => $messages];
             break;
             
+        case 'get_messages_by_publication':
+            $messages = $controller->GetMessagesByPublication($_POST['publication_id']);
+            $response = ['success' => true, 'messages' => $messages];
+            break;
+            
+        case 'get_conversation_with_publication':
+            $conversation = $controller->GetConversationWithPublication($_POST['user_id'], $_POST['other_user_id']);
+            $response = ['success' => true, 'conversation' => $conversation];
+            break;
+            
+        case 'get_user_stats':
+            $stats = $controller->GetUserMessageStats($_POST['user_id']);
+            $response = ['success' => true, 'stats' => $stats];
+            break;
+            
+        case 'get_popular_publications':
+            $publications = $controller->GetPopularPublicationsFromMessages();
+            $response = ['success' => true, 'publications' => $publications];
+            break;
+            
         case 'send_message':
             if (empty($_POST['content']) || strlen(trim($_POST['content'])) < 1) {
                 $response = ['success' => false, 'error' => 'Message cannot be empty'];
@@ -312,7 +492,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
                 $_POST['sender_avatar'] ?? 'av-blue',
                 $_POST['receiver_avatar'] ?? 'av-blue'
             );
-            $result = $controller->AddMessage($msg);
+            $publication_id = $_POST['publication_id'] ?? null;
+            $result = $controller->AddMessageWithPublication($msg, $publication_id);
             $response = ['success' => $result];
             break;
             

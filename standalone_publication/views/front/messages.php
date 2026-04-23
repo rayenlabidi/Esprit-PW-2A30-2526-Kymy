@@ -13,6 +13,9 @@ $controller    = new MessageC();
 $conversations = $controller->ListeConversations($current_user_id);
 $unreadCount   = $controller->GetUnreadCount($current_user_id);
 $users         = $controller->GetAllUsers();
+
+// Get post_id from URL if present
+$post_id_from_url = isset($_GET['post_id']) ? (int)$_GET['post_id'] : null;
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -49,7 +52,7 @@ $users         = $controller->GetAllUsers();
 </nav>
 
 <div class="msg-shell">
-  <!-- LEFT PANEL – conversation list -->
+  <!-- LEFT PANEL -->
   <aside class="msg-panel-left" id="panelLeft">
     <div class="msg-panel-header">
       <div class="msg-panel-header-top">
@@ -75,7 +78,7 @@ $users         = $controller->GetAllUsers();
     </div>
   </aside>
 
-  <!-- RIGHT PANEL – chat -->
+  <!-- RIGHT PANEL -->
   <section class="msg-panel-right" id="panelRight">
     <div class="msg-chat-header" id="chatHeader" style="display:none;"></div>
     <div class="msg-chat-body" id="chatBody">
@@ -106,9 +109,7 @@ $users         = $controller->GetAllUsers();
   </section>
 </div>
 
-<!-- ============================================================
-     SHARED MODAL: Validation Errors
-     ============================================================ -->
+<!-- MODALS -->
 <div id="validationModal" class="validation-modal">
   <div class="validation-modal-content">
     <div class="validation-icon">
@@ -126,9 +127,6 @@ $users         = $controller->GetAllUsers();
   </div>
 </div>
 
-<!-- ============================================================
-     SHARED MODAL: Confirm (replaces confirm())
-     ============================================================ -->
 <div id="confirmModal" class="validation-modal">
   <div class="validation-modal-content">
     <div class="validation-icon" style="background:var(--red-light);">
@@ -147,9 +145,6 @@ $users         = $controller->GetAllUsers();
   </div>
 </div>
 
-<!-- ============================================================
-     MODAL: New Message
-     ============================================================ -->
 <div id="newMessageModal" class="modal">
   <div class="modal-content">
     <span class="close" onclick="closeNewMessageModal()">&times;</span>
@@ -179,9 +174,6 @@ $users         = $controller->GetAllUsers();
   </div>
 </div>
 
-<!-- ============================================================
-     MODAL: Edit Message
-     ============================================================ -->
 <div id="editMessageModal" class="modal">
   <div class="modal-content">
     <span class="close" onclick="closeEditMessageModal()">&times;</span>
@@ -196,9 +188,6 @@ $users         = $controller->GetAllUsers();
   </div>
 </div>
 
-<!-- ============================================================
-     MODAL: Delete Conversation
-     ============================================================ -->
 <div id="deleteConvModal" class="delete-modal">
   <div class="delete-modal-content">
     <div class="delete-icon">
@@ -218,13 +207,13 @@ $users         = $controller->GetAllUsers();
   </div>
 </div>
 
-<!-- JS constants (no logic here) -->
 <script>
 const CURRENT_USER_ID     = '<?php echo $current_user_id; ?>';
 const CURRENT_USER_NAME   = '<?php echo $current_user_name; ?>';
 const CURRENT_USER_INIT   = '<?php echo $current_user_init; ?>';
 const CURRENT_USER_AVATAR = '<?php echo $current_user_avatar; ?>';
 const MSG_URL             = '<?php echo htmlspecialchars($_SERVER['PHP_SELF']); ?>';
+const POST_ID_FROM_URL    = <?php echo $post_id_from_url ? $post_id_from_url : 'null'; ?>;
 </script>
 <script src="../../public/js/messages.js"></script>
 </body>

@@ -1,11 +1,10 @@
 /* ============================================================
    messages.js  –  Workify Messaging
-   Fixed loading state and conversation switching
+   Includes publication_id when sending from a post
    ============================================================ */
 
 'use strict';
 
-/* ---------- state ---------- */
 let activeConvId          = null;
 let activeConvName        = '';
 let activeConvInit        = '';
@@ -13,10 +12,8 @@ let activeConvAvatar      = '';
 let conversations         = [];
 let currentEditMessageId  = null;
 let pollTimer             = null;
+let pendingPublicationId  = POST_ID_FROM_URL; // Store the post ID from URL
 
-/* ============================================================
-   VALIDATION MODAL
-   ============================================================ */
 function showValidationModal(errors) {
   const modal = document.getElementById('validationModal');
   const list  = document.getElementById('validationErrorList');
@@ -35,9 +32,6 @@ function closeValidationModal() {
   if (m) m.style.display = 'none';
 }
 
-/* ============================================================
-   CONFIRM MODAL
-   ============================================================ */
 function showConfirmModal(message, onConfirm) {
   const modal = document.getElementById('confirmModal');
   const msg   = document.getElementById('confirmMessage');
@@ -53,9 +47,6 @@ function closeConfirmModal() {
   if (m) m.style.display = 'none';
 }
 
-/* ============================================================
-   VALIDATION HELPERS
-   ============================================================ */
 function validateMessage(content) {
   const errors = [];
   if (!content || content.trim().length === 0) errors.push('Message cannot be empty');
@@ -63,14 +54,10 @@ function validateMessage(content) {
   return errors;
 }
 
-/* ============================================================
-   CONVERSATIONS
-   ============================================================ */
 function loadConversations(callback) {
   const fd = new FormData();
   fd.append('action',  'get_conversations');
   fd.append('user_id', CURRENT_USER_ID);
-
   fetch(MSG_URL, { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' }, body: fd })
     .then(r => r.json())
     .then(data => {
@@ -88,19 +75,13 @@ function renderConversations(filter) {
   const list = document.getElementById('convList');
   if (!list) return;
   const q = (filter !== undefined ? filter : (document.getElementById('convSearchInput') ? document.getElementById('convSearchInput').value : '')).toLowerCase();
-
-  const filtered = conversations.filter(c =>
-    !q || (c.other_user_name && c.other_user_name.toLowerCase().includes(q))
-  );
-
+  const filtered = conversations.filter(c => !q || (c.other_user_name && c.other_user_name.toLowerCase().includes(q)));
   if (filtered.length === 0) {
     list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-4);font-size:13px;">No conversations yet</div>';
     return;
   }
-
   list.innerHTML = filtered.map(c => `
     <div class="msg-conv-item${activeConvId === c.other_user_id ? ' active' : ''}"
-         data-conv-id="${c.other_user_id}"
          onclick="openConversation('${c.other_user_id}','${escHtml(c.other_user_name || '')}','${escHtml(c.other_user_init || '')}','${escHtml(c.other_user_avatar || 'av-blue')}')">
       <div class="msg-conv-avatar-wrap">
         <div class="wf-avatar wf-avatar-40 ${c.other_user_avatar || 'av-blue'}">${escHtml(c.other_user_init || '?')}</div>
@@ -123,23 +104,13 @@ function filterConversations(q) {
   renderConversations(q);
 }
 
-/* ============================================================
-   OPEN CONVERSATION - INSTANT SWITCHING
-   ============================================================ */
 function openConversation(otherUserId, name, init, avatar) {
-  // Don't reload same conversation
   if (activeConvId === otherUserId) return;
-  
-  // Update active conversation IMMEDIATELY
   activeConvId     = otherUserId;
   activeConvName   = name;
   activeConvInit   = init;
   activeConvAvatar = avatar;
-
-  // INSTANTLY update active conversation highlight in sidebar
   renderConversations();
-
-  // INSTANTLY update chat header
   const header = document.getElementById('chatHeader');
   header.style.display = 'flex';
   header.innerHTML = `
@@ -159,110 +130,57 @@ function openConversation(otherUserId, name, init, avatar) {
         </svg>
       </button>
     </div>`;
-
-  // Show input bar and hide empty state
   document.getElementById('emptyState').style.display = 'none';
   document.getElementById('inputBar').style.display   = 'block';
   document.getElementById('msgTextarea').focus();
-
-  // Clear chat body and show loading state
-  const chatBody = document.getElementById('chatBody');
-  chatBody.innerHTML = `
-    <div style="flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;color:var(--text-4);">
-      <div class="msg-empty-icon" style="width:48px;height:48px;">
-        <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-          <circle cx="12" cy="12" r="10"/>
-          <path d="M12 8v4M12 16h.01"/>
-        </svg>
-      </div>
-      <span>Loading messages...</span>
-    </div>
-  `;
-
-  // Load messages asynchronously
   loadMessages(otherUserId);
-
-  // Reset polling for new messages
   if (pollTimer) clearInterval(pollTimer);
   pollTimer = setInterval(() => {
-    if (activeConvId) {
-      loadMessages(activeConvId, true);
-    }
+    if (activeConvId) loadMessages(activeConvId, true);
   }, 5000);
 }
 
-/* ============================================================
-   MESSAGES
-   ============================================================ */
 function loadMessages(otherUserId, silent) {
   if (!otherUserId) return;
-  
-  const requestedUserId = otherUserId;
-
   const fd = new FormData();
   fd.append('action',        'get_messages');
   fd.append('user_id',       CURRENT_USER_ID);
   fd.append('other_user_id', otherUserId);
-
   fetch(MSG_URL, { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' }, body: fd })
     .then(r => r.json())
     .then(data => {
-      // Only process if this is still the active conversation
-      if (activeConvId === requestedUserId) {
+      if (activeConvId === otherUserId) {
         if (data.success && data.messages) {
           renderMessages(data.messages);
           if (!silent) loadConversations();
         } else {
-          // Show empty state if no messages
           renderMessages([]);
         }
       }
     })
     .catch(error => {
       console.error('Load messages error:', error);
-      // Only show error if still the active conversation
-      if (activeConvId === requestedUserId) {
-        const chatBody = document.getElementById('chatBody');
-        if (chatBody) {
-          chatBody.innerHTML = `
-            <div style="flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;color:var(--red);">
-              <div class="msg-empty-icon" style="width:48px;height:48px;">
-                <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
-                  <circle cx="12" cy="12" r="10"/>
-                  <line x1="12" y1="8" x2="12" y2="12"/>
-                  <line x1="12" y1="16" x2="12.01" y2="16"/>
-                </svg>
-              </div>
-              <span>Error loading messages. Please try again.</span>
-            </div>
-          `;
-        }
-      }
+      if (activeConvId === otherUserId) renderMessages([]);
     });
 }
 
 function renderMessages(messages) {
   const body = document.getElementById('chatBody');
   if (!body) return;
-  
   const wasAtBottom = body.scrollHeight - body.scrollTop - body.clientHeight < 100;
   body.innerHTML = '';
-
   if (!messages || messages.length === 0) {
     body.innerHTML = '<div style="flex:1;display:flex;align-items:center;justify-content:center;color:var(--text-4);font-size:13px;">No messages yet – say hello!</div>';
     return;
   }
-
   messages.forEach(msg => {
     const isMine = msg.sender_id === CURRENT_USER_ID;
     const row    = document.createElement('div');
     row.className = 'msg-row ' + (isMine ? 'mine' : 'their');
     row.dataset.messageId = msg.id;
-
     const editAttr = isMine ? `ondblclick="openEditMessageModal(${msg.id}, '${escAttr(msg.content)}')"` : '';
     const bubble   = `<div class="msg-bubble" ${editAttr} title="${isMine ? 'Double-click to edit' : ''}">${escHtml(msg.content)}</div>`;
     const time     = `<div class="msg-bubble-time">${formatTime(msg.created_at)}</div>`;
-
     if (isMine) {
       row.innerHTML = `<div class="msg-bubble-stack">${bubble}${time}<button class="msg-delete-btn" onclick="confirmDeleteMessage(${msg.id})">Delete</button></div>`;
     } else {
@@ -270,23 +188,17 @@ function renderMessages(messages) {
     }
     body.appendChild(row);
   });
-
-  // Auto-scroll to bottom
-  setTimeout(() => {
-    body.scrollTop = body.scrollHeight;
-  }, 50);
+  if (wasAtBottom) {
+    setTimeout(() => { body.scrollTop = body.scrollHeight; }, 50);
+  }
 }
 
-/* ============================================================
-   SEND MESSAGE
-   ============================================================ */
 function sendMessage() {
   const ta      = document.getElementById('msgTextarea');
   const content = ta.value.trim();
   const errors  = validateMessage(content);
   if (errors.length) { showValidationModal(errors); return; }
   if (!activeConvId) { showValidationModal(['Please select a conversation first']); return; }
-
   _doSendMessage(CURRENT_USER_ID, activeConvId, CURRENT_USER_NAME, activeConvName,
     CURRENT_USER_INIT, activeConvInit, CURRENT_USER_AVATAR, activeConvAvatar, content,
     function () { 
@@ -310,11 +222,18 @@ function _doSendMessage(senderId, receiverId, senderName, receiverName,
   fd.append('sender_avatar',   senderAvatar);
   fd.append('receiver_avatar', receiverAvatar);
   fd.append('content',         content);
-
+  // Include publication_id if coming from a post
+  if (pendingPublicationId) {
+    fd.append('publication_id', pendingPublicationId);
+  }
   fetch(MSG_URL, { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' }, body: fd })
     .then(r => r.json())
     .then(data => {
-      if (data.success) { if (onSuccess) onSuccess(); }
+      if (data.success) { 
+        if (onSuccess) onSuccess();
+        // Clear the pending publication_id after first message
+        pendingPublicationId = null;
+      }
       else showValidationModal([data.error || 'Error sending message']);
     })
     .catch(function () { showValidationModal(['Network error while sending message']); });
@@ -329,9 +248,6 @@ function autoResizeTA(el) {
   el.style.height = Math.min(el.scrollHeight, 120) + 'px';
 }
 
-/* ============================================================
-   EDIT MESSAGE
-   ============================================================ */
 function openEditMessageModal(messageId, currentText) {
   currentEditMessageId = messageId;
   const ta = document.getElementById('editMessageContent');
@@ -344,13 +260,11 @@ function saveEditMessage() {
   const content = ta ? ta.value.trim() : '';
   const errors  = validateMessage(content);
   if (errors.length) { showValidationModal(errors); return; }
-
   const fd = new FormData();
   fd.append('action',     'edit_message');
   fd.append('message_id', currentEditMessageId);
   fd.append('content',    content);
   fd.append('sender_id',  CURRENT_USER_ID);
-
   fetch(MSG_URL, { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' }, body: fd })
     .then(r => r.json())
     .then(data => {
@@ -365,9 +279,6 @@ function closeEditMessageModal() {
   currentEditMessageId = null;
 }
 
-/* ============================================================
-   DELETE MESSAGE
-   ============================================================ */
 function confirmDeleteMessage(messageId) {
   showConfirmModal('Delete this message?', function () { deleteMessage(messageId); });
 }
@@ -377,7 +288,6 @@ function deleteMessage(messageId) {
   fd.append('action',     'delete_message');
   fd.append('message_id', messageId);
   fd.append('sender_id',  CURRENT_USER_ID);
-
   fetch(MSG_URL, { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' }, body: fd })
     .then(r => r.json())
     .then(data => {
@@ -387,9 +297,6 @@ function deleteMessage(messageId) {
     .catch(function () { showValidationModal(['Network error']); });
 }
 
-/* ============================================================
-   DELETE CONVERSATION
-   ============================================================ */
 function openDeleteConvModal() {
   document.getElementById('deleteConvModal').style.display = 'block';
 }
@@ -403,7 +310,6 @@ function confirmDeleteConversation() {
   fd.append('action',        'delete_conversation');
   fd.append('user_id',       CURRENT_USER_ID);
   fd.append('other_user_id', activeConvId);
-
   fetch(MSG_URL, { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' }, body: fd })
     .then(r => r.json())
     .then(data => {
@@ -423,9 +329,6 @@ function confirmDeleteConversation() {
     .catch(function () { showValidationModal(['Network error']); });
 }
 
-/* ============================================================
-   NEW MESSAGE MODAL
-   ============================================================ */
 function openNewMessageModal() {
   document.getElementById('newMessageModal').style.display = 'block';
   document.getElementById('receiverSelect').value          = '';
@@ -444,13 +347,11 @@ function sendNewMessage() {
   const rinit   = opt.dataset.init   || '';
   const ravatar = opt.dataset.avatar || 'av-blue';
   const content = document.getElementById('newMessageContent').value.trim();
-
   const errors = [];
-  if (!rid)                             errors.push('Please select a user');
+  if (!rid) errors.push('Please select a user');
   if (!content || content.length === 0) errors.push('Message cannot be empty');
   if (content && content.length > 5000) errors.push('Message cannot exceed 5000 characters');
   if (errors.length) { showValidationModal(errors); return; }
-
   _doSendMessage(CURRENT_USER_ID, rid, CURRENT_USER_NAME, rname,
     CURRENT_USER_INIT, rinit, CURRENT_USER_AVATAR, ravatar, content,
     function () {
@@ -459,9 +360,6 @@ function sendNewMessage() {
     });
 }
 
-/* ============================================================
-   NAV BADGE
-   ============================================================ */
 function updateNavBadge() {
   const total = conversations.reduce(function (s, c) { return s + (parseInt(c.unread_count) || 0); }, 0);
   const badge = document.getElementById('navMsgBadge');
@@ -470,31 +368,22 @@ function updateNavBadge() {
   badge.style.display = total > 0 ? 'inline-flex' : 'none';
 }
 
-/* ============================================================
-   URL PARAMS → open conversation on load
-   ============================================================ */
 function checkUrlParams() {
   const params     = new URLSearchParams(window.location.search);
   const openUser   = params.get('open_user');
   const openName   = params.get('open_name');
   const openInit   = params.get('open_init');
   const openAvatar = params.get('open_avatar') || 'av-blue';
-
   if (!openUser || !openName) return;
-
   const existing = conversations.find(function (c) { return c.other_user_id === openUser; });
   if (existing) {
     openConversation(openUser, existing.other_user_name, existing.other_user_init, existing.other_user_avatar);
   } else {
     openConversation(openUser, openName, openInit, openAvatar);
   }
-
   window.history.replaceState({}, '', window.location.pathname);
 }
 
-/* ============================================================
-   UTILITIES
-   ============================================================ */
 function formatTime(ts) {
   if (!ts) return '';
   const d   = new Date(ts);
@@ -522,14 +411,10 @@ function escAttr(text) {
   return String(text).replace(/&/g, '&amp;').replace(/'/g, '&#39;').replace(/"/g, '&quot;');
 }
 
-/* ============================================================
-   INIT
-   ============================================================ */
 document.addEventListener('DOMContentLoaded', function () {
   loadConversations(function () {
     checkUrlParams();
   });
-
   window.addEventListener('click', function (e) {
     ['newMessageModal','editMessageModal','deleteConvModal','validationModal','confirmModal'].forEach(function (id) {
       const m = document.getElementById(id);
