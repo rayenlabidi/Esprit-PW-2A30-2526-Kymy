@@ -4,13 +4,11 @@ include_once __DIR__ . '/../models/message.php';
 
 class MessageC
 {
-    // ==================== CONVERSATIONS WITH PUBLICATION INFO ====================
     
     public function ListeConversations($user_id)
     {
         $db = config::getConnexion();
         try {
-            // JOIN with publication to show related post info in conversations
             $sql = "SELECT 
                         DISTINCT other_user_id,
                         other_user_name,
@@ -19,7 +17,6 @@ class MessageC
                         last_message,
                         last_time,
                         unread_count,
-                        -- Publication info from JOIN
                         p.id as related_publication_id,
                         p.content as related_publication_content,
                         p.image_url as related_publication_image
@@ -78,13 +75,11 @@ class MessageC
         }
     }
     
-    // ==================== MESSAGES WITH PUBLICATION INFO ====================
     
     public function ListeMessages($user_id, $other_user_id)
     {
         $db = config::getConnexion();
         try {
-            // First mark messages as read
             $updateSql = "UPDATE messages SET is_read = 1 
                           WHERE receiver_id = :user_id AND sender_id = :other_user_id";
             $updateQuery = $db->prepare($updateSql);
@@ -93,7 +88,6 @@ class MessageC
                 'other_user_id' => $other_user_id
             ]);
             
-            // JOIN with publication to show related post info for each message
             $sql = "SELECT 
                         m.*,
                         p.id as publication_id,
@@ -119,13 +113,10 @@ class MessageC
         }
     }
     
-    // ==================== GET MESSAGES FOR A SPECIFIC PUBLICATION ====================
-    
     public function GetMessagesByPublication($publication_id)
     {
         $db = config::getConnexion();
         try {
-            // JOIN messages with users and publication
             $sql = "SELECT 
                         m.*,
                         u.name as user_name,
@@ -148,13 +139,11 @@ class MessageC
         }
     }
     
-    // ==================== GET CONVERSATION WITH PUBLICATION DETAILS ====================
     
     public function GetConversationWithPublication($user_id, $other_user_id)
     {
         $db = config::getConnexion();
         try {
-            // Complex JOIN to get conversation with publication details
             $sql = "SELECT 
                         m.*,
                         p.id as related_post_id,
@@ -185,13 +174,11 @@ class MessageC
         }
     }
     
-    // ==================== STATISTICS USING JOINS ====================
     
     public function GetUserMessageStats($user_id)
     {
         $db = config::getConnexion();
         try {
-            // Multiple JOINs to get comprehensive stats
             $sql = "SELECT 
                         u.user_id,
                         u.name,
@@ -214,13 +201,11 @@ class MessageC
         }
     }
     
-    // ==================== GET POPULAR PUBLICATIONS BASED ON MESSAGES ====================
     
     public function GetPopularPublicationsFromMessages()
     {
         $db = config::getConnexion();
         try {
-            // JOIN to find which publications are most discussed in messages
             $sql = "SELECT 
                         p.id,
                         p.content,
@@ -245,7 +230,6 @@ class MessageC
         }
     }
     
-    // ==================== ADD MESSAGE WITH PUBLICATION REFERENCE ====================
     
     public function AddMessageWithPublication($m, $publication_id = null)
     {
@@ -274,8 +258,6 @@ class MessageC
             return false;
         }
     }
-    
-    // ==================== EXISTING METHODS (kept for backward compatibility) ====================
     
     public function DeleteMessage($id, $sender_id)
     {

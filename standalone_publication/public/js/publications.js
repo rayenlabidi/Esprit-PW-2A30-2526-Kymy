@@ -1,11 +1,5 @@
-/* ============================================================
-   publications.js  –  Workify Publications
-   - Avatar click passes post ID to messages page
-   ============================================================ */
-
 'use strict';
 
-/* ---------- shared state ---------- */
 let pendingImage        = null;
 let postLikeStates      = {};
 let isLiking            = false;
@@ -15,9 +9,6 @@ let pendingDeleteCommentId = null;
 let currentEditPostId   = null;
 let currentEditCommentId = null;
 
-/* ============================================================
-   VALIDATION MODAL
-   ============================================================ */
 function showValidationModal(errors) {
   const modal   = document.getElementById('validationModal');
   const list    = document.getElementById('validationErrorList');
@@ -37,9 +28,6 @@ function closeValidationModal() {
   if (modal) modal.style.display = 'none';
 }
 
-/* ============================================================
-   CONFIRM MODAL
-   ============================================================ */
 function showConfirmModal(message, onConfirm) {
   const modal = document.getElementById('confirmModal');
   const msg   = document.getElementById('confirmMessage');
@@ -58,9 +46,6 @@ function closeConfirmModal() {
   if (modal) modal.style.display = 'none';
 }
 
-/* ============================================================
-   POST-OPTION MODAL
-   ============================================================ */
 function showPostOptions(postId) {
   currentEditPostId = postId;
   const modal = document.getElementById('postOptionsModal');
@@ -85,9 +70,6 @@ function postOptionsDelete() {
   });
 }
 
-/* ============================================================
-   EDIT COMMENT MODAL
-   ============================================================ */
 function editComment(commentId, currentText) {
   currentEditCommentId = commentId;
   const modal = document.getElementById('editCommentModal');
@@ -137,9 +119,6 @@ function saveEditComment() {
     .catch(() => showValidationModal(['Network error while editing comment']));
 }
 
-/* ============================================================
-   AVATAR CLICK → START CHAT WITH POST ID
-   ============================================================ */
 function startChatFromAvatar(userId, userName, userInit, userAvatar, postId) {
   if (userId === CURRENT_USER_ID) return;
   const params = new URLSearchParams({
@@ -152,9 +131,6 @@ function startChatFromAvatar(userId, userName, userInit, userAvatar, postId) {
   window.location.href = 'messages.php?' + params.toString();
 }
 
-/* ============================================================
-   IMAGE HELPERS
-   ============================================================ */
 function autoResize(el) {
   el.style.height = 'auto';
   el.style.height = Math.min(el.scrollHeight, 200) + 'px';
@@ -191,9 +167,6 @@ function removeImage() {
   pendingImage = null;
 }
 
-/* ============================================================
-   POST CRUD
-   ============================================================ */
 function validatePostContent(content) {
   const errors = [];
   if (!content || content.trim().length === 0) errors.push('Please enter some content for your post');
@@ -287,9 +260,6 @@ function closeModal() {
   document.getElementById('editModal').style.display = 'none';
 }
 
-/* ============================================================
-   LIKES
-   ============================================================ */
 function toggleLike(btn, postId, currentLikes) {
   if (isLiking) return;
   isLiking = true;
@@ -501,9 +471,6 @@ function showReplyForm(postId, commentId) {
   }
 }
 
-/* ============================================================
-   SHARE
-   ============================================================ */
 function sharePost(postId, content, imageUrl) {
   const modal   = document.getElementById('shareModal');
   const preview = document.getElementById('sharePreview');
@@ -543,9 +510,6 @@ function shareOnLinkedIn() {
   closeShareModal();
 }
 
-/* ============================================================
-   FILTER / DISPLAY
-   ============================================================ */
 function filterMyPosts() {
   const fd = new FormData();
   fd.append('action',  'get_user_posts');
@@ -613,9 +577,6 @@ function displayPosts(posts) {
   });
 }
 
-/* ============================================================
-   TOAST
-   ============================================================ */
 function _toast(msg) {
   let t = document.getElementById('wf-toast');
   if (!t) {
@@ -630,9 +591,6 @@ function _toast(msg) {
   t._timer = setTimeout(() => { t.style.opacity = '0'; }, 2500);
 }
 
-/* ============================================================
-   UTILITIES
-   ============================================================ */
 function escapeHtml(text) {
   if (text == null) return '';
   const div = document.createElement('div');
@@ -650,9 +608,6 @@ function escapeAttr(text) {
     .replace(/>/g, '&gt;');
 }
 
-/* ============================================================
-   INIT
-   ============================================================ */
 document.addEventListener('DOMContentLoaded', function () {
   const ta = document.getElementById('newPostText');
   if (ta) autoResize(ta);

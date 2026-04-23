@@ -14,7 +14,6 @@ $conversations = $controller->ListeConversations($current_user_id);
 $unreadCount   = $controller->GetUnreadCount($current_user_id);
 $users         = $controller->GetAllUsers();
 
-// Get post_id from URL if present
 $post_id_from_url = isset($_GET['post_id']) ? (int)$_GET['post_id'] : null;
 ?>
 <!DOCTYPE html>
@@ -78,7 +77,6 @@ $post_id_from_url = isset($_GET['post_id']) ? (int)$_GET['post_id'] : null;
     </div>
   </aside>
 
-  <!-- RIGHT PANEL -->
   <section class="msg-panel-right" id="panelRight">
     <div class="msg-chat-header" id="chatHeader" style="display:none;"></div>
     <div class="msg-chat-body" id="chatBody">
@@ -109,7 +107,6 @@ $post_id_from_url = isset($_GET['post_id']) ? (int)$_GET['post_id'] : null;
   </section>
 </div>
 
-<!-- MODALS -->
 <div id="validationModal" class="validation-modal">
   <div class="validation-modal-content">
     <div class="validation-icon">

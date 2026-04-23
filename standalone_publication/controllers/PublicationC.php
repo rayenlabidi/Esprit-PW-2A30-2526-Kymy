@@ -5,7 +5,6 @@ include_once __DIR__ . '/../models/comment.php';
 
 class PublicationC
 {
-    // ==================== PUBLICATION METHODS ====================
     
     public function ListePublications()
     {
@@ -112,8 +111,6 @@ class PublicationC
             die("Error: " . $e->getMessage());
         }
     }
-
-    // ==================== COMMENT METHODS ====================
 
     public function ListeComments($publication_id)
     {

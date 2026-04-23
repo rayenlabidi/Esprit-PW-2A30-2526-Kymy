@@ -90,7 +90,6 @@ $posts      = $controller->ListePublications();
 <div class="pub-shell">
   <div class="pub-grid">
 
-    <!-- LEFT SIDEBAR -->
     <aside class="pub-sidebar-left">
       <div class="pub-profile-card">
         <div class="pub-profile-banner"></div>
@@ -114,10 +113,8 @@ $posts      = $controller->ListePublications();
       </nav>
     </aside>
 
-    <!-- MAIN FEED -->
     <main class="pub-feed">
 
-      <!-- Create post card -->
       <div class="pub-create-card">
         <div class="pub-create-top">
           <div class="wf-avatar wf-avatar-40 <?php echo $current_user_avatar; ?>"><?php echo $current_user_init; ?></div>
@@ -142,7 +139,6 @@ $posts      = $controller->ListePublications();
         </div>
       </div>
 
-      <!-- Posts -->
       <div id="postsContainer">
         <?php foreach($posts as $post):
           $comments = $controller->ListeComments($post['id']);
@@ -217,7 +213,6 @@ $posts      = $controller->ListePublications();
       </div>
     </main>
 
-    <!-- RIGHT SIDEBAR -->
     <aside class="pub-sidebar-right">
       <div class="pub-widget">
         <div class="pub-widget-title">Trending topics</div>
@@ -235,9 +230,6 @@ $posts      = $controller->ListePublications();
   </div>
 </div>
 
-<!-- ============================================================
-     SHARED MODAL: Validation Errors
-     ============================================================ -->
 <div id="validationModal" class="modal" style="background:rgba(0,0,0,.55);backdrop-filter:blur(3px);">
   <div class="validation-modal-content" style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--bg-card);padding:30px;border-radius:var(--radius-lg);width:420px;max-width:90%;text-align:center;box-shadow:var(--shadow-lg);animation:slideIn .25s ease;">
     <div style="width:56px;height:56px;border-radius:50%;background:var(--red-light);display:flex;align-items:center;justify-content:center;margin:0 auto 18px;">
@@ -258,9 +250,6 @@ $posts      = $controller->ListePublications();
   </div>
 </div>
 
-<!-- ============================================================
-     SHARED MODAL: Confirm (replaces confirm())
-     ============================================================ -->
 <div id="confirmModal" class="modal" style="background:rgba(0,0,0,.55);backdrop-filter:blur(3px);">
   <div style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--bg-card);padding:30px;border-radius:var(--radius-lg);width:380px;max-width:90%;text-align:center;box-shadow:var(--shadow-lg);animation:slideIn .25s ease;">
     <div style="width:56px;height:56px;border-radius:50%;background:var(--red-light);display:flex;align-items:center;justify-content:center;margin:0 auto 18px;">
@@ -285,9 +274,6 @@ $posts      = $controller->ListePublications();
   </div>
 </div>
 
-<!-- ============================================================
-     MODAL: Post Options (Edit / Delete)
-     ============================================================ -->
 <div id="postOptionsModal" class="modal" style="background:rgba(0,0,0,.55);backdrop-filter:blur(3px);">
   <div class="post-options-modal-content">
     <h3>Post Options</h3>
@@ -299,9 +285,6 @@ $posts      = $controller->ListePublications();
   </div>
 </div>
 
-<!-- ============================================================
-     MODAL: Edit Post
-     ============================================================ -->
 <div id="editModal" class="modal">
   <div class="modal-content">
     <span class="close" onclick="closeModal()">&times;</span>
@@ -332,9 +315,6 @@ $posts      = $controller->ListePublications();
   </div>
 </div>
 
-<!-- ============================================================
-     MODAL: Share
-     ============================================================ -->
 <div id="shareModal" class="modal">
   <div class="modal-content share-modal" style="max-width:500px;max-height:80vh;overflow-y:auto;">
     <span class="close" onclick="closeShareModal()">&times;</span>
@@ -349,7 +329,6 @@ $posts      = $controller->ListePublications();
   </div>
 </div>
 
-<!-- JS constants -->
 <script>
 const CURRENT_USER_ID   = '<?php echo $current_user_id; ?>';
 const CURRENT_USER_NAME = '<?php echo $current_user_name; ?>';
