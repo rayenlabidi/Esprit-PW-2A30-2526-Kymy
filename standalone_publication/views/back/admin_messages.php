@@ -51,6 +51,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isAjax) {
 $messages = $controller->GetAllMessagesAdmin();
 $users = $controller->GetAllUsers();
 $posts = $pubController->ListePublications();
+
+// Count unread and flagged
+$unreadCount = 0;
+$flaggedCount = 0;
+foreach ($messages as $m) {
+    if (!$m['is_read']) $unreadCount++;
+    if ($m['is_flagged']) $flaggedCount++;
+}
 $message = '';
 $error = '';
 ?>
@@ -173,10 +181,83 @@ $error = '';
 }
 
 .flagged-row {
-    background-color: #fff0f0; /* light red background */
+    background-color: #fff0f0;
 }
 .flagged-row:hover {
     background-color: #ffe0e0 !important;
+}
+
+/* Filter Bar */
+.msg-filter-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.msg-filter-btn {
+    padding: 8px 18px;
+    border: 1.5px solid var(--border);
+    border-radius: 20px;
+    background: var(--bg-card);
+    color: var(--text-2);
+    font-family: var(--font);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.msg-filter-btn:hover {
+    border-color: var(--blue);
+    color: var(--blue);
+    background: var(--blue-light);
+}
+
+.msg-filter-btn.active {
+    background: var(--blue);
+    color: white;
+    border-color: var(--blue);
+}
+
+.msg-filter-btn.active:hover {
+    background: var(--blue-dark);
+}
+
+.filter-badge {
+    background: rgba(255,255,255,0.25);
+    padding: 1px 7px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 700;
+    min-width: 18px;
+    text-align: center;
+}
+
+.msg-filter-btn:not(.active) .filter-badge {
+    background: var(--bg-hover);
+    color: var(--text-2);
+}
+
+.msg-filter-btn.badge-red:not(.active) .filter-badge {
+    background: var(--red-light);
+    color: var(--red);
+}
+
+.msg-filter-btn.badge-orange:not(.active) .filter-badge {
+    background: #fff3e0;
+    color: #e65100;
+}
+
+.no-results-row td {
+    text-align: center;
+    padding: 30px !important;
+    color: var(--text-3);
+    font-style: italic;
 }
 </style>
 </head>
@@ -277,6 +358,23 @@ $error = '';
     <!-- All Messages Table -->
     <div class="crud-section">
       <h2>📄 All Messages</h2>
+
+      <!-- Filter Bar -->
+      <div class="msg-filter-bar">
+        <button class="msg-filter-btn active" id="filterAll" onclick="filterMessages('all')">
+          📋 All <span class="filter-badge"><?php echo count($messages); ?></span>
+        </button>
+        <button class="msg-filter-btn badge-orange" id="filterUnread" onclick="filterMessages('unread')">
+          📩 Unread <span class="filter-badge"><?php echo $unreadCount; ?></span>
+        </button>
+        <button class="msg-filter-btn badge-red" id="filterFlagged" onclick="filterMessages('flagged')">
+          🚩 Flagged <span class="filter-badge"><?php echo $flaggedCount; ?></span>
+        </button>
+        <button class="msg-filter-btn" id="filterRead" onclick="filterMessages('read')">
+          ✅ Read <span class="filter-badge"><?php echo count($messages) - $unreadCount; ?></span>
+        </button>
+      </div>
+
       <div class="admin-table-wrapper">
         <table class="admin-table" id="messagesTable">
           <thead>
@@ -284,7 +382,7 @@ $error = '';
           </thead>
           <tbody id="messagesTableBody">
             <?php foreach($messages as $msg): ?>
-            <tr class="<?php echo $msg['is_flagged'] ? 'flagged-row' : ''; ?>">
+            <tr class="<?php echo $msg['is_flagged'] ? 'flagged-row' : ''; ?>" data-read="<?php echo $msg['is_read'] ? '1' : '0'; ?>" data-flagged="<?php echo $msg['is_flagged'] ? '1' : '0'; ?>">
               <td><?php echo $msg['id']; ?></td>
               <td>
                 <div class="author-cell">
@@ -310,9 +408,7 @@ $error = '';
               <td><?php echo date('M d, Y H:i', strtotime($msg['created_at'])); ?></td>
               <td>
                 <div class="action-buttons">
-                  <?php if ($msg['is_flagged']): ?>
-                    <button class="btn-edit" onclick="adminUnflagMessage(<?php echo $msg['id']; ?>)" style="background:var(--green-light); color:var(--green);">✅ Safe</button>
-                  <?php endif; ?>
+
                   <button class="btn-edit" onclick="adminEditMessage(<?php echo $msg['id']; ?>, '<?php echo htmlspecialchars(addslashes($msg['content'])); ?>')">✏️ Edit</button>
                   <button class="btn-delete" onclick="adminDeleteMessage(<?php echo $msg['id']; ?>)">🗑️ Delete</button>
                 </div>
@@ -364,6 +460,57 @@ $error = '';
 <script>
 let adminEditMessageId = null;
 let adminDeleteMessageId = null;
+let currentFilter = 'all';
+
+function filterMessages(filter) {
+    currentFilter = filter;
+    const rows = document.querySelectorAll('#messagesTableBody tr:not(.no-results-row)');
+    const buttons = document.querySelectorAll('.msg-filter-btn');
+    let visibleCount = 0;
+
+    // Update active button
+    buttons.forEach(btn => btn.classList.remove('active'));
+    document.getElementById('filter' + filter.charAt(0).toUpperCase() + filter.slice(1)).classList.add('active');
+
+    // Remove old no-results row
+    const oldNoResults = document.querySelector('.no-results-row');
+    if (oldNoResults) oldNoResults.remove();
+
+    // Filter rows
+    rows.forEach(row => {
+        const isRead = row.getAttribute('data-read') === '1';
+        const isFlagged = row.getAttribute('data-flagged') === '1';
+        let show = false;
+
+        switch (filter) {
+            case 'all':
+                show = true;
+                break;
+            case 'unread':
+                show = !isRead;
+                break;
+            case 'read':
+                show = isRead;
+                break;
+            case 'flagged':
+                show = isFlagged;
+                break;
+        }
+
+        row.style.display = show ? '' : 'none';
+        if (show) visibleCount++;
+    });
+
+    // Show "no results" if needed
+    if (visibleCount === 0) {
+        const tbody = document.getElementById('messagesTableBody');
+        const labels = { all: 'messages', unread: 'unread messages', read: 'read messages', flagged: 'flagged messages' };
+        const tr = document.createElement('tr');
+        tr.className = 'no-results-row';
+        tr.innerHTML = `<td colspan="8" style="text-align:center; padding:30px; color:var(--text-3); font-style:italic;">No ${labels[filter]} found.</td>`;
+        tbody.appendChild(tr);
+    }
+}
 
 function showAdminMessage(msg, isError = false) {
     const alertDiv = document.getElementById(isError ? 'errorAlert' : 'messageAlert');
@@ -413,7 +560,7 @@ function adminAddUser() {
     formData.append('avatar', avatar);
     formData.append('role', role);
     
-    fetch(window.location.href, {
+    fetch(window.location.pathname, {
         method: 'POST',
         headers: { 'X-Requested-With': 'XMLHttpRequest' },
         body: formData
@@ -455,7 +602,7 @@ function adminSaveEditMessage() {
     formData.append('message_id', adminEditMessageId);
     formData.append('content', newContent);
     
-    fetch(window.location.href, {
+    fetch(window.location.pathname, {
         method: 'POST',
         headers: { 'X-Requested-With': 'XMLHttpRequest' },
         body: formData
@@ -482,7 +629,7 @@ function confirmAdminDelete() {
     formData.append('action', 'delete_message_admin');
     formData.append('message_id', adminDeleteMessageId);
     
-    fetch(window.location.href, {
+    fetch(window.location.pathname, {
         method: 'POST',
         headers: { 'X-Requested-With': 'XMLHttpRequest' },
         body: formData
@@ -505,19 +652,26 @@ function adminUnflagMessage(id) {
         formData.append('action', 'unflag_message');
         formData.append('message_id', id);
         
-        fetch(window.location.href, {
+        fetch(window.location.pathname, {
             method: 'POST',
             headers: { 'X-Requested-With': 'XMLHttpRequest' },
             body: formData
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) throw new Error('HTTP ' + response.status);
+            return response.json();
+        })
         .then(data => {
             if (data.success) {
                 showAdminMessage('Message marked as safe!');
                 setTimeout(() => location.reload(), 1000);
             } else {
-                showAdminMessage('Error updating message', true);
+                showAdminMessage(data.error || 'Error updating message', true);
             }
+        })
+        .catch(err => {
+            console.error('Unflag error:', err);
+            showAdminMessage('Network error: ' + err.message, true);
         });
     }
 }

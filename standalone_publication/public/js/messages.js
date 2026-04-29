@@ -12,8 +12,22 @@ let conversations         = [];
 let currentEditMessageId  = null;
 let pollTimer             = null;
 let pendingPublicationId  = POST_ID_FROM_URL;
+let convFilter            = 'all'; // 'all' or 'unread'
 
-const BAD_WORDS = ['badword1', 'badword2', 'spam', 'scam', 'abuse'];
+const BAD_WORDS = [
+  // Profanity
+  'fuck', 'shit', 'ass', 'asshole', 'bitch', 'bastard', 'damn', 'dick', 'crap',
+  'piss', 'cunt', 'cock', 'whore', 'slut', 'motherfucker', 'bullshit',
+  'dumbass', 'jackass', 'nigger', 'nigga', 'retard', 'faggot', 'fag',
+  // Spam / scam
+  'spam', 'scam', 'abuse', 'phishing', 'malware',
+  // Threats
+  'kill you', 'death threat', 'i will kill',
+  // French profanity
+  'merde', 'putain', 'connard', 'salope', 'enculer', 'nique',
+  // Arabic profanity (transliterated)
+  'kol5ara', 'zebi', 'kahba', 'nik', 'taboun',
+];
 
 function handleInputBadWords(ta) {
   const content = ta.value.toLowerCase();
@@ -108,9 +122,14 @@ function renderConversations(filter) {
   const list = document.getElementById('convList');
   if (!list) return;
   const q = (filter !== undefined ? filter : (document.getElementById('convSearchInput') ? document.getElementById('convSearchInput').value : '')).toLowerCase();
-  const filtered = conversations.filter(c => !q || (c.other_user_name && c.other_user_name.toLowerCase().includes(q)));
+  let filtered = conversations.filter(c => !q || (c.other_user_name && c.other_user_name.toLowerCase().includes(q)));
+  // Apply unread filter
+  if (convFilter === 'unread') {
+    filtered = filtered.filter(c => parseInt(c.unread_count) > 0);
+  }
   if (filtered.length === 0) {
-    list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-4);font-size:13px;">No conversations yet</div>';
+    list.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-4);font-size:13px;">' +
+      (convFilter === 'unread' ? 'No unread conversations' : 'No conversations yet') + '</div>';
     return;
   }
   list.innerHTML = filtered.map(c => `
@@ -132,6 +151,19 @@ function renderConversations(filter) {
       </div>
     </div>
   `).join('');
+}
+
+function setConvFilter(filter) {
+  convFilter = filter;
+  document.querySelectorAll('.msg-filter-btn').forEach(btn => btn.classList.remove('active'));
+  if (filter === 'all') {
+    const allBtn = document.getElementById('filterAllBtn');
+    if (allBtn) allBtn.classList.add('active');
+  } else {
+    const unreadBtn = document.getElementById('filterUnreadBtn');
+    if (unreadBtn) unreadBtn.classList.add('active');
+  }
+  renderConversations();
 }
 
 function filterConversations(q) {
@@ -425,9 +457,20 @@ function sendNewMessage() {
 function updateNavBadge() {
   const total = conversations.reduce(function (s, c) { return s + (parseInt(c.unread_count) || 0); }, 0);
   const badge = document.getElementById('navMsgBadge');
-  if (!badge) return;
-  badge.textContent   = total;
-  badge.style.display = total > 0 ? 'inline-flex' : 'none';
+  if (badge) {
+    badge.textContent   = total;
+    badge.style.display = total > 0 ? 'inline-flex' : 'none';
+  }
+  // Update filter count badge
+  const filterCount = document.getElementById('unreadFilterCount');
+  if (filterCount) {
+    filterCount.textContent = total;
+    if (total > 0) {
+      filterCount.classList.add('has-unread');
+    } else {
+      filterCount.classList.remove('has-unread');
+    }
+  }
 }
 
 function checkUrlParams() {

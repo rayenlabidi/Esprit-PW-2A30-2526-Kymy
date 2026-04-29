@@ -322,8 +322,21 @@ class MessageC
     
     public function AddMessageWithPublication($m, $publication_id = null)
     {
-        // Bad words filter
-        $bad_words = ['badword1', 'badword2', 'spam', 'scam', 'abuse'];
+        // Bad words filter - comprehensive list
+        $bad_words = [
+            // Profanity
+            'fuck', 'shit', 'ass', 'asshole', 'bitch', 'bastard', 'damn', 'dick', 'crap',
+            'piss', 'cunt', 'cock', 'whore', 'slut', 'motherfucker', 'bullshit',
+            'dumbass', 'jackass', 'nigger', 'nigga', 'retard', 'faggot', 'fag',
+            // Spam / scam
+            'spam', 'scam', 'abuse', 'phishing', 'malware',
+            // Threats
+            'kill you', 'death threat', 'i will kill',
+            // French profanity
+            'merde', 'putain', 'connard', 'salope', 'enculer', 'nique',
+            // Arabic profanity (transliterated)
+            'kol5ara', 'zebi', 'kahba', 'nik', 'taboun',
+        ];
         $content_lower = strtolower($m->getContent());
         $is_flagged = 0;
         foreach ($bad_words as $word) {

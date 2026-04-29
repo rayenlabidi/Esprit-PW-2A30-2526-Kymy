@@ -603,3 +603,63 @@
 .read-status-sent {
   color: var(--text-4) !important;
 }
+
+/* ============================================
+   FILTER TOGGLE
+   ============================================ */
+.msg-filter-btn {
+  padding: 6px 14px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--bg-card);
+  color: var(--text-3);
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.msg-filter-btn:hover {
+  color: var(--blue);
+  border-color: var(--blue);
+  background: var(--blue-light);
+}
+
+.msg-filter-btn.active {
+  background: var(--blue);
+  color: white;
+  border-color: var(--blue);
+  font-weight: 600;
+}
+
+.msg-filter-btn.active:hover {
+  background: var(--blue-dark);
+  border-color: var(--blue-dark);
+}
+
+.msg-filter-count {
+  background: var(--red);
+  color: white;
+  padding: 1px 6px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 700;
+  min-width: 18px;
+  text-align: center;
+  line-height: 1.4;
+  transition: all 0.2s;
+}
+
+.msg-filter-btn:not(.active) .msg-filter-count {
+  background: var(--border);
+  color: var(--text-3);
+}
+
+.msg-filter-btn:not(.active) .msg-filter-count.has-unread {
+  background: var(--red);
+  color: white;
+}
