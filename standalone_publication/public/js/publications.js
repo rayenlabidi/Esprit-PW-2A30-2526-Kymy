@@ -1,13 +1,13 @@
 'use strict';
 
 let pendingImage        = null;
-let postLikeStates      = {};
-let isLiking            = false;
-let isCommentLiking     = false;
+const likingInProgress        = new Set(); // tracks post IDs currently being liked
+const commentLikingInProgress = new Set(); // tracks comment IDs currently being liked
 let pendingDeletePostId = null;
 let pendingDeleteCommentId = null;
 let currentEditPostId   = null;
 let currentEditCommentId = null;
+let currentUserLikedPosts = {}; // Track which posts current user has liked
 
 function showValidationModal(errors) {
   const modal   = document.getElementById('validationModal');
@@ -260,52 +260,116 @@ function closeModal() {
   document.getElementById('editModal').style.display = 'none';
 }
 
+// ==================== SMART LIKE SYSTEM ====================
 function toggleLike(btn, postId, currentLikes) {
-  if (isLiking) return;
-  isLiking = true;
-  const wasLiked = postLikeStates[postId] || false;
-  const newLikes = Math.max(0, wasLiked ? currentLikes - 1 : currentLikes + 1);
+  if (likingInProgress.has(postId)) return; // prevent double-click on THIS post only
+  likingInProgress.add(postId);
+  
   const fd = new FormData();
-  fd.append('action', 'update_likes');
-  fd.append('id',     postId);
-  fd.append('likes',  newLikes);
+  fd.append('action', 'toggle_like');
+  fd.append('publication_id', postId);
+  fd.append('user_id', CURRENT_USER_ID);
+  
   fetch(BASE_URL, { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' }, body: fd })
     .then(r => r.json())
     .then(data => {
-      isLiking = false;
+      likingInProgress.delete(postId);
       if (data.success) {
-        postLikeStates[postId] = !wasLiked;
-        btn.classList.toggle('liked');
-        const span = document.querySelector('.like-count-' + postId);
-        if (span) span.textContent = data.likes;
-        btn.style.color      = !wasLiked ? 'var(--blue)' : 'var(--text-3)';
-        btn.style.background = !wasLiked ? 'var(--blue-light)' : 'none';
+        // Update local state
+        currentUserLikedPosts[postId] = data.liked;
+        
+        // Update UI
+        const span = document.querySelector(`.like-count-${postId}`);
+        if (span) span.textContent = data.total_likes;
+        
+        if (data.liked) {
+          btn.classList.add('liked');
+          btn.style.color = 'var(--blue)';
+          btn.style.background = 'var(--blue-light)';
+        } else {
+          btn.classList.remove('liked');
+          btn.style.color = 'var(--text-3)';
+          btn.style.background = 'none';
+        }
+      } else {
+        showValidationModal([data.error || 'Error toggling like']);
       }
     })
-    .catch(() => { isLiking = false; });
+    .catch(() => { 
+      likingInProgress.delete(postId);
+      showValidationModal(['Network error while toggling like']);
+    });
 }
 
+// ==================== COMMENT LIKE SYSTEM ====================
 function toggleCommentLike(btn, commentId, currentLikes) {
-  if (isCommentLiking) return;
-  isCommentLiking = true;
-  const wasLiked = btn.classList.contains('liked');
-  const newLikes = Math.max(0, wasLiked ? currentLikes - 1 : currentLikes + 1);
+  if (commentLikingInProgress.has(commentId)) return; // prevent double-click on THIS comment only
+  commentLikingInProgress.add(commentId);
+  
   const fd = new FormData();
-  fd.append('action',     'update_comment_likes');
+  fd.append('action', 'toggle_comment_like');
   fd.append('comment_id', commentId);
-  fd.append('likes',      newLikes);
+  fd.append('user_id', CURRENT_USER_ID);
+  
   fetch(BASE_URL, { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' }, body: fd })
     .then(r => r.json())
     .then(data => {
-      isCommentLiking = false;
+      commentLikingInProgress.delete(commentId);
       if (data.success) {
-        btn.classList.toggle('liked');
-        const span = document.querySelector('.comment-like-count-' + commentId);
-        if (span) span.textContent = data.likes;
-        btn.style.color = wasLiked ? 'var(--text-3)' : 'var(--blue)';
+        const span = document.querySelector(`.comment-like-count-${commentId}`);
+        if (span) span.textContent = data.total_likes;
+        
+        if (data.liked) {
+          btn.classList.add('liked');
+          btn.style.color = 'var(--blue)';
+        } else {
+          btn.classList.remove('liked');
+          btn.style.color = 'var(--text-3)';
+        }
+      } else {
+        showValidationModal([data.error || 'Error toggling comment like']);
       }
     })
-    .catch(() => { isCommentLiking = false; });
+    .catch(() => { 
+      commentLikingInProgress.delete(commentId);
+      showValidationModal(['Network error while toggling comment like']);
+    });
+}
+
+// Load user's liked posts status on page load
+function loadUserLikes() {
+  const postCards = document.querySelectorAll('.pub-post-card');
+  const postIds = Array.from(postCards).map(card => card.dataset.postId);
+  
+  if (postIds.length === 0) return;
+  
+  const fd = new FormData();
+  fd.append('action', 'get_user_likes');
+  fd.append('user_id', CURRENT_USER_ID);
+  fd.append('publication_ids', JSON.stringify(postIds));
+  
+  fetch(BASE_URL, { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' }, body: fd })
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        // Initialize liked status for all posts
+        postIds.forEach(id => {
+          currentUserLikedPosts[id] = data.liked_publications.includes(parseInt(id));
+        });
+        
+        // Update UI for like buttons
+        postCards.forEach(card => {
+          const postId = card.dataset.postId;
+          const likeBtn = card.querySelector('.like-btn');
+          if (likeBtn && currentUserLikedPosts[postId]) {
+            likeBtn.classList.add('liked');
+            likeBtn.style.color = 'var(--blue)';
+            likeBtn.style.background = 'var(--blue-light)';
+          }
+        });
+      }
+    })
+    .catch(console.error);
 }
 
 /* ============================================================
@@ -528,11 +592,46 @@ function filterFeed(type) {
   if (type === 'all') location.reload();
 }
 
+let fetchTimeout = null;
+function fetchFilteredPosts() {
+  if (fetchTimeout) clearTimeout(fetchTimeout);
+  
+  fetchTimeout = setTimeout(() => {
+    const keyword = document.getElementById('postSearchInput') ? document.getElementById('postSearchInput').value.trim() : '';
+    const sort = document.getElementById('postSortSelect') ? document.getElementById('postSortSelect').value : 'newest';
+    
+    const fd = new FormData();
+    fd.append('action', 'get_publications');
+    fd.append('keyword', keyword);
+    fd.append('sort', sort);
+    
+    fetch(BASE_URL, { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' }, body: fd })
+      .then(r => r.json())
+      .then(data => {
+        if (data.success) {
+          displayPosts(data.posts);
+        }
+      })
+      .catch(console.error);
+  }, 300); // debounce for 300ms
+}
+
 function displayPosts(posts) {
   const container = document.getElementById('postsContainer');
   container.innerHTML = '';
+  
+  if (!posts || posts.length === 0) {
+    container.innerHTML = '<div style="padding:40px 20px; text-align:center; color:var(--text-3); background:var(--bg-card); border-radius:var(--radius-lg); border:1px solid var(--border);">No publications found.</div>';
+    return;
+  }
+  
   posts.forEach(post => {
     const isOwner = post.user_id === CURRENT_USER_ID;
+    const userLiked = currentUserLikedPosts[post.id] || false;
+    const likeBtnClass = userLiked ? 'liked' : '';
+    const likeBtnColor = userLiked ? 'var(--blue)' : 'var(--text-3)';
+    const likeBtnBg = userLiked ? 'var(--blue-light)' : 'none';
+    
     container.innerHTML += `
     <div class="pub-post-card" data-post-id="${post.id}" data-user-id="${post.user_id}">
       <div class="pub-post-header">
@@ -559,7 +658,9 @@ function displayPosts(posts) {
         ${post.image_url ? `<div class="pub-post-image"><img src="${post.image_url}" style="max-width:100%;border-radius:10px;margin-top:10px;"></div>` : ''}
       </div>
       <div class="pub-post-actions">
-        <button class="pub-action-btn like-btn" onclick="toggleLike(this,${post.id},${post.likes})">
+        <button class="pub-action-btn like-btn ${likeBtnClass}" 
+                onclick="toggleLike(this,${post.id},${post.likes})"
+                style="color:${likeBtnColor};background:${likeBtnBg}">
           👍 <span class="like-count-${post.id}">${post.likes}</span> Likes
         </button>
         <button class="pub-action-btn" onclick="toggleComments(${post.id})">💬 <span class="comment-count-${post.id}">0</span> Comments</button>
@@ -574,6 +675,11 @@ function displayPosts(posts) {
         <div class="pub-comments-list" id="comments-list-${post.id}"></div>
       </div>
     </div>`;
+  });
+  
+  // Load comments for each post
+  posts.forEach(post => {
+    loadComments(post.id);
   });
 }
 
@@ -611,10 +717,10 @@ function escapeAttr(text) {
 document.addEventListener('DOMContentLoaded', function () {
   const ta = document.getElementById('newPostText');
   if (ta) autoResize(ta);
-  document.querySelectorAll('.like-btn').forEach(btn => {
-    const card = btn.closest('.pub-post-card');
-    if (card) postLikeStates[card.dataset.postId] = btn.classList.contains('liked');
-  });
+  
+  // Load user's liked posts status
+  loadUserLikes();
+  
   window.addEventListener('click', function (e) {
     ['editModal','shareModal','validationModal','confirmModal','postOptionsModal','editCommentModal'].forEach(id => {
       const m = document.getElementById(id);

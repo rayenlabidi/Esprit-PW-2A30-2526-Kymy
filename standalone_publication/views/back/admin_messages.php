@@ -2,11 +2,52 @@
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
+// Prevent controller AJAX handlers from running - this page has its own
+define('ADMIN_AJAX_HANDLER', true);
+
 require_once __DIR__ . '/../../controllers/MessageC.php';
 require_once __DIR__ . '/../../controllers/PublicationC.php';
 
 $controller = new MessageC();
 $pubController = new PublicationC();
+
+// Handle AJAX requests
+$isAjax = isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && $isAjax) {
+    header('Content-Type: application/json');
+    $action = $_POST['action'] ?? '';
+    $response = ['success' => false];
+
+    switch ($action) {
+        case 'add_user':
+            if (empty($_POST['user_id']) || empty($_POST['name']) || empty($_POST['init'])) {
+                $response = ['success' => false, 'error' => 'All fields are required'];
+            } else {
+                $result = $controller->AddUser($_POST['user_id'], $_POST['name'], $_POST['init'], $_POST['avatar'], $_POST['role']);
+                $response = ['success' => (bool)$result];
+            }
+            break;
+        case 'edit_message_admin':
+            $result = $controller->EditMessageAdmin($_POST['message_id'], trim($_POST['content']));
+            $response = ['success' => (bool)$result];
+            break;
+        case 'delete_message_admin':
+            $result = $controller->DeleteMessageAdmin($_POST['message_id']);
+            $response = ['success' => (bool)$result];
+            break;
+        case 'unflag_message':
+            $result = $controller->UnflagMessage($_POST['message_id']);
+            $response = ['success' => (bool)$result];
+            break;
+        default:
+            $response = ['success' => false, 'error' => 'Unknown action: ' . $action];
+            break;
+    }
+
+    echo json_encode($response);
+    exit;
+}
+
 $messages = $controller->GetAllMessagesAdmin();
 $users = $controller->GetAllUsers();
 $posts = $pubController->ListePublications();
@@ -130,6 +171,13 @@ $error = '';
         font-size: 22px;
     }
 }
+
+.flagged-row {
+    background-color: #fff0f0; /* light red background */
+}
+.flagged-row:hover {
+    background-color: #ffe0e0 !important;
+}
 </style>
 </head>
 <body>
@@ -232,11 +280,11 @@ $error = '';
       <div class="admin-table-wrapper">
         <table class="admin-table" id="messagesTable">
           <thead>
-            <tr><th>ID</th><th>From</th><th>To</th><th>Message</th><th>Read</th><th>Created</th><th>Actions</th></tr>
+            <tr><th>ID</th><th>From</th><th>To</th><th>Message</th><th>Read</th><th>Status</th><th>Created</th><th>Actions</th></tr>
           </thead>
           <tbody id="messagesTableBody">
             <?php foreach($messages as $msg): ?>
-            <tr>
+            <tr class="<?php echo $msg['is_flagged'] ? 'flagged-row' : ''; ?>">
               <td><?php echo $msg['id']; ?></td>
               <td>
                 <div class="author-cell">
@@ -252,9 +300,19 @@ $error = '';
               </td>
               <td class="content-cell"><?php echo htmlspecialchars(substr($msg['content'], 0, 80)) . (strlen($msg['content']) > 80 ? '...' : ''); ?></td>
               <td><?php echo $msg['is_read'] ? '✅ Yes' : '❌ No'; ?></td>
+              <td>
+                <?php if ($msg['is_flagged']): ?>
+                  <span style="background:var(--red-light); color:var(--red); padding:4px 8px; border-radius:4px; font-size:12px; font-weight:bold;">FLAGGED</span>
+                <?php else: ?>
+                  <span style="color:var(--text-3); font-size:12px;">Normal</span>
+                <?php endif; ?>
+              </td>
               <td><?php echo date('M d, Y H:i', strtotime($msg['created_at'])); ?></td>
               <td>
                 <div class="action-buttons">
+                  <?php if ($msg['is_flagged']): ?>
+                    <button class="btn-edit" onclick="adminUnflagMessage(<?php echo $msg['id']; ?>)" style="background:var(--green-light); color:var(--green);">✅ Safe</button>
+                  <?php endif; ?>
                   <button class="btn-edit" onclick="adminEditMessage(<?php echo $msg['id']; ?>, '<?php echo htmlspecialchars(addslashes($msg['content'])); ?>')">✏️ Edit</button>
                   <button class="btn-delete" onclick="adminDeleteMessage(<?php echo $msg['id']; ?>)">🗑️ Delete</button>
                 </div>
@@ -439,6 +497,29 @@ function confirmAdminDelete() {
             showAdminMessage('Error deleting message', true);
         }
     });
+}
+
+function adminUnflagMessage(id) {
+    if (confirm('Are you sure you want to mark this message as safe?')) {
+        const formData = new FormData();
+        formData.append('action', 'unflag_message');
+        formData.append('message_id', id);
+        
+        fetch(window.location.href, {
+            method: 'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAdminMessage('Message marked as safe!');
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showAdminMessage('Error updating message', true);
+            }
+        });
+    }
 }
 
 function closeAdminEditModal() {

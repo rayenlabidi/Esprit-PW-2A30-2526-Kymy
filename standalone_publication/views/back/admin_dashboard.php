@@ -2,6 +2,9 @@
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
+// Prevent controller AJAX handlers from running
+define('ADMIN_AJAX_HANDLER', true);
+
 require_once __DIR__ . '/../../controllers/PublicationC.php';
 require_once __DIR__ . '/../../controllers/MessageC.php';
 

@@ -5,13 +5,31 @@ include_once __DIR__ . '/../models/comment.php';
 
 class PublicationC
 {
+    // ==================== PUBLICATIONS ====================
     
-    public function ListePublications()
+    public function ListePublications($keyword = '', $sort = 'newest')
     {
         $db = config::getConnexion();
         try {
-            $liste = $db->query('SELECT * FROM publication ORDER BY created_at DESC');
-            return $liste->fetchAll();
+            $sql = "SELECT * FROM publication WHERE 1=1";
+            $params = [];
+            
+            if (!empty($keyword)) {
+                $sql .= " AND (content LIKE :keyword OR user_name LIKE :keyword)";
+                $params['keyword'] = '%' . $keyword . '%';
+            }
+            
+            if ($sort === 'most_liked') {
+                $sql .= " ORDER BY likes DESC";
+            } else if ($sort === 'oldest') {
+                $sql .= " ORDER BY created_at ASC";
+            } else {
+                $sql .= " ORDER BY created_at DESC";
+            }
+            
+            $query = $db->prepare($sql);
+            $query->execute($params);
+            return $query->fetchAll();
         } catch (Exception $e) {
             die("Error: " . $e->getMessage());
         }
@@ -25,6 +43,19 @@ class PublicationC
             $query = $db->prepare($sql);
             $query->execute(['user_id' => $user_id]);
             return $query->fetchAll();
+        } catch (Exception $e) {
+            die("Error: " . $e->getMessage());
+        }
+    }
+
+    public function GetPublicationById($id)
+    {
+        $db = config::getConnexion();
+        try {
+            $sql = "SELECT * FROM publication WHERE id = :id";
+            $query = $db->prepare($sql);
+            $query->execute(['id' => $id]);
+            return $query->fetch();
         } catch (Exception $e) {
             die("Error: " . $e->getMessage());
         }
@@ -48,7 +79,7 @@ class PublicationC
             ]);
             return $db->lastInsertId();
         } catch (Exception $e) {
-            echo 'Erreur: ' . $e->getMessage();
+            error_log('Erreur: ' . $e->getMessage());
             return false;
         }
     }
@@ -61,9 +92,29 @@ class PublicationC
         $req->bindValue(':id', $id);
         $req->bindValue(':user_id', $user_id);
         try {
-            return $req->execute();
+            $req->execute();
+            return $req->rowCount() > 0;
         } catch (Exception $e) {
-            die('Erreur: ' . $e->getMessage());
+            error_log('DeletePublication error: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Admin delete - bypasses user_id ownership check
+     */
+    public function DeletePublicationAdmin($id)
+    {
+        $sql = "DELETE FROM publication WHERE id = :id";
+        $db = config::getConnexion();
+        $req = $db->prepare($sql);
+        $req->bindValue(':id', $id);
+        try {
+            $req->execute();
+            return $req->rowCount() > 0;
+        } catch (Exception $e) {
+            error_log('DeletePublicationAdmin error: ' . $e->getMessage());
+            return false;
         }
     }
 
@@ -87,30 +138,179 @@ class PublicationC
         }
     }
 
-    public function UpdateLikes($id, $likes)
+    // ==================== SMART LIKE SYSTEM ====================
+    
+    /**
+     * Toggle like on a publication (smart like - can only like once)
+     * @param int $publication_id The publication ID
+     * @param string $user_id The user ID liking the publication
+     * @return array ['liked' => bool, 'total_likes' => int]
+     */
+    public function TogglePublicationLike($publication_id, $user_id)
     {
+        $db = config::getConnexion();
         try {
-            $db = config::getConnexion();
-            $likes = max(0, (int)$likes);
-            $query = $db->prepare('UPDATE publication SET likes = :likes WHERE id = :id');
-            $query->execute(['likes' => $likes, 'id' => $id]);
-            return true;
+            // Check if user already liked this publication
+            $checkSql = "SELECT id FROM publication_likes WHERE publication_id = :pub_id AND user_id = :user_id";
+            $checkQuery = $db->prepare($checkSql);
+            $checkQuery->execute(['pub_id' => $publication_id, 'user_id' => $user_id]);
+            $existing = $checkQuery->fetch();
+            
+            if ($existing) {
+                // User already liked - remove like (UNLIKE)
+                $deleteSql = "DELETE FROM publication_likes WHERE publication_id = :pub_id AND user_id = :user_id";
+                $deleteQuery = $db->prepare($deleteSql);
+                $deleteQuery->execute(['pub_id' => $publication_id, 'user_id' => $user_id]);
+                
+                // Count first (MySQL does not allow subquery on the same table being updated)
+                $countSql = "SELECT COUNT(*) as cnt FROM publication_likes WHERE publication_id = :pub_id";
+                $countQuery = $db->prepare($countSql);
+                $countQuery->execute(['pub_id' => $publication_id]);
+                $newCount = (int)$countQuery->fetch()['cnt'];
+                
+                // Then update
+                $updateSql = "UPDATE publication SET likes = :cnt WHERE id = :pub_id";
+                $updateQuery = $db->prepare($updateSql);
+                $updateQuery->execute(['cnt' => $newCount, 'pub_id' => $publication_id]);
+                
+                return ['liked' => false, 'total_likes' => $newCount];
+            } else {
+                // User hasn't liked - add like
+                $insertSql = "INSERT INTO publication_likes (publication_id, user_id) VALUES (:pub_id, :user_id)";
+                $insertQuery = $db->prepare($insertSql);
+                $insertQuery->execute(['pub_id' => $publication_id, 'user_id' => $user_id]);
+                
+                // Count first (MySQL does not allow subquery on the same table being updated)
+                $countSql = "SELECT COUNT(*) as cnt FROM publication_likes WHERE publication_id = :pub_id";
+                $countQuery = $db->prepare($countSql);
+                $countQuery->execute(['pub_id' => $publication_id]);
+                $newCount = (int)$countQuery->fetch()['cnt'];
+                
+                // Then update
+                $updateSql = "UPDATE publication SET likes = :cnt WHERE id = :pub_id";
+                $updateQuery = $db->prepare($updateSql);
+                $updateQuery->execute(['cnt' => $newCount, 'pub_id' => $publication_id]);
+                
+                return ['liked' => true, 'total_likes' => $newCount];
+            }
+        } catch (Exception $e) {
+            error_log("TogglePublicationLike error: " . $e->getMessage());
+            return ['liked' => false, 'total_likes' => 0, 'error' => $e->getMessage()];
+        }
+    }
+    
+    /**
+     * Check if a user has liked a publication
+     */
+    public function HasUserLikedPublication($publication_id, $user_id)
+    {
+        $db = config::getConnexion();
+        try {
+            $sql = "SELECT id FROM publication_likes WHERE publication_id = :pub_id AND user_id = :user_id";
+            $query = $db->prepare($sql);
+            $query->execute(['pub_id' => $publication_id, 'user_id' => $user_id]);
+            return $query->fetch() !== false;
+        } catch (Exception $e) {
+            return false;
+        }
+    }
+    
+    /**
+     * Get like statuses for multiple publications
+     */
+    public function GetUserPublicationLikes($user_id, $publication_ids = [])
+    {
+        if (empty($publication_ids)) return [];
+        
+        $db = config::getConnexion();
+        try {
+            $placeholders = implode(',', array_fill(0, count($publication_ids), '?'));
+            $sql = "SELECT publication_id FROM publication_likes WHERE user_id = ? AND publication_id IN ($placeholders)";
+            $params = array_merge([$user_id], $publication_ids);
+            $query = $db->prepare($sql);
+            $query->execute($params);
+            $results = $query->fetchAll();
+            return array_column($results, 'publication_id');
+        } catch (Exception $e) {
+            return [];
+        }
+    }
+    
+    // ==================== COMMENT LIKES (Smart Like) ====================
+    
+    /**
+     * Toggle like on a comment (smart like - can only like once)
+     */
+    public function ToggleCommentLike($comment_id, $user_id)
+    {
+        $db = config::getConnexion();
+        try {
+            // Check if user already liked this comment
+            $checkSql = "SELECT id FROM comment_likes WHERE comment_id = :comment_id AND user_id = :user_id";
+            $checkQuery = $db->prepare($checkSql);
+            $checkQuery->execute(['comment_id' => $comment_id, 'user_id' => $user_id]);
+            $existing = $checkQuery->fetch();
+            
+            if ($existing) {
+                // Remove like
+                $deleteSql = "DELETE FROM comment_likes WHERE comment_id = :comment_id AND user_id = :user_id";
+                $deleteQuery = $db->prepare($deleteSql);
+                $deleteQuery->execute(['comment_id' => $comment_id, 'user_id' => $user_id]);
+                
+                // Count first (MySQL does not allow subquery on the same table being updated)
+                $countSql = "SELECT COUNT(*) as cnt FROM comment_likes WHERE comment_id = :comment_id";
+                $countQuery = $db->prepare($countSql);
+                $countQuery->execute(['comment_id' => $comment_id]);
+                $newCount = (int)$countQuery->fetch()['cnt'];
+                
+                // Then update
+                $updateSql = "UPDATE comments SET likes = :cnt WHERE id = :comment_id";
+                $updateQuery = $db->prepare($updateSql);
+                $updateQuery->execute(['cnt' => $newCount, 'comment_id' => $comment_id]);
+                
+                return ['liked' => false, 'total_likes' => $newCount];
+            } else {
+                // Add like
+                $insertSql = "INSERT INTO comment_likes (comment_id, user_id) VALUES (:comment_id, :user_id)";
+                $insertQuery = $db->prepare($insertSql);
+                $insertQuery->execute(['comment_id' => $comment_id, 'user_id' => $user_id]);
+                
+                // Count first (MySQL does not allow subquery on the same table being updated)
+                $countSql = "SELECT COUNT(*) as cnt FROM comment_likes WHERE comment_id = :comment_id";
+                $countQuery = $db->prepare($countSql);
+                $countQuery->execute(['comment_id' => $comment_id]);
+                $newCount = (int)$countQuery->fetch()['cnt'];
+                
+                // Then update
+                $updateSql = "UPDATE comments SET likes = :cnt WHERE id = :comment_id";
+                $updateQuery = $db->prepare($updateSql);
+                $updateQuery->execute(['cnt' => $newCount, 'comment_id' => $comment_id]);
+                
+                return ['liked' => true, 'total_likes' => $newCount];
+            }
+        } catch (Exception $e) {
+            error_log("ToggleCommentLike error: " . $e->getMessage());
+            return ['liked' => false, 'total_likes' => 0, 'error' => $e->getMessage()];
+        }
+    }
+    
+    /**
+     * Check if user has liked a comment
+     */
+    public function HasUserLikedComment($comment_id, $user_id)
+    {
+        $db = config::getConnexion();
+        try {
+            $sql = "SELECT id FROM comment_likes WHERE comment_id = :comment_id AND user_id = :user_id";
+            $query = $db->prepare($sql);
+            $query->execute(['comment_id' => $comment_id, 'user_id' => $user_id]);
+            return $query->fetch() !== false;
         } catch (Exception $e) {
             return false;
         }
     }
 
-    public function GetPublicationById($id)
-    {
-        $db = config::getConnexion();
-        try {
-            $query = $db->prepare('SELECT * FROM publication WHERE id = :id');
-            $query->execute(['id' => $id]);
-            return $query->fetch();
-        } catch (Exception $e) {
-            die("Error: " . $e->getMessage());
-        }
-    }
+    // ==================== COMMENTS ====================
 
     public function ListeComments($publication_id)
     {
@@ -155,28 +355,25 @@ class PublicationC
         }
     }
 
-    public function UpdateCommentLikes($comment_id, $likes)
-    {
-        try {
-            $db = config::getConnexion();
-            $likes = max(0, (int)$likes);
-            $query = $db->prepare('UPDATE comments SET likes = :likes WHERE id = :id');
-            return $query->execute(['likes' => $likes, 'id' => $comment_id]);
-        } catch (Exception $e) {
-            return false;
-        }
-    }
-
     public function DeleteComment($comment_id)
     {
-        $sql = "DELETE FROM comments WHERE id = :id";
         $db = config::getConnexion();
-        $req = $db->prepare($sql);
-        $req->bindValue(':id', $comment_id);
         try {
-            return $req->execute();
+            // First delete any child replies
+            $sqlReplies = "DELETE FROM comments WHERE parent_id = :id";
+            $reqReplies = $db->prepare($sqlReplies);
+            $reqReplies->bindValue(':id', $comment_id);
+            $reqReplies->execute();
+
+            // Then delete the comment itself
+            $sql = "DELETE FROM comments WHERE id = :id";
+            $req = $db->prepare($sql);
+            $req->bindValue(':id', $comment_id);
+            $req->execute();
+            return $req->rowCount() > 0;
         } catch (Exception $e) {
-            die('Erreur: ' . $e->getMessage());
+            error_log('DeleteComment error: ' . $e->getMessage());
+            return false;
         }
     }
 
@@ -215,12 +412,6 @@ class PublicationC
 
     public function UploadImage($file)
     {
-        $target_dir = __DIR__ . '/../uploads/';
-        
-        if (!file_exists($target_dir)) {
-            mkdir($target_dir, 0777, true);
-        }
-        
         $file_extension = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
         $allowed_extensions = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
         
@@ -232,19 +423,22 @@ class PublicationC
             return ['success' => false, 'error' => 'File is too large. Max 5MB.'];
         }
         
-        $new_filename = uniqid() . '.' . $file_extension;
-        $target_file = $target_dir . $new_filename;
-        
-        if (move_uploaded_file($file['tmp_name'], $target_file)) {
-            return ['success' => true, 'filename' => '/workify/standalone_publication/uploads/' . $new_filename];
+        $imageData = file_get_contents($file['tmp_name']);
+        if ($imageData === false) {
+            return ['success' => false, 'error' => 'Failed to read image file.'];
         }
         
-        return ['success' => false, 'error' => 'Failed to upload image'];
+        $base64 = base64_encode($imageData);
+        $mime = $file['type'];
+        $base64String = 'data:' . $mime . ';base64,' . $base64;
+        
+        return ['success' => true, 'filename' => $base64String];
     }
 }
 
 // ==================== AJAX HANDLER ====================
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WITH'])) {
+// Run AJAX handler unless the including page has its own handler (e.g., admin.php)
+if (!defined('ADMIN_AJAX_HANDLER') && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WITH'])) {
     header('Content-Type: application/json');
     
     $controller = new PublicationC();
@@ -273,15 +467,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
             break;
             
         case 'delete':
-            $result = $controller->DeletePublication($_POST['id'], $_POST['user_id']);
+            $user_id = $_POST['user_id'] ?? null;
+            if (!$user_id) {
+                $post = $controller->GetPublicationById($_POST['id']);
+                if ($post) {
+                    $user_id = $post['user_id'];
+                }
+            }
+            $result = false;
+            if ($user_id) {
+                $result = $controller->DeletePublication($_POST['id'], $user_id);
+            }
             $response = ['success' => $result];
             break;
             
-        case 'update_likes':
-            $result = $controller->UpdateLikes($_POST['id'], $_POST['likes']);
-            $response = ['success' => $result, 'likes' => $_POST['likes']];
+        // ========== SMART LIKE ACTIONS ==========
+        case 'toggle_like':
+            $result = $controller->TogglePublicationLike($_POST['publication_id'], $_POST['user_id']);
+            $response = ['success' => true, 'liked' => $result['liked'], 'total_likes' => $result['total_likes']];
+            if (isset($result['error'])) {
+                $response['success'] = false;
+                $response['error'] = $result['error'];
+            }
             break;
             
+        case 'toggle_comment_like':
+            $result = $controller->ToggleCommentLike($_POST['comment_id'], $_POST['user_id']);
+            $response = ['success' => true, 'liked' => $result['liked'], 'total_likes' => $result['total_likes']];
+            if (isset($result['error'])) {
+                $response['success'] = false;
+                $response['error'] = $result['error'];
+            }
+            break;
+            
+        case 'check_like_status':
+            $liked = $controller->HasUserLikedPublication($_POST['publication_id'], $_POST['user_id']);
+            $response = ['success' => true, 'liked' => $liked];
+            break;
+            
+        case 'get_user_likes':
+            $publication_ids = isset($_POST['publication_ids']) ? json_decode($_POST['publication_ids'], true) : [];
+            $liked_ids = $controller->GetUserPublicationLikes($_POST['user_id'], $publication_ids);
+            $response = ['success' => true, 'liked_publications' => $liked_ids];
+            break;
+            
+        // ========== COMMENT ACTIONS ==========
         case 'get_comments':
             $comments = $controller->ListeComments($_POST['publication_id']);
             $response = ['success' => true, 'comments' => $comments];
@@ -301,11 +531,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
             $response = ['success' => $result];
             break;
             
-        case 'update_comment_likes':
-            $result = $controller->UpdateCommentLikes($_POST['comment_id'], $_POST['likes']);
-            $response = ['success' => $result, 'likes' => $_POST['likes']];
-            break;
-            
         case 'delete_comment':
             $result = $controller->DeleteComment($_POST['comment_id']);
             $response = ['success' => $result];
@@ -318,6 +543,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
             
         case 'get_user_posts':
             $posts = $controller->ListePublicationsByUser($_POST['user_id']);
+            $response = ['success' => true, 'posts' => $posts];
+            break;
+            
+        case 'get_publications':
+            $keyword = isset($_POST['keyword']) ? $_POST['keyword'] : '';
+            $sort = isset($_POST['sort']) ? $_POST['sort'] : 'newest';
+            $posts = $controller->ListePublications($keyword, $sort);
             $response = ['success' => true, 'posts' => $posts];
             break;
             

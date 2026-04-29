@@ -13,6 +13,7 @@ class message
     private $publication_id;  // NEW: link to publication
     private $content;
     private $is_read;
+    private $is_flagged;
     private $created_at;
     private $updated_at;
 
@@ -29,6 +30,7 @@ class message
         $this->receiver_avatar = $receiver_avatar;
         $this->publication_id = $publication_id;
         $this->is_read = 0;
+        $this->is_flagged = 0;
     }
 
     // Getters
@@ -44,6 +46,7 @@ class message
     public function getPublicationId() { return $this->publication_id; }  // NEW
     public function getContent() { return $this->content; }
     public function getIsRead() { return $this->is_read; }
+    public function getIsFlagged() { return $this->is_flagged; }
     public function getCreatedAt() { return $this->created_at; }
     public function getUpdatedAt() { return $this->updated_at; }
 
@@ -60,6 +63,7 @@ class message
     public function setPublicationId($publication_id) { $this->publication_id = $publication_id; }  // NEW
     public function setContent($content) { $this->content = $content; }
     public function setIsRead($is_read) { $this->is_read = $is_read; }
+    public function setIsFlagged($is_flagged) { $this->is_flagged = $is_flagged; }
     public function setCreatedAt($created_at) { $this->created_at = $created_at; }
     public function setUpdatedAt($updated_at) { $this->updated_at = $updated_at; }
 }

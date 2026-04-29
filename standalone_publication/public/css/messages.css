@@ -573,3 +573,33 @@
     opacity: 1;
   }
 }
+/* Add to messages.css - unread badge on avatar */
+.badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background: var(--red);
+  color: white;
+  font-size: 10px;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  z-index: 10;
+}
+
+.msg-conv-avatar-wrap {
+  position: relative;
+}
+
+/* Read status indicator */
+.read-status-read {
+  color: var(--green) !important;
+}
+
+.read-status-sent {
+  color: var(--text-4) !important;
+}

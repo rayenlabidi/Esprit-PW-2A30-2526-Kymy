@@ -339,3 +339,149 @@ if (editCommentContentInput) {
         }
     });
 }
+
+// Toast notification function
+function showAdminToast(message, type) {
+    // Remove existing toasts
+    const existing = document.querySelectorAll('.admin-toast');
+    existing.forEach(t => t.remove());
+
+    const toast = document.createElement('div');
+    toast.className = 'admin-toast';
+    toast.style.cssText = `
+        position: fixed; top: 20px; right: 20px; z-index: 99999;
+        padding: 14px 24px; border-radius: 10px; font-size: 14px; font-weight: 600;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15); animation: slideInToast 0.3s ease;
+        display: flex; align-items: center; gap: 10px; max-width: 400px;
+    `;
+    if (type === 'success') {
+        toast.style.background = '#10b981';
+        toast.style.color = '#fff';
+        toast.innerHTML = '✅ ' + message;
+    } else {
+        toast.style.background = '#ef4444';
+        toast.style.color = '#fff';
+        toast.innerHTML = '❌ ' + message;
+    }
+    document.body.appendChild(toast);
+
+    // Add animation keyframes if not present
+    if (!document.getElementById('toastAnimStyle')) {
+        const style = document.createElement('style');
+        style.id = 'toastAnimStyle';
+        style.textContent = `
+            @keyframes slideInToast {
+                from { opacity: 0; transform: translateX(60px); }
+                to { opacity: 1; transform: translateX(0); }
+            }
+            @keyframes slideOutToast {
+                from { opacity: 1; transform: translateX(0); }
+                to { opacity: 0; transform: translateX(60px); }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    setTimeout(() => {
+        toast.style.animation = 'slideOutToast 0.3s ease forwards';
+        setTimeout(() => toast.remove(), 350);
+    }, 2000);
+}
+
+// Delete Modal Logic
+let deleteModalTarget = null;
+let deleteModalId = null;
+
+function adminDeletePublication(id) {
+    deleteModalTarget = 'publication';
+    deleteModalId = id;
+    document.getElementById('deleteModalTitle').textContent = 'Delete Publication';
+    document.getElementById('adminDeleteModal').style.display = 'block';
+}
+
+function adminDeleteComment(id) {
+    deleteModalTarget = 'comment';
+    deleteModalId = id;
+    document.getElementById('deleteModalTitle').textContent = 'Delete Comment';
+    document.getElementById('adminDeleteModal').style.display = 'block';
+}
+
+function closeAdminDeleteModal() {
+    document.getElementById('adminDeleteModal').style.display = 'none';
+    deleteModalTarget = null;
+    deleteModalId = null;
+}
+
+const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+if (confirmDeleteBtn) {
+    confirmDeleteBtn.addEventListener('click', function() {
+        if (!deleteModalTarget || !deleteModalId) {
+            showAdminToast('Error: No item selected for deletion', 'error');
+            closeAdminDeleteModal();
+            return;
+        }
+
+        const formData = new FormData();
+
+        if (deleteModalTarget === 'publication') {
+            formData.append('action', 'delete');
+            formData.append('id', deleteModalId);
+        } else if (deleteModalTarget === 'comment') {
+            formData.append('action', 'delete_comment');
+            formData.append('comment_id', deleteModalId);
+        }
+
+        // Disable button to prevent double-click
+        this.disabled = true;
+        this.textContent = 'Deleting...';
+
+        // Use the admin.php URL directly (strip any query params)
+        const adminUrl = window.location.pathname;
+
+        fetch(adminUrl, {
+            method: 'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            body: formData
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Server responded with status: ' + response.status);
+            }
+            return response.text();
+        })
+        .then(text => {
+            console.log('Delete response:', text);
+            let data;
+            try {
+                data = JSON.parse(text);
+            } catch (e) {
+                console.error('Invalid JSON response:', text);
+                throw new Error('Server returned invalid response');
+            }
+            if (data.success) {
+                closeAdminDeleteModal();
+                showAdminToast('Deleted successfully!', 'success');
+                setTimeout(() => location.reload(), 800);
+            } else {
+                showAdminToast('Error: ' + (data.error || 'Could not delete item'), 'error');
+                // Re-enable button
+                confirmDeleteBtn.disabled = false;
+                confirmDeleteBtn.textContent = 'Delete';
+            }
+        })
+        .catch(error => {
+            console.error('Delete error:', error);
+            showAdminToast('Network error: ' + error.message, 'error');
+            // Re-enable button
+            confirmDeleteBtn.disabled = false;
+            confirmDeleteBtn.textContent = 'Delete';
+        });
+    });
+}
+
+window.addEventListener('click', function(event) {
+    const deleteModal = document.getElementById('adminDeleteModal');
+    if (event.target == deleteModal) {
+        closeAdminDeleteModal();
+    }
+});

@@ -1,6 +1,5 @@
 /* ============================================================
-   messages.js  –  Workify Messaging
-   Includes publication_id when sending from a post
+   messages.js  –  Workify Messaging with Read System
    ============================================================ */
 
 'use strict';
@@ -12,7 +11,41 @@ let activeConvAvatar      = '';
 let conversations         = [];
 let currentEditMessageId  = null;
 let pollTimer             = null;
-let pendingPublicationId  = POST_ID_FROM_URL; // Store the post ID from URL
+let pendingPublicationId  = POST_ID_FROM_URL;
+
+const BAD_WORDS = ['badword1', 'badword2', 'spam', 'scam', 'abuse'];
+
+function handleInputBadWords(ta) {
+  const content = ta.value.toLowerCase();
+  let foundWord = null;
+  for (let word of BAD_WORDS) {
+    if (content.includes(word)) {
+      foundWord = word;
+      break;
+    }
+  }
+  
+  let warningDiv = document.getElementById('badWordWarning');
+  if (foundWord) {
+    if (!warningDiv) {
+      warningDiv = document.createElement('div');
+      warningDiv.id = 'badWordWarning';
+      warningDiv.style.color = 'var(--red)';
+      warningDiv.style.fontSize = '12px';
+      warningDiv.style.marginBottom = '4px';
+      ta.parentNode.insertBefore(warningDiv, ta);
+    }
+    warningDiv.innerHTML = `Warning: The word "<span style="color:red; font-weight:bold;">${foundWord}</span>" is not allowed. Your message will be flagged.`;
+    ta.style.borderColor = 'var(--red)';
+    ta.style.backgroundColor = '#fff0f0';
+  } else {
+    if (warningDiv) {
+      warningDiv.remove();
+    }
+    ta.style.borderColor = '';
+    ta.style.backgroundColor = '';
+  }
+}
 
 function showValidationModal(errors) {
   const modal = document.getElementById('validationModal');
@@ -85,6 +118,7 @@ function renderConversations(filter) {
          onclick="openConversation('${c.other_user_id}','${escHtml(c.other_user_name || '')}','${escHtml(c.other_user_init || '')}','${escHtml(c.other_user_avatar || 'av-blue')}')">
       <div class="msg-conv-avatar-wrap">
         <div class="wf-avatar wf-avatar-40 ${c.other_user_avatar || 'av-blue'}">${escHtml(c.other_user_init || '?')}</div>
+        ${parseInt(c.unread_count) > 0 ? '<span class="badge">' + c.unread_count + '</span>' : ''}
       </div>
       <div class="msg-conv-body">
         <div class="msg-conv-row1">
@@ -118,6 +152,7 @@ function openConversation(otherUserId, name, init, avatar) {
       <div class="wf-avatar wf-avatar-40 ${avatar}">${escHtml(init)}</div>
       <div>
         <div class="msg-chat-name">${escHtml(name)}</div>
+        <div style="font-size:11px; color:var(--text-4);" id="readStatus">Online</div>
       </div>
     </div>
     <div>
@@ -152,7 +187,10 @@ function loadMessages(otherUserId, silent) {
       if (activeConvId === otherUserId) {
         if (data.success && data.messages) {
           renderMessages(data.messages);
-          if (!silent) loadConversations();
+          if (!silent) {
+            loadConversations();
+            updateReadStatus(data.messages);
+          }
         } else {
           renderMessages([]);
         }
@@ -162,6 +200,27 @@ function loadMessages(otherUserId, silent) {
       console.error('Load messages error:', error);
       if (activeConvId === otherUserId) renderMessages([]);
     });
+}
+
+// Update read status indicator
+function updateReadStatus(messages) {
+  const statusEl = document.getElementById('readStatus');
+  if (!statusEl) return;
+  
+  // Find last message sent by current user that hasn't been read yet
+  const lastSentMessage = [...messages].reverse().find(msg => msg.sender_id === CURRENT_USER_ID);
+  if (lastSentMessage) {
+    if (lastSentMessage.is_read == 1) {
+      statusEl.innerHTML = '✓✓ Read';
+      statusEl.style.color = 'var(--green)';
+    } else {
+      statusEl.innerHTML = '✓ Sent';
+      statusEl.style.color = 'var(--text-4)';
+    }
+  } else {
+    statusEl.innerHTML = 'Online';
+    statusEl.style.color = 'var(--text-4)';
+  }
 }
 
 function renderMessages(messages) {
@@ -175,11 +234,14 @@ function renderMessages(messages) {
   }
   messages.forEach(msg => {
     const isMine = msg.sender_id === CURRENT_USER_ID;
+    const isRead = msg.is_read == 1;
+    const readIndicator = (isMine && isRead) ? '<span style="font-size:10px; margin-left:6px; color:var(--green);">✓✓</span>' : 
+                          (isMine && !isRead) ? '<span style="font-size:10px; margin-left:6px; color:var(--text-4);">✓</span>' : '';
     const row    = document.createElement('div');
     row.className = 'msg-row ' + (isMine ? 'mine' : 'their');
     row.dataset.messageId = msg.id;
     const editAttr = isMine ? `ondblclick="openEditMessageModal(${msg.id}, '${escAttr(msg.content)}')"` : '';
-    const bubble   = `<div class="msg-bubble" ${editAttr} title="${isMine ? 'Double-click to edit' : ''}">${escHtml(msg.content)}</div>`;
+    const bubble   = `<div class="msg-bubble" ${editAttr} title="${isMine ? 'Double-click to edit' : ''}">${escHtml(msg.content)}${readIndicator}</div>`;
     const time     = `<div class="msg-bubble-time">${formatTime(msg.created_at)}</div>`;
     if (isMine) {
       row.innerHTML = `<div class="msg-bubble-stack">${bubble}${time}<button class="msg-delete-btn" onclick="confirmDeleteMessage(${msg.id})">Delete</button></div>`;
@@ -204,6 +266,7 @@ function sendMessage() {
     function () { 
       ta.value = ''; 
       ta.style.height = 'auto'; 
+      handleInputBadWords(ta);
       loadMessages(activeConvId);
       loadConversations();
     });
@@ -222,7 +285,6 @@ function _doSendMessage(senderId, receiverId, senderName, receiverName,
   fd.append('sender_avatar',   senderAvatar);
   fd.append('receiver_avatar', receiverAvatar);
   fd.append('content',         content);
-  // Include publication_id if coming from a post
   if (pendingPublicationId) {
     fd.append('publication_id', pendingPublicationId);
   }
@@ -231,7 +293,6 @@ function _doSendMessage(senderId, receiverId, senderName, receiverName,
     .then(data => {
       if (data.success) { 
         if (onSuccess) onSuccess();
-        // Clear the pending publication_id after first message
         pendingPublicationId = null;
       }
       else showValidationModal([data.error || 'Error sending message']);
@@ -246,6 +307,7 @@ function handleSendKey(e) {
 function autoResizeTA(el) {
   el.style.height = 'auto';
   el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+  handleInputBadWords(el);
 }
 
 function openEditMessageModal(messageId, currentText) {

@@ -2,6 +2,9 @@
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
+// Prevent controller AJAX handlers from running - admin.php has its own
+define('ADMIN_AJAX_HANDLER', true);
+
 require_once __DIR__ . '/../../controllers/PublicationC.php';
 require_once __DIR__ . '/../../controllers/MessageC.php';
 
@@ -10,6 +13,8 @@ $msgController = new MessageC();
 
 $message = '';
 $error = '';
+
+$isAjax = isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['action'])) {
@@ -25,6 +30,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 );
                 $pub->setUserId('admin');
                 $result = $controller->AddPublication($pub);
+                if ($isAjax) {
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => (bool)$result]);
+                    exit;
+                }
                 if ($result) {
                     $message = 'Publication created successfully!';
                     header('Location: admin.php?success=1');
@@ -38,6 +48,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($post) {
                     $pub = new publication('', '', '', '', $_POST['content']);
                     $result = $controller->UpdatePublication($pub, $_POST['id'], $post['user_id']);
+                    if ($isAjax) {
+                        header('Content-Type: application/json');
+                        echo json_encode(['success' => (bool)$result]);
+                        exit;
+                    }
                     if ($result) {
                         $message = 'Publication updated successfully!';
                         header('Location: admin.php?success=1');
@@ -46,26 +61,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $error = 'Update failed';
                     }
                 } else {
+                    if ($isAjax) {
+                        header('Content-Type: application/json');
+                        echo json_encode(['success' => false, 'error' => 'Publication not found']);
+                        exit;
+                    }
                     $error = 'Publication not found';
                 }
                 break;
             case 'delete':
-                $post = $controller->GetPublicationById($_POST['id']);
-                if ($post) {
-                    $result = $controller->DeletePublication($_POST['id'], $post['user_id']);
-                    if ($result) {
-                        $message = 'Publication deleted successfully!';
-                        header('Location: admin.php?success=1');
-                        exit;
-                    } else {
-                        $error = 'Error deleting publication';
-                    }
+                $result = $controller->DeletePublicationAdmin($_POST['id']);
+                if ($isAjax) {
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => (bool)$result, 'error' => $result ? '' : 'Publication not found or already deleted']);
+                    exit;
+                }
+                if ($result) {
+                    $message = 'Publication deleted successfully!';
+                    header('Location: admin.php?success=1');
+                    exit;
                 } else {
-                    $error = 'Publication not found';
+                    $error = 'Error deleting publication';
                 }
                 break;
             case 'delete_comment':
                 $result = $controller->DeleteComment($_POST['comment_id']);
+                if ($isAjax) {
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => (bool)$result]);
+                    exit;
+                }
                 if ($result) {
                     $message = 'Comment deleted successfully!';
                     header('Location: admin.php?success=1');
@@ -76,12 +101,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 break;
             case 'edit_comment':
                 $result = $controller->EditComment($_POST['comment_id'], $_POST['comment'], $_POST['user_name']);
+                if ($isAjax) {
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => (bool)$result]);
+                    exit;
+                }
                 if ($result) {
                     $message = 'Comment updated successfully!';
                     header('Location: admin.php?success=1');
                     exit;
                 } else {
                     $error = 'Error updating comment';
+                }
+                break;
+            case 'upload_image':
+                if ($isAjax && isset($_FILES['image'])) {
+                    header('Content-Type: application/json');
+                    echo json_encode($controller->UploadImage($_FILES['image']));
+                    exit;
                 }
                 break;
         }
@@ -434,11 +471,7 @@ if (isset($_GET['edit_comment'])) {
               <td>
                 <div class="action-buttons">
                   <a href="?edit=<?php echo $post['id']; ?>" class="btn-edit">✏️ Edit</a>
-                  <form method="POST" action="" style="display:inline;" onsubmit="return confirm('Are you sure?')">
-                    <input type="hidden" name="action" value="delete">
-                    <input type="hidden" name="id" value="<?php echo $post['id']; ?>">
-                    <button type="submit" class="btn-delete">🗑️ Delete</button>
-                  </form>
+                  <button class="btn-delete" onclick="adminDeletePublication(<?php echo $post['id']; ?>)">🗑️ Delete</button>
                 </div>
               </td>
             </tr>
@@ -472,11 +505,7 @@ if (isset($_GET['edit_comment'])) {
               <td>
                 <div class="action-buttons">
                   <a href="?edit_comment=<?php echo $comment['id']; ?>" class="btn-edit">✏️ Edit</a>
-                  <form method="POST" action="" style="display:inline;" onsubmit="return confirm('Delete this comment?')">
-                    <input type="hidden" name="action" value="delete_comment">
-                    <input type="hidden" name="comment_id" value="<?php echo $comment['id']; ?>">
-                    <button type="submit" class="btn-delete">🗑️ Delete</button>
-                  </form>
+                  <button class="btn-delete" onclick="adminDeleteComment(<?php echo $comment['id']; ?>)">🗑️ Delete</button>
                 </div>
               </td>
             </tr>
@@ -486,6 +515,30 @@ if (isset($_GET['edit_comment'])) {
       </div>
     </div>
   </main>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="adminDeleteModal" class="modal">
+  <div class="modal-content">
+    <div class="validation-icon" style="margin: 0 auto 20px; width: 60px; height: 60px; border-radius: 50%; background: var(--red-light); display: flex; align-items: center; justify-content: center;">
+      <svg width="30" height="30" fill="none" stroke="var(--red)" stroke-width="2" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="12"/>
+        <line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+    </div>
+    <h3 id="deleteModalTitle">Delete Item</h3>
+    <p>Are you sure you want to delete this item? This action cannot be undone.</p>
+    <div class="modal-buttons">
+      <button class="btn-delete" id="confirmDeleteBtn" style="background: var(--red);">Delete</button>
+      <button class="btn-cancel" onclick="closeAdminDeleteModal()">Cancel</button>
+    </div>
+  </div>
+  <form id="hiddenDeleteForm" method="POST" style="display:none;">
+      <input type="hidden" name="action" id="hiddenDeleteAction" value="">
+      <input type="hidden" name="id" id="hiddenDeleteId" value="">
+      <input type="hidden" name="comment_id" id="hiddenDeleteCommentId" value="">
+  </form>
 </div>
 
 <script src="../../public/js/admin.js"></script>

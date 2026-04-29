@@ -138,6 +138,21 @@ $posts      = $controller->ListePublications();
           </div>
         </div>
       </div>
+      
+      <div class="pub-filter-bar" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+        <div class="search-wrap" style="flex:1; margin-right:16px;">
+          <input type="text" id="postSearchInput" placeholder="Search publications..." oninput="fetchFilteredPosts()"
+                 style="width:100%; padding:10px 16px; border:1.5px solid var(--border); border-radius:var(--radius-xl); font-family:var(--font); font-size:14px; outline:none; transition:border 0.15s;">
+        </div>
+        <div class="sort-wrap">
+          <select id="postSortSelect" onchange="fetchFilteredPosts()"
+                  style="padding:10px 16px; border:1.5px solid var(--border); border-radius:var(--radius-xl); font-family:var(--font); font-size:14px; outline:none; background:var(--bg-card); cursor:pointer;">
+            <option value="newest">Newest</option>
+            <option value="most_liked">Most Liked</option>
+            <option value="oldest">Oldest</option>
+          </select>
+        </div>
+      </div>
 
       <div id="postsContainer">
         <?php foreach($posts as $post):

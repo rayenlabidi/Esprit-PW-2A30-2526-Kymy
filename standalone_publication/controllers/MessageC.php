@@ -4,6 +4,7 @@ include_once __DIR__ . '/../models/message.php';
 
 class MessageC
 {
+    // ==================== CONVERSATIONS ====================
     
     public function ListeConversations($user_id)
     {
@@ -75,19 +76,25 @@ class MessageC
         }
     }
     
+    // ==================== MESSAGES WITH READ SYSTEM ====================
     
+    /**
+     * Get messages between two users and mark received messages as read
+     */
     public function ListeMessages($user_id, $other_user_id)
     {
         $db = config::getConnexion();
         try {
+            // Mark all unread messages from the other user as read
             $updateSql = "UPDATE messages SET is_read = 1 
-                          WHERE receiver_id = :user_id AND sender_id = :other_user_id";
+                          WHERE receiver_id = :user_id AND sender_id = :other_user_id AND is_read = 0";
             $updateQuery = $db->prepare($updateSql);
             $updateQuery->execute([
                 'user_id' => $user_id,
                 'other_user_id' => $other_user_id
             ]);
             
+            // Get all messages
             $sql = "SELECT 
                         m.*,
                         p.id as publication_id,
@@ -112,6 +119,88 @@ class MessageC
             return [];
         }
     }
+    
+    /**
+     * Mark specific messages as read
+     */
+    public function MarkMessagesAsRead($user_id, $other_user_id)
+    {
+        $db = config::getConnexion();
+        try {
+            $sql = "UPDATE messages SET is_read = 1 
+                    WHERE receiver_id = :user_id AND sender_id = :other_user_id AND is_read = 0";
+            $query = $db->prepare($sql);
+            return $query->execute([
+                'user_id' => $user_id,
+                'other_user_id' => $other_user_id
+            ]);
+        } catch (Exception $e) {
+            error_log("MarkMessagesAsRead error: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Mark single message as read
+     */
+    public function MarkMessageAsRead($message_id, $receiver_id)
+    {
+        $db = config::getConnexion();
+        try {
+            $sql = "UPDATE messages SET is_read = 1 WHERE id = :id AND receiver_id = :receiver_id";
+            $query = $db->prepare($sql);
+            return $query->execute(['id' => $message_id, 'receiver_id' => $receiver_id]);
+        } catch (Exception $e) {
+            error_log("MarkMessageAsRead error: " . $e->getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Get unread messages count for a user
+     */
+    public function GetUnreadCount($user_id)
+    {
+        $db = config::getConnexion();
+        try {
+            $query = $db->prepare('SELECT COUNT(*) as total FROM messages WHERE receiver_id = :user_id AND is_read = 0');
+            $query->execute(['user_id' => $user_id]);
+            $result = $query->fetch();
+            return $result['total'];
+        } catch (Exception $e) {
+            error_log("GetUnreadCount error: " . $e->getMessage());
+            return 0;
+        }
+    }
+    
+    /**
+     * Get unread messages grouped by sender
+     */
+    public function GetUnreadMessagesBySender($user_id)
+    {
+        $db = config::getConnexion();
+        try {
+            $sql = "SELECT 
+                        sender_id, 
+                        sender_name, 
+                        sender_init, 
+                        sender_avatar,
+                        COUNT(*) as unread_count,
+                        MAX(created_at) as last_message_time
+                    FROM messages 
+                    WHERE receiver_id = :user_id AND is_read = 0
+                    GROUP BY sender_id, sender_name, sender_init, sender_avatar
+                    ORDER BY last_message_time DESC";
+            $query = $db->prepare($sql);
+            $query->execute(['user_id' => $user_id]);
+            return $query->fetchAll();
+        } catch (Exception $e) {
+            error_log("GetUnreadMessagesBySender error: " . $e->getMessage());
+            return [];
+        }
+    }
+    
+    // ==================== MESSAGES BY PUBLICATION ====================
     
     public function GetMessagesByPublication($publication_id)
     {
@@ -138,7 +227,6 @@ class MessageC
             return [];
         }
     }
-    
     
     public function GetConversationWithPublication($user_id, $other_user_id)
     {
@@ -174,6 +262,7 @@ class MessageC
         }
     }
     
+    // ==================== STATS ====================
     
     public function GetUserMessageStats($user_id)
     {
@@ -200,7 +289,6 @@ class MessageC
             return null;
         }
     }
-    
     
     public function GetPopularPublicationsFromMessages()
     {
@@ -230,13 +318,25 @@ class MessageC
         }
     }
     
+    // ==================== CRUD OPERATIONS ====================
     
     public function AddMessageWithPublication($m, $publication_id = null)
     {
+        // Bad words filter
+        $bad_words = ['badword1', 'badword2', 'spam', 'scam', 'abuse'];
+        $content_lower = strtolower($m->getContent());
+        $is_flagged = 0;
+        foreach ($bad_words as $word) {
+            if (strpos($content_lower, $word) !== false) {
+                $is_flagged = 1;
+                break;
+            }
+        }
+
         $sql = "INSERT INTO messages (sender_id, receiver_id, sender_name, receiver_name, 
-                sender_init, receiver_init, sender_avatar, receiver_avatar, publication_id, content, is_read) 
+                sender_init, receiver_init, sender_avatar, receiver_avatar, publication_id, content, is_read, is_flagged) 
                 VALUES (:sender_id, :receiver_id, :sender_name, :receiver_name, 
-                :sender_init, :receiver_init, :sender_avatar, :receiver_avatar, :publication_id, :content, 0)";
+                :sender_init, :receiver_init, :sender_avatar, :receiver_avatar, :publication_id, :content, 0, :is_flagged)";
         
         $db = config::getConnexion();
         try {
@@ -251,7 +351,8 @@ class MessageC
                 'sender_avatar' => $m->getSenderAvatar(),
                 'receiver_avatar' => $m->getReceiverAvatar(),
                 'publication_id' => $publication_id,
-                'content' => $m->getContent()
+                'content' => $m->getContent(),
+                'is_flagged' => $is_flagged
             ]);
         } catch (Exception $e) {
             error_log("AddMessageWithPublication error: " . $e->getMessage());
@@ -307,19 +408,7 @@ class MessageC
         }
     }
     
-    public function GetUnreadCount($user_id)
-    {
-        $db = config::getConnexion();
-        try {
-            $query = $db->prepare('SELECT COUNT(*) as total FROM messages WHERE receiver_id = :user_id AND is_read = 0');
-            $query->execute(['user_id' => $user_id]);
-            $result = $query->fetch();
-            return $result['total'];
-        } catch (Exception $e) {
-            error_log("GetUnreadCount error: " . $e->getMessage());
-            return 0;
-        }
-    }
+    // ==================== USER MANAGEMENT ====================
     
     public function GetAllUsers()
     {
@@ -367,11 +456,12 @@ class MessageC
         }
     }
     
+    // ==================== ADMIN FUNCTIONS ====================
+    
     public function GetAllMessagesAdmin()
     {
         $db = config::getConnexion();
         try {
-            // JOIN with publication for admin view
             $sql = "SELECT 
                         m.*,
                         p.id as pub_id,
@@ -417,10 +507,22 @@ class MessageC
             return false;
         }
     }
+
+    public function UnflagMessage($id)
+    {
+        try {
+            $db = config::getConnexion();
+            $query = $db->prepare('UPDATE messages SET is_flagged = 0 WHERE id = :id');
+            return $query->execute(['id' => $id]);
+        } catch (Exception $e) {
+            error_log("UnflagMessage error: " . $e->getMessage());
+            return false;
+        }
+    }
 }
 
-// AJAX Handler
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WITH'])) {
+// AJAX Handler - skip if the including page has its own handler (e.g., admin pages)
+if (!defined('ADMIN_AJAX_HANDLER') && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WITH'])) {
     header('Content-Type: application/json');
     
     $controller = new MessageC();
@@ -436,6 +538,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
         case 'get_messages':
             $messages = $controller->ListeMessages($_POST['user_id'], $_POST['other_user_id']);
             $response = ['success' => true, 'messages' => $messages];
+            break;
+            
+        case 'mark_read':
+            $result = $controller->MarkMessagesAsRead($_POST['user_id'], $_POST['other_user_id']);
+            $response = ['success' => $result];
+            break;
+            
+        case 'mark_single_read':
+            $result = $controller->MarkMessageAsRead($_POST['message_id'], $_POST['receiver_id']);
+            $response = ['success' => $result];
+            break;
+            
+        case 'get_unread_by_sender':
+            $unreadData = $controller->GetUnreadMessagesBySender($_POST['user_id']);
+            $response = ['success' => true, 'unreadData' => $unreadData];
             break;
             
         case 'get_messages_by_publication':
@@ -544,6 +661,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WI
                 break;
             }
             $result = $controller->EditMessageAdmin($_POST['message_id'], trim($_POST['content']));
+            $response = ['success' => $result];
+            break;
+            
+        case 'unflag_message':
+            $result = $controller->UnflagMessage($_POST['message_id']);
             $response = ['success' => $result];
             break;
             
