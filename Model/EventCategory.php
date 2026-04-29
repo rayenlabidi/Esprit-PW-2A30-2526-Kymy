@@ -1,5 +1,6 @@
 <?php
 // Model/EventCategory.php — Entity class for Event Category
+// Follows the structure of the "personne" example
 
 class EventCategory
 {
