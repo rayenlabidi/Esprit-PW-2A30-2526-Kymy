@@ -1,162 +1,102 @@
-DROP DATABASE IF EXISTS workify_group_db;
-CREATE DATABASE workify_group_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE workify_group_db;
+CREATE DATABASE IF NOT EXISTS `2a30` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+USE `2a30`;
 
-CREATE TABLE roles (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(60) NOT NULL,
-    slug VARCHAR(40) NOT NULL UNIQUE,
-    description VARCHAR(255) NULL
-);
+SET FOREIGN_KEY_CHECKS = 0;
+DROP TABLE IF EXISTS inscription_formation;
+DROP TABLE IF EXISTS apprenant;
+DROP TABLE IF EXISTS formation;
+DROP TABLE IF EXISTS formateur;
+DROP TABLE IF EXISTS categorie_formation;
+SET FOREIGN_KEY_CHECKS = 1;
 
-CREATE TABLE utilisateurs (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    role_id INT NOT NULL,
-    first_name VARCHAR(100) NOT NULL,
-    last_name VARCHAR(100) NOT NULL,
-    email VARCHAR(190) NOT NULL UNIQUE,
-    password VARCHAR(255) NOT NULL,
-    headline VARCHAR(150) NOT NULL,
-    bio TEXT NOT NULL,
-    avatar_url VARCHAR(255) NULL,
-    status ENUM('active', 'pending', 'blocked') NOT NULL DEFAULT 'active',
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_utilisateurs_role FOREIGN KEY (role_id) REFERENCES roles(id)
-        ON UPDATE CASCADE ON DELETE RESTRICT
-);
+CREATE TABLE categorie_formation (
+    id_categorie INT AUTO_INCREMENT PRIMARY KEY,
+    nom_categorie VARCHAR(100) NOT NULL,
+    description_categorie TEXT NULL,
+    UNIQUE KEY unique_nom_categorie (nom_categorie)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE categories (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(120) NOT NULL,
-    slug VARCHAR(120) NOT NULL UNIQUE,
-    scope ENUM('all', 'formation', 'job') NOT NULL DEFAULT 'all',
-    description VARCHAR(255) NULL
-);
+CREATE TABLE formateur (
+    id_formateur INT AUTO_INCREMENT PRIMARY KEY,
+    nom VARCHAR(120) NOT NULL,
+    email VARCHAR(150) NOT NULL,
+    specialite VARCHAR(120) NOT NULL,
+    UNIQUE KEY unique_formateur_email (email)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE formations (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    title VARCHAR(180) NOT NULL,
+CREATE TABLE formation (
+    id_formation INT AUTO_INCREMENT PRIMARY KEY,
+    titre VARCHAR(150) NOT NULL,
     description TEXT NOT NULL,
-    category_id INT NOT NULL,
-    level ENUM('Beginner', 'Intermediate', 'Advanced') NOT NULL DEFAULT 'Beginner',
-    price DECIMAL(10,2) NOT NULL DEFAULT 0,
-    duration_hours INT NOT NULL,
-    status ENUM('draft', 'published', 'archived') NOT NULL DEFAULT 'draft',
-    creator_id INT NOT NULL,
-    image_url VARCHAR(255) NULL,
-    tags VARCHAR(255) NULL,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_formations_category FOREIGN KEY (category_id) REFERENCES categories(id)
-        ON UPDATE CASCADE ON DELETE RESTRICT,
-    CONSTRAINT fk_formations_creator FOREIGN KEY (creator_id) REFERENCES utilisateurs(id)
-        ON UPDATE CASCADE ON DELETE CASCADE
-);
+    date_debut DATE NOT NULL,
+    date_fin DATE NOT NULL,
+    duree INT NOT NULL,
+    prix DECIMAL(10, 2) NOT NULL DEFAULT 0,
+    niveau VARCHAR(30) NOT NULL,
+    statut VARCHAR(30) NOT NULL DEFAULT 'planifiee',
+    mode VARCHAR(30) NOT NULL DEFAULT 'Presentiel',
+    places INT NOT NULL DEFAULT 20,
+    id_categorie INT NOT NULL,
+    id_formateur INT NOT NULL,
+    CONSTRAINT fk_formation_categorie
+        FOREIGN KEY (id_categorie)
+        REFERENCES categorie_formation(id_categorie)
+        ON UPDATE CASCADE
+        ON DELETE RESTRICT,
+    CONSTRAINT fk_formation_formateur
+        FOREIGN KEY (id_formateur)
+        REFERENCES formateur(id_formateur)
+        ON UPDATE CASCADE
+        ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE inscriptions (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
-    formation_id INT NOT NULL,
-    enrolled_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    progress INT NOT NULL DEFAULT 0,
-    UNIQUE KEY uniq_inscription (user_id, formation_id),
-    CONSTRAINT fk_inscriptions_user FOREIGN KEY (user_id) REFERENCES utilisateurs(id)
-        ON UPDATE CASCADE ON DELETE CASCADE,
-    CONSTRAINT fk_inscriptions_formation FOREIGN KEY (formation_id) REFERENCES formations(id)
-        ON UPDATE CASCADE ON DELETE CASCADE
-);
+CREATE TABLE apprenant (
+    id_apprenant INT AUTO_INCREMENT PRIMARY KEY,
+    nom VARCHAR(120) NOT NULL,
+    email VARCHAR(150) NOT NULL,
+    telephone VARCHAR(30) NOT NULL,
+    UNIQUE KEY unique_apprenant_email (email)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE jobs (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    title VARCHAR(180) NOT NULL,
-    description TEXT NOT NULL,
-    budget DECIMAL(10,2) NOT NULL,
-    category_id INT NOT NULL,
-    location VARCHAR(120) NOT NULL,
-    is_remote TINYINT(1) NOT NULL DEFAULT 0,
-    job_type ENUM('Freelance', 'Full-time', 'Stage', 'Part-time') NOT NULL DEFAULT 'Freelance',
-    status ENUM('open', 'draft', 'closed') NOT NULL DEFAULT 'open',
-    publisher_id INT NOT NULL,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_jobs_category FOREIGN KEY (category_id) REFERENCES categories(id)
-        ON UPDATE CASCADE ON DELETE RESTRICT,
-    CONSTRAINT fk_jobs_publisher FOREIGN KEY (publisher_id) REFERENCES utilisateurs(id)
-        ON UPDATE CASCADE ON DELETE CASCADE
-);
+CREATE TABLE inscription_formation (
+    id_apprenant INT NOT NULL,
+    id_formation INT NOT NULL,
+    date_inscription DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    statut VARCHAR(30) NOT NULL DEFAULT 'en_attente',
+    PRIMARY KEY (id_apprenant, id_formation),
+    CONSTRAINT fk_inscription_apprenant
+        FOREIGN KEY (id_apprenant)
+        REFERENCES apprenant(id_apprenant)
+        ON UPDATE CASCADE
+        ON DELETE CASCADE,
+    CONSTRAINT fk_inscription_formation
+        FOREIGN KEY (id_formation)
+        REFERENCES formation(id_formation)
+        ON UPDATE CASCADE
+        ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE candidatures (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
-    job_id INT NOT NULL,
-    cover_letter TEXT NOT NULL,
-    status ENUM('pending', 'reviewed', 'accepted', 'rejected') NOT NULL DEFAULT 'pending',
-    applied_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE KEY uniq_candidature (user_id, job_id),
-    CONSTRAINT fk_candidatures_user FOREIGN KEY (user_id) REFERENCES utilisateurs(id)
-        ON UPDATE CASCADE ON DELETE CASCADE,
-    CONSTRAINT fk_candidatures_job FOREIGN KEY (job_id) REFERENCES jobs(id)
-        ON UPDATE CASCADE ON DELETE CASCADE
-);
+INSERT INTO categorie_formation (id_categorie, nom_categorie, description_categorie) VALUES
+(1, 'Developpement web', 'Formations PHP, HTML, CSS et JavaScript'),
+(2, 'Base de donnees', 'Formations MySQL, jointures et conception relationnelle'),
+(3, 'Design UI UX', 'Formations interfaces, experience utilisateur et prototypage'),
+(4, 'Marketing digital', 'Formations reseaux sociaux et communication digitale');
 
-INSERT INTO roles (name, slug, description) VALUES
-('Admin', 'admin', 'Gere toute la plateforme'),
-('Freelancer', 'freelancer', 'Suit des formations et postule aux jobs'),
-('Boss', 'boss', 'Publie des jobs et recrute des freelances');
+INSERT INTO formateur (id_formateur, nom, email, specialite) VALUES
+(1, 'Rayen Labidi', 'rayen.formateur@workify.tn', 'PHP MVC et PDO'),
+(2, 'Sarra Mansouri', 'sarra.design@workify.tn', 'UI UX Design'),
+(3, 'Youssef Ben Ali', 'youssef.data@workify.tn', 'MySQL et data');
 
-INSERT INTO utilisateurs (role_id, first_name, last_name, email, password, headline, bio, avatar_url, status) VALUES
-(1, 'Admin', 'Workify', 'admin@workify.com', '$2y$10$7ALOQvIWzngQAJ/eN3NsS.7HpVWVUVLlxv7KblJL4McnOLEJIKus6', 'Platform administrator', 'Compte admin pour tester toute la plateforme et gerer chaque module.', '', 'active'),
-(2, 'Sami', 'Freelancer', 'freelancer@workify.com', '$2y$10$8zrsqRyUqyEqdh3xLvEOW.wNgPVfdGPdSFThS54XdcyVY4Oc3b/JO', 'Front-end freelancer', 'Freelancer de demo pour tester les inscriptions et candidatures.', '', 'active'),
-(3, 'Lina', 'Boss', 'boss@workify.com', '$2y$10$HLpAbAB5hkZFjJmYnlsqNeBUQS186KVB.uhsU8RBO5LyC0WLyzBai', 'Talent recruiter', 'Boss de demo pour publier des jobs et recruter des profils.', '', 'active');
+INSERT INTO formation (id_formation, titre, description, date_debut, date_fin, duree, prix, niveau, statut, mode, places, id_categorie, id_formateur) VALUES
+(1, 'PHP MVC avec PDO', 'Objectif general : construire une application MVC simple avec PHP, OOP, PDO, validations JS et structure professor-friendly.', '2026-05-02', '2026-05-08', 18, 120.00, 'Intermediaire', 'planifiee', 'Hybride', 24, 1, 1),
+(2, 'MySQL et jointures', 'Formation pratique sur les cles primaires, cles etrangeres, relations one-to-many et entites de jointure many-to-many.', '2026-05-12', '2026-05-14', 9, 80.00, 'Debutant', 'planifiee', 'Presentiel', 18, 2, 3),
+(3, 'UI Workify Blue White', 'Ateliers pour creer des interfaces modernes et coherentes avec sidebar, header, cards et tables lisibles.', '2026-05-20', '2026-05-22', 12, 95.00, 'Debutant', 'en_cours', 'En ligne', 30, 3, 2);
 
-INSERT INTO categories (name, slug, scope, description) VALUES
-('Developpement Web', 'developpement-web', 'all', 'Frontend, backend et full stack'),
-('UI UX Design', 'ui-ux-design', 'formation', 'Parcours design et prototypage'),
-('Marketing Digital', 'marketing-digital', 'all', 'SEO, paid media et social media'),
-('Data & IA', 'data-ia', 'formation', 'Analyse de donnees et intelligence artificielle'),
-('Support Client', 'support-client', 'job', 'Experience client et assistance'),
-('Product Management', 'product-management', 'job', 'Pilotage produit et delivery');
+INSERT INTO apprenant (id_apprenant, nom, email, telephone) VALUES
+(1, 'Membre Test', 'membre.test@workify.tn', '22123456'),
+(2, 'Etudiant Workify', 'etudiant@workify.tn', '55123456');
 
-INSERT INTO formations (title, description, category_id, level, price, duration_hours, status, creator_id, image_url, tags) VALUES
-('Bootcamp Full Stack Laravel', 'Un parcours intensif pour maitriser MVC, MySQL, authentification et dashboards dans une logique de projet concret.', 1, 'Intermediate', 149.00, 42, 'published', 2, 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&w=1200&q=80', 'php,mysql,laravel,mvc'),
-('Masterclass UI UX pour plateformes marketplace', 'Apprenez a creer des interfaces professionnelles pour une application inspiree de Fiverr et Upwork.', 2, 'Advanced', 119.00, 28, 'published', 2, 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1200&q=80', 'ui,ux,figma,marketplace'),
-('Introduction a la Data analyse', 'Formation accessible pour debuter avec les tableaux de bord, les KPIs et la lecture des donnees.', 4, 'Beginner', 89.00, 18, 'draft', 1, 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1200&q=80', 'data,analytics,kpi');
-
-INSERT INTO inscriptions (user_id, formation_id, progress) VALUES
-(2, 1, 35),
-(2, 2, 10);
-
-INSERT INTO jobs (title, description, budget, category_id, location, is_remote, job_type, status, publisher_id) VALUES
-('Developpeur PHP MVC pour plateforme locale', 'Nous cherchons un freelancer capable de finaliser un projet PHP MVC avec sessions, CRUD et validations JS.', 900.00, 1, 'Tunis', 1, 'Freelance', 'open', 3),
-('UX Designer pour espace formation premium', 'Mission sur une interface moderne pour une section de catalogue de formations avec cartes, filtres et details.', 650.00, 6, 'Sousse', 1, 'Part-time', 'open', 3),
-('Assistant marketing junior', 'Suivi de campagnes digitales et production de contenu pour une startup locale.', 550.00, 3, 'Remote', 1, 'Stage', 'draft', 1);
-
-INSERT INTO candidatures (user_id, job_id, cover_letter, status) VALUES
-(2, 1, 'Je peux prendre en charge le projet Workify, integrer les modules et optimiser le rendu pour une demo professeur.', 'reviewed');
-
-CREATE TABLE publication (
-    id INT(11) AUTO_INCREMENT PRIMARY KEY,
-    user_id VARCHAR(50) DEFAULT 'current_user',
-    user_name VARCHAR(100) NOT NULL,
-    user_init VARCHAR(5) NOT NULL,
-    user_role ENUM('Freelancer', 'Client') DEFAULT 'Freelancer',
-    user_avatar VARCHAR(50) DEFAULT 'av-blue',
-    content TEXT NOT NULL,
-    has_image TINYINT(1) DEFAULT 0,
-    image_url VARCHAR(255) DEFAULT NULL,
-    likes INT(11) DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
-
-CREATE TABLE comments (
-    id INT(11) AUTO_INCREMENT PRIMARY KEY,
-    publication_id INT(11) NOT NULL,
-    user_name VARCHAR(100) NOT NULL,
-    user_init VARCHAR(5) NOT NULL,
-    user_avatar VARCHAR(50) DEFAULT 'av-blue',
-    comment TEXT NOT NULL,
-    likes INT(11) DEFAULT 0,
-    parent_id INT(11) DEFAULT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (publication_id) REFERENCES publication(id) ON DELETE CASCADE,
-    FOREIGN KEY (parent_id) REFERENCES comments(id) ON DELETE CASCADE
-);
+INSERT INTO inscription_formation (id_apprenant, id_formation, statut) VALUES
+(1, 1, 'acceptee'),
+(2, 1, 'en_attente'),
+(2, 2, 'en_attente');
