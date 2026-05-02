@@ -595,7 +595,8 @@ function fetchFilteredPosts() {
   if (fetchTimeout) clearTimeout(fetchTimeout);
   
   fetchTimeout = setTimeout(() => {
-    const keyword = document.getElementById('postSearchInput') ? document.getElementById('postSearchInput').value.trim() : '';
+    const rawKeyword = document.getElementById('postSearchInput') ? document.getElementById('postSearchInput').value.trim() : '';
+    const keyword = typeof normalizeText === 'function' ? normalizeText(rawKeyword) : rawKeyword;
     const sort = document.getElementById('postSortSelect') ? document.getElementById('postSortSelect').value : 'newest';
     
     const fd = new FormData();

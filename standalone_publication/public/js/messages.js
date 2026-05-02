@@ -28,12 +28,21 @@ const BAD_WORDS = [
 ];
 
 function handleInputBadWords(ta) {
-  const content = ta.value.toLowerCase();
+  const content = typeof normalizeText === 'function' ? normalizeText(ta.value) : ta.value.toLowerCase();
   let foundWord = null;
   for (let word of BAD_WORDS) {
     if (content.includes(word)) {
       foundWord = word;
       break;
+    }
+  }
+  // Also check Tunisian bad words from shared utils
+  if (!foundWord && typeof TUNISIAN_BAD_WORDS !== 'undefined') {
+    for (let word of TUNISIAN_BAD_WORDS) {
+      if (content.includes(word)) {
+        foundWord = word;
+        break;
+      }
     }
   }
   
@@ -94,6 +103,7 @@ function closeConfirmModal() {
 
 function validateMessage(content) {
   const errors = [];
+  const normalized = typeof normalizeText === 'function' ? normalizeText(content) : (content || '').trim();
   if (!content || content.trim().length === 0) errors.push('Message cannot be empty');
   if (content && content.trim().length > 5000)  errors.push('Message cannot exceed 5000 characters');
   return errors;
@@ -119,8 +129,9 @@ function loadConversations(callback) {
 function renderConversations(filter) {
   const list = document.getElementById('convList');
   if (!list) return;
-  const q = (filter !== undefined ? filter : (document.getElementById('convSearchInput') ? document.getElementById('convSearchInput').value : '')).toLowerCase();
-  let filtered = conversations.filter(c => !q || (c.other_user_name && c.other_user_name.toLowerCase().includes(q)));
+  const rawQ = filter !== undefined ? filter : (document.getElementById('convSearchInput') ? document.getElementById('convSearchInput').value : '');
+  const q = typeof normalizeText === 'function' ? normalizeText(rawQ) : rawQ.toLowerCase();
+  let filtered = conversations.filter(c => !q || (c.other_user_name && (typeof normalizeText === 'function' ? normalizeText(c.other_user_name) : c.other_user_name.toLowerCase()).includes(q)));
   // Apply unread filter
   if (convFilter === 'unread') {
     filtered = filtered.filter(c => parseInt(c.unread_count) > 0);
@@ -285,12 +296,29 @@ function renderMessages(messages) {
   }
 }
 
-function sendMessage() {
+async function sendMessage() {
   const ta      = document.getElementById('msgTextarea');
   const content = ta.value.trim();
   const errors  = validateMessage(content);
   if (errors.length) { showValidationModal(errors); return; }
   if (!activeConvId) { showValidationModal(['Please select a conversation first']); return; }
+
+  // Hybrid bad-word check (local Tunisian + PurgoMalum API)
+  if (typeof isBadMessage === 'function') {
+    try {
+      const check = await isBadMessage(content);
+      if (check.isBad) {
+        const reason = check.word
+          ? `Your message contains inappropriate language ("${check.word}"). Message blocked.`
+          : 'Your message contains inappropriate language (detected by filter). Message blocked.';
+        showValidationModal([reason]);
+        return; // ← BLOCK the message from being sent
+      }
+    } catch (e) {
+      console.warn('Bad word check failed, sending anyway:', e);
+    }
+  }
+
   _doSendMessage(CURRENT_USER_ID, activeConvId, CURRENT_USER_NAME, activeConvName,
     CURRENT_USER_INIT, activeConvInit, CURRENT_USER_AVATAR, activeConvAvatar, content,
     function () { 

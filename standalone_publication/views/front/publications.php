@@ -20,6 +20,7 @@ $posts      = $controller->ListePublications();
 <title>Publications – Workify</title>
 <link rel="stylesheet" href="../../public/css/workify-tokens.css">
 <link rel="stylesheet" href="../../public/css/publications.css">
+<link rel="stylesheet" href="../../public/css/chatbot.css">
 <style>
 .clickable-avatar { transition: box-shadow .15s; cursor: pointer; }
 .clickable-avatar:hover { box-shadow: 0 0 0 3px var(--blue-mid); }
@@ -349,6 +350,7 @@ const CURRENT_USER_ID   = '<?php echo $current_user_id; ?>';
 const CURRENT_USER_NAME = '<?php echo $current_user_name; ?>';
 const BASE_URL          = '<?php echo htmlspecialchars($_SERVER['PHP_SELF']); ?>';
 </script>
+<script src="../../public/js/workify-utils.js"></script>
 <script src="../../public/js/publications.js"></script>
 </body>
 </html>
