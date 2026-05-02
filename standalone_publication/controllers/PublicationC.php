@@ -437,7 +437,6 @@ class PublicationC
 }
 
 // ==================== AJAX HANDLER ====================
-// Run AJAX handler unless the including page has its own handler (e.g., admin.php)
 if (!defined('ADMIN_AJAX_HANDLER') && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SERVER['HTTP_X_REQUESTED_WITH'])) {
     header('Content-Type: application/json');
     

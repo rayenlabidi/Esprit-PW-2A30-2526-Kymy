@@ -25,8 +25,6 @@ const BAD_WORDS = [
   'kill you', 'death threat', 'i will kill',
   // French profanity
   'merde', 'putain', 'connard', 'salope', 'enculer', 'nique',
-  // Arabic profanity (transliterated)
-  'kol5ara', 'zebi', 'kahba', 'nik', 'taboun',
 ];
 
 function handleInputBadWords(ta) {

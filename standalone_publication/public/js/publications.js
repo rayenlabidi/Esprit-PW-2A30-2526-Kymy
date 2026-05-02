@@ -262,7 +262,7 @@ function closeModal() {
 
 // ==================== SMART LIKE SYSTEM ====================
 function toggleLike(btn, postId, currentLikes) {
-  if (likingInProgress.has(postId)) return; // prevent double-click on THIS post only
+  if (likingInProgress.has(postId)) return;
   likingInProgress.add(postId);
   
   const fd = new FormData();
@@ -303,7 +303,7 @@ function toggleLike(btn, postId, currentLikes) {
 
 // ==================== COMMENT LIKE SYSTEM ====================
 function toggleCommentLike(btn, commentId, currentLikes) {
-  if (commentLikingInProgress.has(commentId)) return; // prevent double-click on THIS comment only
+  if (commentLikingInProgress.has(commentId)) return;
   commentLikingInProgress.add(commentId);
   
   const fd = new FormData();
@@ -352,12 +352,10 @@ function loadUserLikes() {
     .then(r => r.json())
     .then(data => {
       if (data.success) {
-        // Initialize liked status for all posts
         postIds.forEach(id => {
           currentUserLikedPosts[id] = data.liked_publications.includes(parseInt(id));
         });
         
-        // Update UI for like buttons
         postCards.forEach(card => {
           const postId = card.dataset.postId;
           const likeBtn = card.querySelector('.like-btn');
