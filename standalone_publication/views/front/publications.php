@@ -350,7 +350,7 @@ const CURRENT_USER_ID   = '<?php echo $current_user_id; ?>';
 const CURRENT_USER_NAME = '<?php echo $current_user_name; ?>';
 const BASE_URL          = '<?php echo htmlspecialchars($_SERVER['PHP_SELF']); ?>';
 </script>
-<script src="../../public/js/workify-utils.js"></script>
+<script src="../../public/js/workify-utils.js?v=<?php echo time(); ?>"></script>
 <script src="../../public/js/publications.js"></script>
 </body>
 </html>

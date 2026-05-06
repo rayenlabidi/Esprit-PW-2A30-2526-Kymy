@@ -94,54 +94,38 @@ async function isBadMessage(text) {
 }
 
 
-// ==================== 3. GEMINI CHATBOT API ====================
+// ==================== 3. GEMINI CHATBOT API (server-side proxy) ====================
 
-const GEMINI_API_KEY = 'AIzaSyDIgiEnHLwAGNhqd3-qv935bvD-f1VYOUE';
-const GEMINI_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent';
-const CHATBOT_SYSTEM_PROMPT =
-  'You are a helpful assistant for a freelancing platform called Workify. ' +
-  'Help users with publications, messages, and navigation. ' +
-  'Keep answers concise and friendly.';
+// API key is now stored securely in controllers/ChatbotAPI.php
+const CHATBOT_PROXY_URL = '../../controllers/ChatbotAPI.php';
 
 /**
- * Sends a user message to Gemini API and returns the bot response.
+ * Sends a user message to the server-side PHP proxy which forwards it
+ * to the Gemini API.  The API key never leaves the server.
  * Input is normalized before sending.
  */
 async function askChatbot(message) {
   const normalized = normalizeText(message);
-  const fullPrompt = CHATBOT_SYSTEM_PROMPT + '\n\nUser: ' + normalized;
-
-  const body = {
-    contents: [
-      {
-        parts: [
-          { text: fullPrompt }
-        ]
-      }
-    ]
-  };
 
   try {
-    const res = await fetch(GEMINI_ENDPOINT, {
+    const res = await fetch(CHATBOT_PROXY_URL, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-goog-api-key': GEMINI_API_KEY
-      },
-      body: JSON.stringify(body)
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: normalized })
     });
     const data = await res.json();
 
-    if (data.candidates &&
-      data.candidates[0] &&
-      data.candidates[0].content &&
-      data.candidates[0].content.parts &&
-      data.candidates[0].content.parts[0]) {
-      return data.candidates[0].content.parts[0].text;
+    if (!res.ok) {
+      console.error('Chatbot API Error:', data);
+      return data.error ? `Error: ${data.error}` : 'Sorry, the server returned an error.';
+    }
+
+    if (data.reply) {
+      return data.reply;
     }
     return 'Sorry, I could not generate a response right now.';
   } catch (err) {
-    console.error('Gemini API error:', err);
+    console.error('Chatbot proxy error:', err);
     return 'Sorry, I am having trouble connecting. Please try again later.';
   }
 }

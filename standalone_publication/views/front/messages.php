@@ -231,7 +231,7 @@ $post_id_from_url = isset($_GET['post_id']) ? (int)$_GET['post_id'] : null;
     const MSG_URL = '<?php echo htmlspecialchars($_SERVER['PHP_SELF']); ?>';
     const POST_ID_FROM_URL = <?php echo $post_id_from_url ? $post_id_from_url : 'null'; ?>;
   </script>
-  <script src="../../public/js/workify-utils.js"></script>
+  <script src="../../public/js/workify-utils.js?v=<?php echo time(); ?>"></script>
   <script src="../../public/js/messages.js"></script>
 </body>
 
