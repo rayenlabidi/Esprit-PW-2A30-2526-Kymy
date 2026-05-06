@@ -134,6 +134,11 @@ class UserController extends BaseController
         $enrollments = [];
         $applications = [];
 
+        $filters_app = [
+            'search' => trim($_GET['search_app'] ?? ''),
+            'sort' => $_GET['sort_app'] ?? 'date_desc',
+        ];
+
         if ($this->db) {
             $userModel = new User($this->db);
             $enrollmentModel = new Enrollment($this->db);
@@ -141,7 +146,7 @@ class UserController extends BaseController
 
             $user = $userModel->find($id);
             $enrollments = $enrollmentModel->forUser($id);
-            $applications = $applicationModel->forUser($id);
+            $applications = $applicationModel->forUser($id, $filters_app);
         }
 
         if (!$user) {
@@ -149,6 +154,6 @@ class UserController extends BaseController
             redirect(['module' => 'dashboard', 'action' => 'index']);
         }
 
-        $this->render('users/show', compact('user', 'enrollments', 'applications'));
+        $this->render('users/show', compact('user', 'enrollments', 'applications', 'filters_app'));
     }
 }

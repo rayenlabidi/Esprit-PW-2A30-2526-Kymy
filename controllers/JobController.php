@@ -15,6 +15,7 @@ class JobController extends BaseController
             'job_type' => $_GET['job_type'] ?? '',
             'status' => $_GET['status'] ?? '',
             'remote_only' => $_GET['remote_only'] ?? '',
+            'sort' => $_GET['sort'] ?? 'date_desc',
         ];
 
         $jobs = [];
@@ -37,6 +38,8 @@ class JobController extends BaseController
         $id = (int) ($_GET['id'] ?? 0);
         $job = null;
         $hasApplied = false;
+        $applications = [];
+        $recommendations = [];
 
         if ($this->db) {
             $jobModel = new Job($this->db);
@@ -45,6 +48,10 @@ class JobController extends BaseController
 
             if ($job && is_logged_in()) {
                 $hasApplied = $applicationModel->hasApplied(auth_user()['id'], $id);
+                if (has_role(['admin']) || (int) $job['publisher_id'] === (int) auth_user()['id']) {
+                    $applications = $applicationModel->forJob($id);
+                    $recommendations = $jobModel->getScoredRecommendations($id, $job['category_id'], $job['title']);
+                }
             }
         }
 
@@ -53,7 +60,7 @@ class JobController extends BaseController
             redirect(['module' => 'jobs', 'action' => 'index']);
         }
 
-        $this->render('jobs/show', compact('job', 'hasApplied'));
+        $this->render('jobs/show', compact('job', 'hasApplied', 'applications', 'recommendations'));
     }
 
     public function create(): void
@@ -100,13 +107,57 @@ class JobController extends BaseController
         $jobId = (int) ($_GET['id'] ?? 0);
 
         if ($this->db && $jobId > 0 && is_post()) {
+            $cvUrl = null;
+            $photoUrl = null;
+            $uploadDir = __DIR__ . '/../uploads/';
+
+            if (!empty($_FILES['cv_file']['name'])) {
+                $cvName = time() . '_cv_' . basename($_FILES['cv_file']['name']);
+                if (move_uploaded_file($_FILES['cv_file']['tmp_name'], $uploadDir . $cvName)) {
+                    $cvUrl = 'uploads/' . $cvName;
+                }
+            }
+
+            if (!empty($_FILES['photo_file']['name'])) {
+                $photoName = time() . '_photo_' . basename($_FILES['photo_file']['name']);
+                if (move_uploaded_file($_FILES['photo_file']['tmp_name'], $uploadDir . $photoName)) {
+                    $photoUrl = 'uploads/' . $photoName;
+                }
+            }
+
             $applicationModel = new Application($this->db);
-            $applicationModel->apply((int) auth_user()['id'], $jobId, $_POST['cover_letter'] ?? '');
+            $applicationModel->apply((int) auth_user()['id'], $jobId, $_POST['cover_letter'] ?? '', $cvUrl, $photoUrl);
             set_flash('success', 'Votre candidature a ete envoyee.');
             redirect(['module' => 'jobs', 'action' => 'show', 'id' => $jobId]);
         }
 
         set_flash('error', 'Impossible d envoyer la candidature.');
+        redirect(['module' => 'jobs', 'action' => 'index']);
+    }
+
+    public function updateApplicationStatus(): void
+    {
+        require_roles(['boss', 'admin']);
+        $appId = (int) ($_GET['id'] ?? 0);
+        $status = $_GET['status'] ?? '';
+
+        if ($this->db && $appId > 0 && in_array($status, ['accepted', 'rejected'])) {
+            $applicationModel = new Application($this->db);
+            $app = $applicationModel->find($appId);
+
+            if ($app) {
+                $jobModel = new Job($this->db);
+                $job = $jobModel->find((int) $app['job_id']);
+
+                if ($job && (has_role(['admin']) || (int) $job['publisher_id'] === (int) auth_user()['id'])) {
+                    $applicationModel->updateStatus($appId, $status);
+                    set_flash('success', 'Statut de la candidature mis a jour avec succes.');
+                    redirect(['module' => 'jobs', 'action' => 'show', 'id' => $job['id']]);
+                }
+            }
+        }
+
+        set_flash('error', 'Action non autorisee ou candidature introuvable.');
         redirect(['module' => 'jobs', 'action' => 'index']);
     }
 

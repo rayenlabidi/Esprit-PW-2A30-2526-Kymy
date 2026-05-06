@@ -6,11 +6,43 @@
         <h1>Gestion des jobs</h1>
         <p class="muted">Le boss offre un job. Le freelancer postule. Les deux parcours sont differencies clairement dans l interface.</p>
     </div>
-    <?php if (has_role(['admin', 'boss'])): ?>
-        <a class="btn btn-primary" href="<?= url(['module' => 'jobs', 'action' => 'create']) ?>">Offrir un job</a>
-    <?php endif; ?>
+    <div style="display: flex; gap: 10px;">
+        <?php if (has_role(['admin', 'boss'])): ?>
+            <a class="btn btn-primary" href="<?= url(['module' => 'jobs', 'action' => 'create']) ?>">Offrir un job</a>
+        <?php endif; ?>
+        <button class="btn btn-outline" onclick="exportToPDF('jobs-container', 'liste_jobs.pdf')">Exporter en PDF</button>
+    </div>
 </section>
 
+<div class="stats-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2rem;">
+    <div class="section-card" style="padding: 1rem; text-align: center;"><strong>Total Jobs</strong><br><span style="font-size: 1.5rem; color: var(--color-primary);"><?= $stats['total'] ?></span></div>
+    <div class="section-card" style="padding: 1rem; text-align: center;"><strong>Jobs Ouverts</strong><br><span style="font-size: 1.5rem; color: var(--color-primary);"><?= $stats['open'] ?></span></div>
+    <div class="section-card" style="padding: 1rem; text-align: center;"><strong>Candidatures</strong><br><span style="font-size: 1.5rem; color: var(--color-primary);"><?= $stats['applications'] ?></span></div>
+    <div class="section-card" style="padding: 1rem; text-align: center;"><strong>Budget Moyen</strong><br><span style="font-size: 1.5rem; color: var(--color-primary);"><?= format_currency($stats['average_budget']) ?></span></div>
+</div>
+
+<section class="section-card" style="margin-bottom: 2rem;">
+    <form method="GET" action="index.php" style="display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap;">
+        <input type="hidden" name="module" value="jobs">
+        <input type="hidden" name="action" value="index">
+        <div class="form-group" style="margin-bottom: 0;">
+            <label>Recherche</label>
+            <input type="text" name="search" class="form-control" value="<?= h($filters['search'] ?? '') ?>" placeholder="Titre, description...">
+        </div>
+        <div class="form-group" style="margin-bottom: 0;">
+            <label>Trier par</label>
+            <select name="sort" class="form-control">
+                <option value="date_desc" <?= ($filters['sort'] ?? '') === 'date_desc' ? 'selected' : '' ?>>Plus recents d'abord</option>
+                <option value="date_asc" <?= ($filters['sort'] ?? '') === 'date_asc' ? 'selected' : '' ?>>Plus anciens d'abord</option>
+                <option value="budget_desc" <?= ($filters['sort'] ?? '') === 'budget_desc' ? 'selected' : '' ?>>Budget decroissant</option>
+                <option value="budget_asc" <?= ($filters['sort'] ?? '') === 'budget_asc' ? 'selected' : '' ?>>Budget croissant</option>
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Filtrer & Trier</button>
+    </form>
+</section>
+
+<div id="jobs-container">
 <?php if ($jobs): ?>
     <section class="listing-stack">
         <?php foreach ($jobs as $job): ?>
@@ -45,5 +77,21 @@
         <p class="muted">Publiez une offre ou essayez un autre type de mission.</p>
     </section>
 <?php endif; ?>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script>
+function exportToPDF(elementId, filename) {
+    const element = document.getElementById(elementId);
+    const opt = {
+      margin:       10,
+      filename:     filename,
+      image:        { type: 'jpeg', quality: 0.98 },
+      html2canvas:  { scale: 2 },
+      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+    html2pdf().set(opt).from(element).save();
+}
+</script>
 
 <?php require __DIR__ . '/../layouts/footer.php'; ?>

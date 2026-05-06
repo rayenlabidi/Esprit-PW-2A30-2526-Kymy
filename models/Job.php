@@ -42,8 +42,18 @@ class Job
             $sql .= ' AND j.is_remote = 1';
         }
 
-        $sql .= ' GROUP BY j.id, c.name, u.first_name, u.last_name
-                  ORDER BY j.created_at DESC';
+        $sql .= ' GROUP BY j.id, c.name, u.first_name, u.last_name ';
+
+        $sort = $filters['sort'] ?? 'date_desc';
+        if ($sort === 'budget_asc') {
+            $sql .= ' ORDER BY j.budget ASC';
+        } elseif ($sort === 'budget_desc') {
+            $sql .= ' ORDER BY j.budget DESC';
+        } elseif ($sort === 'date_asc') {
+            $sql .= ' ORDER BY j.created_at ASC';
+        } else {
+            $sql .= ' ORDER BY j.created_at DESC';
+        }
 
         $statement = $this->db->prepare($sql);
         $statement->execute($params);
@@ -144,5 +154,76 @@ class Job
             'applications' => (int) $this->db->query('SELECT COUNT(*) FROM candidatures')->fetchColumn(),
             'average_budget' => (float) $this->db->query('SELECT COALESCE(AVG(budget), 0) FROM jobs')->fetchColumn(),
         ];
+    }
+
+    public function getScoredRecommendations(int $jobId, int $categoryId, string $jobTitle): array
+    {
+        $sqlFreelancers = "SELECT u.id, u.first_name, u.last_name, u.headline, u.bio, u.avatar_url 
+                           FROM utilisateurs u
+                           INNER JOIN roles r ON r.id = u.role_id
+                           WHERE r.slug = 'freelancer'
+                             AND u.id NOT IN (SELECT user_id FROM candidatures WHERE job_id = :job_id)";
+        $stmt = $this->db->prepare($sqlFreelancers);
+        $stmt->execute(['job_id' => $jobId]);
+        $freelancers = $stmt->fetchAll();
+
+        $recommendations = [];
+        $stopWords = ['de', 'pour', 'le', 'la', 'les', 'un', 'une', 'des', 'et', 'en', 'a', 'au', 'aux', 'dans', 'sur'];
+        $words = explode(' ', strtolower(trim($jobTitle)));
+        $keywords = array_filter($words, fn($w) => strlen($w) > 2 && !in_array($w, $stopWords));
+
+        foreach ($freelancers as $f) {
+            $score = 0;
+
+            $sqlFormations = "SELECT MAX(i.progress) as max_progress, f.title
+                              FROM inscriptions i
+                              INNER JOIN formations f ON f.id = i.formation_id
+                              WHERE i.user_id = :user_id AND f.category_id = :category_id
+                              GROUP BY f.title LIMIT 1";
+            $stmtForm = $this->db->prepare($sqlFormations);
+            $stmtForm->execute(['user_id' => $f['id'], 'category_id' => $categoryId]);
+            $formationData = $stmtForm->fetch();
+            
+            $formationTitle = '';
+            $progress = 0;
+            if ($formationData) {
+                $progress = (int) $formationData['max_progress'];
+                $formationTitle = $formationData['title'];
+                if ($progress > 0) {
+                    $score += min(40, ($progress / 100) * 40);
+                }
+            }
+
+            $sqlExp = "SELECT COUNT(*) 
+                       FROM candidatures c
+                       INNER JOIN jobs j ON j.id = c.job_id
+                       WHERE c.user_id = :user_id 
+                         AND c.status = 'accepted' 
+                         AND j.category_id = :category_id";
+            $stmtExp = $this->db->prepare($sqlExp);
+            $stmtExp->execute(['user_id' => $f['id'], 'category_id' => $categoryId]);
+            $acceptedCount = (int) $stmtExp->fetchColumn();
+            $score += min(30, $acceptedCount * 15);
+
+            $textToSearch = strtolower($f['headline'] . ' ' . $f['bio']);
+            $semanticScore = 0;
+            foreach ($keywords as $kw) {
+                if (strpos($textToSearch, $kw) !== false) {
+                    $semanticScore += 10;
+                }
+            }
+            $score += min(30, $semanticScore);
+
+            if ($score > 0) {
+                $f['match_score'] = round($score);
+                $f['formation_title'] = $formationTitle;
+                $f['progress'] = $progress;
+                $recommendations[] = $f;
+            }
+        }
+
+        usort($recommendations, fn($a, $b) => $b['match_score'] <=> $a['match_score']);
+
+        return array_slice($recommendations, 0, 5);
     }
 }
