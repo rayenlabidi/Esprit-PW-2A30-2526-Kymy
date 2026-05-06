@@ -14,7 +14,18 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 // ── API Configuration ──────────────────────────────────────────
-$GEMINI_API_KEY  = 'AIzaSyBZm1cF5Pqxe7xqp7R6SlGtJ75fFpj70tw';
+$envFile = __DIR__ . '/../.env';
+$envVars = [];
+if (file_exists($envFile)) {
+    $envVars = parse_ini_file($envFile);
+}
+$GEMINI_API_KEY  = $envVars['GEMINI_API_KEY'] ?? '';
+if (empty($GEMINI_API_KEY)) {
+    http_response_code(500);
+    echo json_encode(['error' => 'API key configuration missing']);
+    exit;
+}
+
 $GEMINI_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent';
 
 $SYSTEM_PROMPT =
