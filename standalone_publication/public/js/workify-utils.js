@@ -227,11 +227,20 @@ function toggleChatbotModal() {
   }
 }
 
+let lastChatbotSendTime = 0;
+
 async function handleChatbotSend() {
   const input = document.getElementById('wf-chatbot-input');
   const msgBox = document.getElementById('wf-chatbot-messages');
   const raw = input.value.trim();
   if (!raw) return;
+
+  const now = Date.now();
+  if (now - lastChatbotSendTime < 10000) {
+    appendChatbotMessage("Please wait 10 seconds before sending another message.", 'bot');
+    return;
+  }
+  lastChatbotSendTime = now;
 
   // Show user bubble
   appendChatbotMessage(raw, 'user');

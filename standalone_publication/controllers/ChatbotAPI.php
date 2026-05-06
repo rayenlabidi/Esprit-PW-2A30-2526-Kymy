@@ -26,12 +26,31 @@ if (empty($GEMINI_API_KEY)) {
     exit;
 }
 
-$GEMINI_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent';
+$GEMINI_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
 
-$SYSTEM_PROMPT =
-    'You are a helpful assistant for a freelancing platform called Workify. ' .
-    'Help users with publications, messages, and navigation. ' .
-    'Keep answers concise and friendly.';
+$SYSTEM_PROMPT = <<<EOT
+You are a support assistant for a freelancing web application called Workify. Your primary goal is to be helpful and provide exact, step-by-step instructions when a user asks how to use a feature. Do NOT give vague or basic replies like "Hello" or "You can do this". Give them actionable steps.
+
+IMPORTANT RULES:
+- If a user asks HOW to do something, tell them exactly where to click or go.
+- Only talk about features that EXIST in the platform.
+- If a feature does NOT exist, say: "This feature is not available yet."
+- Do NOT invent features.
+
+AVAILABLE FEATURES AND HOW TO USE THEM:
+- Creating publications: Go to the feed or publications page, write your post in the input area, and click the publish button.
+- Liking publications: Find the publication you want to like, and click the "Like" button below the post.
+- Commenting on publications: Underneath a publication, click on the comment area, type your comment, and submit it.
+- Sending messages: Click on "Messages" in the navigation bar, select a user to chat with, type your message, and send it.
+- Searching publications: Use the search bar at the top of the publications page to type your keywords and filter posts.
+
+FORBIDDEN:
+- Do NOT mention archive.
+- Do NOT mention notifications if not implemented.
+- Do NOT mention features not listed.
+
+Always be direct, specific, and helpful. Give exact directions.
+EOT;
 
 // ── Read incoming JSON body ────────────────────────────────────
 $rawBody  = file_get_contents('php://input');
@@ -44,16 +63,26 @@ if (!$incoming || empty($incoming['message'])) {
 }
 
 $userMessage = trim($incoming['message']);
-$fullPrompt  = $SYSTEM_PROMPT . "\n\nUser: " . $userMessage;
 
 // ── Build Gemini request payload ───────────────────────────────
 $payload = json_encode([
+    'system_instruction' => [
+        'parts' => [
+            ['text' => $SYSTEM_PROMPT]
+        ]
+    ],
     'contents' => [
         [
             'parts' => [
-                ['text' => $fullPrompt]
+                ['text' => $userMessage]
             ]
         ]
+    ],
+    'safetySettings' => [
+        ['category' => 'HARM_CATEGORY_HARASSMENT', 'threshold' => 'BLOCK_NONE'],
+        ['category' => 'HARM_CATEGORY_HATE_SPEECH', 'threshold' => 'BLOCK_NONE'],
+        ['category' => 'HARM_CATEGORY_SEXUALLY_EXPLICIT', 'threshold' => 'BLOCK_NONE'],
+        ['category' => 'HARM_CATEGORY_DANGEROUS_CONTENT', 'threshold' => 'BLOCK_NONE']
     ]
 ]);
 
@@ -79,13 +108,24 @@ curl_close($ch);
 // ── Handle errors ──────────────────────────────────────────────
 if ($curlError) {
     http_response_code(502);
-    echo json_encode(['error' => 'Failed to reach Gemini API', 'detail' => $curlError]);
+    echo json_encode(['error' => 'Failed to reach Gemini API: ' . $curlError]);
     exit;
 }
 
 if ($httpCode !== 200) {
     http_response_code($httpCode);
-    echo json_encode(['error' => 'Gemini API returned an error', 'detail' => json_decode($response, true)]);
+    $geminiData = json_decode($response, true);
+
+    if ($httpCode === 429 || (isset($geminiData['error']['status']) && $geminiData['error']['status'] === 'RESOURCE_EXHAUSTED')) {
+        $errorMessage = 'The bot is currently busy. Please wait a minute before trying again.';
+    } else {
+        $errorMessage = 'Gemini API returned an error';
+        if (isset($geminiData['error']['message'])) {
+            $errorMessage .= ': ' . $geminiData['error']['message'];
+        }
+    }
+
+    echo json_encode(['error' => $errorMessage, 'detail' => $geminiData]);
     exit;
 }
 

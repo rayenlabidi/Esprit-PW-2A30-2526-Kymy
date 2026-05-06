@@ -261,7 +261,34 @@ function closeModal() {
 }
 
 // ==================== SMART LIKE SYSTEM ====================
-function toggleLike(btn, postId, currentLikes) {
+let reactionTimeouts = {};
+
+function showReactions(postId) {
+  clearTimeout(reactionTimeouts[postId]);
+  const popup = document.getElementById('reactions-' + postId);
+  if (popup) {
+    popup.style.display = 'flex';
+    popup.style.gap = '8px';
+  }
+}
+
+function hideReactions(postId) {
+  reactionTimeouts[postId] = setTimeout(() => {
+    const popup = document.getElementById('reactions-' + postId);
+    if (popup) popup.style.display = 'none';
+  }, 300);
+}
+
+const REACTION_EMOJIS = {
+  like: '👍',
+  love: '❤️',
+  haha: '😂',
+  wow: '😮',
+  angry: '😡',
+  sad: '😢'
+};
+
+function toggleLike(btn, postId, currentLikes, reactionType = 'like') {
   if (likingInProgress.has(postId)) return;
   likingInProgress.add(postId);
   
@@ -269,6 +296,7 @@ function toggleLike(btn, postId, currentLikes) {
   fd.append('action', 'toggle_like');
   fd.append('publication_id', postId);
   fd.append('user_id', CURRENT_USER_ID);
+  fd.append('reaction_type', reactionType);
   
   fetch(BASE_URL, { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' }, body: fd })
     .then(r => r.json())
@@ -278,18 +306,20 @@ function toggleLike(btn, postId, currentLikes) {
         // Update local state
         currentUserLikedPosts[postId] = data.liked;
         
-        // Update UI
-        const span = document.querySelector(`.like-count-${postId}`);
-        if (span) span.textContent = data.total_likes;
+        // Hide popup after click
+        const popup = document.getElementById('reactions-' + postId);
+        if (popup) popup.style.display = 'none';
         
         if (data.liked) {
           btn.classList.add('liked');
           btn.style.color = 'var(--blue)';
           btn.style.background = 'var(--blue-light)';
+          btn.innerHTML = `${REACTION_EMOJIS[data.reaction_type || reactionType]} <span class="like-count-${postId}">${data.total_likes}</span>`;
         } else {
           btn.classList.remove('liked');
           btn.style.color = 'var(--text-3)';
           btn.style.background = 'none';
+          btn.innerHTML = `👍 <span class="like-count-${postId}">${data.total_likes}</span>`;
         }
       } else {
         showValidationModal([data.error || 'Error toggling like']);
@@ -301,8 +331,26 @@ function toggleLike(btn, postId, currentLikes) {
     });
 }
 
+let commentReactionTimeouts = {};
+
+function showCommentReactions(commentId) {
+  clearTimeout(commentReactionTimeouts[commentId]);
+  const popup = document.getElementById('comment-reactions-' + commentId);
+  if (popup) {
+    popup.style.display = 'flex';
+    popup.style.gap = '8px';
+  }
+}
+
+function hideCommentReactions(commentId) {
+  commentReactionTimeouts[commentId] = setTimeout(() => {
+    const popup = document.getElementById('comment-reactions-' + commentId);
+    if (popup) popup.style.display = 'none';
+  }, 300);
+}
+
 // ==================== COMMENT LIKE SYSTEM ====================
-function toggleCommentLike(btn, commentId, currentLikes) {
+function toggleCommentLike(btn, commentId, currentLikes, reactionType = 'like') {
   if (commentLikingInProgress.has(commentId)) return;
   commentLikingInProgress.add(commentId);
   
@@ -310,21 +358,24 @@ function toggleCommentLike(btn, commentId, currentLikes) {
   fd.append('action', 'toggle_comment_like');
   fd.append('comment_id', commentId);
   fd.append('user_id', CURRENT_USER_ID);
+  fd.append('reaction_type', reactionType);
   
   fetch(BASE_URL, { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' }, body: fd })
     .then(r => r.json())
     .then(data => {
       commentLikingInProgress.delete(commentId);
       if (data.success) {
-        const span = document.querySelector(`.comment-like-count-${commentId}`);
-        if (span) span.textContent = data.total_likes;
+        const popup = document.getElementById('comment-reactions-' + commentId);
+        if (popup) popup.style.display = 'none';
         
         if (data.liked) {
           btn.classList.add('liked');
           btn.style.color = 'var(--blue)';
+          btn.innerHTML = `${REACTION_EMOJIS[data.reaction_type || reactionType]} <span class="comment-like-count-${commentId}">${data.total_likes}</span>`;
         } else {
           btn.classList.remove('liked');
           btn.style.color = 'var(--text-3)';
+          btn.innerHTML = `👍 <span class="comment-like-count-${commentId}">${data.total_likes}</span>`;
         }
       } else {
         showValidationModal([data.error || 'Error toggling comment like']);
@@ -352,17 +403,22 @@ function loadUserLikes() {
     .then(r => r.json())
     .then(data => {
       if (data.success) {
+        // data.liked_publications is now an object: { "1": "haha", "2": "like" }
+        const likesData = data.liked_publications || {};
         postIds.forEach(id => {
-          currentUserLikedPosts[id] = data.liked_publications.includes(parseInt(id));
+          currentUserLikedPosts[id] = likesData[id] || false;
         });
         
         postCards.forEach(card => {
           const postId = card.dataset.postId;
           const likeBtn = card.querySelector('.like-btn');
-          if (likeBtn && currentUserLikedPosts[postId]) {
+          const reaction = currentUserLikedPosts[postId];
+          if (likeBtn && reaction) {
             likeBtn.classList.add('liked');
             likeBtn.style.color = 'var(--blue)';
             likeBtn.style.background = 'var(--blue-light)';
+            const likesCount = likeBtn.querySelector(`.like-count-${postId}`)?.textContent || '0';
+            likeBtn.innerHTML = `${REACTION_EMOJIS[reaction] || '👍'} <span class="like-count-${postId}">${likesCount}</span>`;
           }
         });
       }
@@ -385,6 +441,7 @@ function loadComments(postId) {
   const fd = new FormData();
   fd.append('action',         'get_comments');
   fd.append('publication_id', postId);
+  fd.append('user_id', CURRENT_USER_ID);
   fetch(BASE_URL, { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' }, body: fd })
     .then(r => r.json())
     .then(data => {
@@ -432,6 +489,11 @@ function buildCommentHtml(c, postId, isReply) {
         <button class="pub-comment-send" onclick="addReply(${postId}, ${c.id})">Send</button>
       </div>
     </div>` : '';
+  const userReaction = c.user_reaction || null;
+  const likeBtnClass = userReaction ? 'liked' : '';
+  const likeBtnColor = userReaction ? 'var(--blue)' : 'var(--text-3)';
+  const reactionEmoji = userReaction ? (REACTION_EMOJIS[userReaction] || '👍') : '👍';
+
   return `
     <div class="pub-comment" data-comment-id="${c.id}">
       <div class="wf-avatar wf-avatar-32 ${c.user_avatar}">${escapeHtml(c.user_init)}</div>
@@ -439,9 +501,19 @@ function buildCommentHtml(c, postId, isReply) {
         <div class="pub-comment-author">${escapeHtml(c.user_name)}</div>
         <div class="pub-comment-text" id="comment-text-${c.id}">${escapeHtml(c.comment).replace(/\n/g, '<br>')}</div>
         <div class="pub-comment-actions">
-          <button class="comment-like-btn" onclick="toggleCommentLike(this, ${c.id}, ${c.likes})">
-            👍 <span class="comment-like-count-${c.id}">${c.likes}</span>
-          </button>
+          <div class="reaction-container" style="position:relative; display:inline-block;">
+            <button class="comment-like-btn ${likeBtnClass}" style="color:${likeBtnColor}" onmouseenter="showCommentReactions(${c.id})" onmouseleave="hideCommentReactions(${c.id})" onclick="toggleCommentLike(this, ${c.id}, ${c.likes}, 'like')">
+              ${reactionEmoji} <span class="comment-like-count-${c.id}">${c.likes}</span>
+            </button>
+            <div class="reactions-popup" id="comment-reactions-${c.id}" onmouseenter="showCommentReactions(${c.id})" onmouseleave="hideCommentReactions(${c.id})" style="display:none; position:absolute; bottom:100%; left:50%; transform:translateX(-50%); background:var(--bg-card); border:1px solid var(--border); border-radius:30px; padding:3px 8px; box-shadow:0 4px 12px rgba(0,0,0,0.15); z-index:10; white-space:nowrap; margin-bottom:5px;">
+                  <span style="cursor:pointer; font-size:16px; transition:transform 0.2s;" onmouseenter="this.style.transform='scale(1.3)'" onmouseleave="this.style.transform='scale(1)'" onclick="toggleCommentLike(this.parentElement.previousElementSibling, ${c.id}, 0, 'like')">👍</span>
+                  <span style="cursor:pointer; font-size:16px; transition:transform 0.2s;" onmouseenter="this.style.transform='scale(1.3)'" onmouseleave="this.style.transform='scale(1)'" onclick="toggleCommentLike(this.parentElement.previousElementSibling, ${c.id}, 0, 'love')">❤️</span>
+                  <span style="cursor:pointer; font-size:16px; transition:transform 0.2s;" onmouseenter="this.style.transform='scale(1.3)'" onmouseleave="this.style.transform='scale(1)'" onclick="toggleCommentLike(this.parentElement.previousElementSibling, ${c.id}, 0, 'haha')">😂</span>
+                  <span style="cursor:pointer; font-size:16px; transition:transform 0.2s;" onmouseenter="this.style.transform='scale(1.3)'" onmouseleave="this.style.transform='scale(1)'" onclick="toggleCommentLike(this.parentElement.previousElementSibling, ${c.id}, 0, 'wow')">😮</span>
+                  <span style="cursor:pointer; font-size:16px; transition:transform 0.2s;" onmouseenter="this.style.transform='scale(1.3)'" onmouseleave="this.style.transform='scale(1)'" onclick="toggleCommentLike(this.parentElement.previousElementSibling, ${c.id}, 0, 'sad')">😢</span>
+                  <span style="cursor:pointer; font-size:16px; transition:transform 0.2s;" onmouseenter="this.style.transform='scale(1.3)'" onmouseleave="this.style.transform='scale(1)'" onclick="toggleCommentLike(this.parentElement.previousElementSibling, ${c.id}, 0, 'angry')">😡</span>
+            </div>
+          </div>
           ${replyBtn}
           ${ownerBtns}
         </div>

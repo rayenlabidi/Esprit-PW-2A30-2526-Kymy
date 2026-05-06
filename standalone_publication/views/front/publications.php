@@ -201,9 +201,19 @@ $posts      = $controller->ListePublications();
           </div>
 
           <div class="pub-post-actions">
-            <button class="pub-action-btn like-btn" onclick="toggleLike(this, <?php echo $post['id']; ?>, <?php echo $post['likes']; ?>)">
-              👍 <span class="like-count-<?php echo $post['id']; ?>"><?php echo $post['likes']; ?></span> Likes
-            </button>
+            <div class="reaction-container" style="position:relative; flex:1;">
+              <button class="pub-action-btn like-btn" style="width:100%" onmouseenter="showReactions(<?php echo $post['id']; ?>)" onmouseleave="hideReactions(<?php echo $post['id']; ?>)" onclick="toggleLike(this, <?php echo $post['id']; ?>, <?php echo $post['likes']; ?>, 'like')">
+                👍 <span class="like-count-<?php echo $post['id']; ?>"><?php echo $post['likes']; ?></span>
+              </button>
+              <div class="reactions-popup" id="reactions-<?php echo $post['id']; ?>" onmouseenter="showReactions(<?php echo $post['id']; ?>)" onmouseleave="hideReactions(<?php echo $post['id']; ?>)" style="display:none; position:absolute; bottom:100%; left:50%; transform:translateX(-50%); background:var(--bg-card); border:1px solid var(--border); border-radius:30px; padding:5px 10px; box-shadow:0 4px 12px rgba(0,0,0,0.15); z-index:10; white-space:nowrap; margin-bottom:5px;">
+                  <span style="cursor:pointer; font-size:20px; transition:transform 0.2s;" onmouseenter="this.style.transform='scale(1.3)'" onmouseleave="this.style.transform='scale(1)'" onclick="toggleLike(this.parentElement.previousElementSibling, <?php echo $post['id']; ?>, 0, 'like')">👍</span>
+                  <span style="cursor:pointer; font-size:20px; transition:transform 0.2s;" onmouseenter="this.style.transform='scale(1.3)'" onmouseleave="this.style.transform='scale(1)'" onclick="toggleLike(this.parentElement.previousElementSibling, <?php echo $post['id']; ?>, 0, 'love')">❤️</span>
+                  <span style="cursor:pointer; font-size:20px; transition:transform 0.2s;" onmouseenter="this.style.transform='scale(1.3)'" onmouseleave="this.style.transform='scale(1)'" onclick="toggleLike(this.parentElement.previousElementSibling, <?php echo $post['id']; ?>, 0, 'haha')">😂</span>
+                  <span style="cursor:pointer; font-size:20px; transition:transform 0.2s;" onmouseenter="this.style.transform='scale(1.3)'" onmouseleave="this.style.transform='scale(1)'" onclick="toggleLike(this.parentElement.previousElementSibling, <?php echo $post['id']; ?>, 0, 'wow')">😮</span>
+                  <span style="cursor:pointer; font-size:20px; transition:transform 0.2s;" onmouseenter="this.style.transform='scale(1.3)'" onmouseleave="this.style.transform='scale(1)'" onclick="toggleLike(this.parentElement.previousElementSibling, <?php echo $post['id']; ?>, 0, 'sad')">😢</span>
+                  <span style="cursor:pointer; font-size:20px; transition:transform 0.2s;" onmouseenter="this.style.transform='scale(1.3)'" onmouseleave="this.style.transform='scale(1)'" onclick="toggleLike(this.parentElement.previousElementSibling, <?php echo $post['id']; ?>, 0, 'angry')">😡</span>
+              </div>
+            </div>
             <button class="pub-action-btn" onclick="toggleComments(<?php echo $post['id']; ?>)">
               💬 <span class="comment-count-<?php echo $post['id']; ?>"><?php echo $commentCount; ?></span> Comments
             </button>

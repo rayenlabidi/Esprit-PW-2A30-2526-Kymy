@@ -179,6 +179,8 @@ function filterConversations(q) {
   renderConversations(q);
 }
 
+let messageCache = {};
+
 function openConversation(otherUserId, name, init, avatar) {
   if (activeConvId === otherUserId) return;
   activeConvId     = otherUserId;
@@ -209,6 +211,14 @@ function openConversation(otherUserId, name, init, avatar) {
   document.getElementById('emptyState').style.display = 'none';
   document.getElementById('inputBar').style.display   = 'block';
   document.getElementById('msgTextarea').focus();
+  
+  const body = document.getElementById('chatBody');
+  if (messageCache[otherUserId]) {
+    renderMessages(messageCache[otherUserId]);
+  } else if (body) {
+    body.innerHTML = '<div style="flex:1;display:flex;align-items:center;justify-content:center;color:var(--text-4);font-size:13px;">Loading...</div>';
+  }
+
   loadMessages(otherUserId);
   if (pollTimer) clearInterval(pollTimer);
   pollTimer = setInterval(() => {
@@ -225,21 +235,22 @@ function loadMessages(otherUserId, silent) {
   fetch(MSG_URL, { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' }, body: fd })
     .then(r => r.json())
     .then(data => {
-      if (activeConvId === otherUserId) {
-        if (data.success && data.messages) {
+      if (data.success && data.messages) {
+        messageCache[otherUserId] = data.messages;
+        if (activeConvId === otherUserId) {
           renderMessages(data.messages);
           if (!silent) {
             loadConversations();
             updateReadStatus(data.messages);
           }
-        } else {
-          renderMessages([]);
         }
+      } else if (activeConvId === otherUserId) {
+        renderMessages([]);
       }
     })
     .catch(error => {
       console.error('Load messages error:', error);
-      if (activeConvId === otherUserId) renderMessages([]);
+      if (activeConvId === otherUserId && !messageCache[otherUserId]) renderMessages([]);
     });
 }
 

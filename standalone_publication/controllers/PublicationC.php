@@ -146,53 +146,54 @@ class PublicationC
      * @param string $user_id The user ID liking the publication
      * @return array ['liked' => bool, 'total_likes' => int]
      */
-    public function TogglePublicationLike($publication_id, $user_id)
+    public function TogglePublicationLike($publication_id, $user_id, $reaction_type = 'like')
     {
         $db = config::getConnexion();
         try {
-            // Check if user already liked this publication
-            $checkSql = "SELECT id FROM publication_likes WHERE publication_id = :pub_id AND user_id = :user_id";
+            $checkSql = "SELECT id, reaction_type FROM publication_likes WHERE publication_id = :pub_id AND user_id = :user_id";
             $checkQuery = $db->prepare($checkSql);
             $checkQuery->execute(['pub_id' => $publication_id, 'user_id' => $user_id]);
             $existing = $checkQuery->fetch();
             
+            $liked = false;
             if ($existing) {
-                // User already liked - remove like (UNLIKE)
-                $deleteSql = "DELETE FROM publication_likes WHERE publication_id = :pub_id AND user_id = :user_id";
-                $deleteQuery = $db->prepare($deleteSql);
-                $deleteQuery->execute(['pub_id' => $publication_id, 'user_id' => $user_id]);
-                
-                // Count first (MySQL does not allow subquery on the same table being updated)
-                $countSql = "SELECT COUNT(*) as cnt FROM publication_likes WHERE publication_id = :pub_id";
-                $countQuery = $db->prepare($countSql);
-                $countQuery->execute(['pub_id' => $publication_id]);
-                $newCount = (int)$countQuery->fetch()['cnt'];
-                
-                // Then update
-                $updateSql = "UPDATE publication SET likes = :cnt WHERE id = :pub_id";
-                $updateQuery = $db->prepare($updateSql);
-                $updateQuery->execute(['cnt' => $newCount, 'pub_id' => $publication_id]);
-                
-                return ['liked' => false, 'total_likes' => $newCount];
+                if ($existing['reaction_type'] === $reaction_type) {
+                    // Same reaction -> remove it
+                    $deleteSql = "DELETE FROM publication_likes WHERE id = :id";
+                    $db->prepare($deleteSql)->execute(['id' => $existing['id']]);
+                } else {
+                    // Different reaction -> update it
+                    $updateSql = "UPDATE publication_likes SET reaction_type = :reaction WHERE id = :id";
+                    $db->prepare($updateSql)->execute(['reaction' => $reaction_type, 'id' => $existing['id']]);
+                    $liked = true;
+                }
             } else {
-                // User hasn't liked - add like
-                $insertSql = "INSERT INTO publication_likes (publication_id, user_id) VALUES (:pub_id, :user_id)";
-                $insertQuery = $db->prepare($insertSql);
-                $insertQuery->execute(['pub_id' => $publication_id, 'user_id' => $user_id]);
-                
-                // Count first (MySQL does not allow subquery on the same table being updated)
-                $countSql = "SELECT COUNT(*) as cnt FROM publication_likes WHERE publication_id = :pub_id";
-                $countQuery = $db->prepare($countSql);
-                $countQuery->execute(['pub_id' => $publication_id]);
-                $newCount = (int)$countQuery->fetch()['cnt'];
-                
-                // Then update
-                $updateSql = "UPDATE publication SET likes = :cnt WHERE id = :pub_id";
-                $updateQuery = $db->prepare($updateSql);
-                $updateQuery->execute(['cnt' => $newCount, 'pub_id' => $publication_id]);
-                
-                return ['liked' => true, 'total_likes' => $newCount];
+                // New reaction
+                $insertSql = "INSERT INTO publication_likes (publication_id, user_id, reaction_type) VALUES (:pub_id, :user_id, :reaction)";
+                $db->prepare($insertSql)->execute(['pub_id' => $publication_id, 'user_id' => $user_id, 'reaction' => $reaction_type]);
+                $liked = true;
             }
+            
+            // Total count
+            $countSql = "SELECT COUNT(*) as cnt FROM publication_likes WHERE publication_id = :pub_id";
+            $countQuery = $db->prepare($countSql);
+            $countQuery->execute(['pub_id' => $publication_id]);
+            $newCount = (int)$countQuery->fetch()['cnt'];
+            
+            // Reaction counts breakdown
+            $countsByTypeSql = "SELECT reaction_type, COUNT(*) as cnt FROM publication_likes WHERE publication_id = :pub_id GROUP BY reaction_type";
+            $countsQuery = $db->prepare($countsByTypeSql);
+            $countsQuery->execute(['pub_id' => $publication_id]);
+            $reactionCounts = [];
+            foreach ($countsQuery->fetchAll() as $row) {
+                $reactionCounts[$row['reaction_type']] = (int)$row['cnt'];
+            }
+            
+            // Update legacy column
+            $updateSql = "UPDATE publication SET likes = :cnt WHERE id = :pub_id";
+            $db->prepare($updateSql)->execute(['cnt' => $newCount, 'pub_id' => $publication_id]);
+            
+            return ['liked' => $liked, 'total_likes' => $newCount, 'reaction_type' => $liked ? $reaction_type : null, 'reaction_counts' => $reactionCounts];
         } catch (Exception $e) {
             error_log("TogglePublicationLike error: " . $e->getMessage());
             return ['liked' => false, 'total_likes' => 0, 'error' => $e->getMessage()];
@@ -225,12 +226,16 @@ class PublicationC
         $db = config::getConnexion();
         try {
             $placeholders = implode(',', array_fill(0, count($publication_ids), '?'));
-            $sql = "SELECT publication_id FROM publication_likes WHERE user_id = ? AND publication_id IN ($placeholders)";
+            $sql = "SELECT publication_id, reaction_type FROM publication_likes WHERE user_id = ? AND publication_id IN ($placeholders)";
             $params = array_merge([$user_id], $publication_ids);
             $query = $db->prepare($sql);
             $query->execute($params);
-            $results = $query->fetchAll();
-            return array_column($results, 'publication_id');
+            $results = $query->fetchAll(PDO::FETCH_ASSOC);
+            $likes = [];
+            foreach ($results as $row) {
+                $likes[$row['publication_id']] = $row['reaction_type'];
+            }
+            return $likes;
         } catch (Exception $e) {
             return [];
         }
@@ -241,53 +246,45 @@ class PublicationC
     /**
      * Toggle like on a comment (smart like - can only like once)
      */
-    public function ToggleCommentLike($comment_id, $user_id)
+    public function ToggleCommentLike($comment_id, $user_id, $reaction_type = 'like')
     {
         $db = config::getConnexion();
         try {
-            // Check if user already liked this comment
-            $checkSql = "SELECT id FROM comment_likes WHERE comment_id = :comment_id AND user_id = :user_id";
+            $checkSql = "SELECT id, reaction_type FROM comment_likes WHERE comment_id = :comment_id AND user_id = :user_id";
             $checkQuery = $db->prepare($checkSql);
             $checkQuery->execute(['comment_id' => $comment_id, 'user_id' => $user_id]);
             $existing = $checkQuery->fetch();
             
+            $liked = false;
             if ($existing) {
-                // Remove like
-                $deleteSql = "DELETE FROM comment_likes WHERE comment_id = :comment_id AND user_id = :user_id";
-                $deleteQuery = $db->prepare($deleteSql);
-                $deleteQuery->execute(['comment_id' => $comment_id, 'user_id' => $user_id]);
-                
-                // Count first (MySQL does not allow subquery on the same table being updated)
-                $countSql = "SELECT COUNT(*) as cnt FROM comment_likes WHERE comment_id = :comment_id";
-                $countQuery = $db->prepare($countSql);
-                $countQuery->execute(['comment_id' => $comment_id]);
-                $newCount = (int)$countQuery->fetch()['cnt'];
-                
-                // Then update
-                $updateSql = "UPDATE comments SET likes = :cnt WHERE id = :comment_id";
-                $updateQuery = $db->prepare($updateSql);
-                $updateQuery->execute(['cnt' => $newCount, 'comment_id' => $comment_id]);
-                
-                return ['liked' => false, 'total_likes' => $newCount];
+                if ($existing['reaction_type'] === $reaction_type) {
+                    // Remove like
+                    $deleteSql = "DELETE FROM comment_likes WHERE id = :id";
+                    $db->prepare($deleteSql)->execute(['id' => $existing['id']]);
+                } else {
+                    // Change reaction
+                    $updateSql = "UPDATE comment_likes SET reaction_type = :reaction WHERE id = :id";
+                    $db->prepare($updateSql)->execute(['reaction' => $reaction_type, 'id' => $existing['id']]);
+                    $liked = true;
+                }
             } else {
                 // Add like
-                $insertSql = "INSERT INTO comment_likes (comment_id, user_id) VALUES (:comment_id, :user_id)";
-                $insertQuery = $db->prepare($insertSql);
-                $insertQuery->execute(['comment_id' => $comment_id, 'user_id' => $user_id]);
-                
-                // Count first (MySQL does not allow subquery on the same table being updated)
-                $countSql = "SELECT COUNT(*) as cnt FROM comment_likes WHERE comment_id = :comment_id";
-                $countQuery = $db->prepare($countSql);
-                $countQuery->execute(['comment_id' => $comment_id]);
-                $newCount = (int)$countQuery->fetch()['cnt'];
-                
-                // Then update
-                $updateSql = "UPDATE comments SET likes = :cnt WHERE id = :comment_id";
-                $updateQuery = $db->prepare($updateSql);
-                $updateQuery->execute(['cnt' => $newCount, 'comment_id' => $comment_id]);
-                
-                return ['liked' => true, 'total_likes' => $newCount];
+                $insertSql = "INSERT INTO comment_likes (comment_id, user_id, reaction_type) VALUES (:comment_id, :user_id, :reaction)";
+                $db->prepare($insertSql)->execute(['comment_id' => $comment_id, 'user_id' => $user_id, 'reaction' => $reaction_type]);
+                $liked = true;
             }
+            
+            // Count total
+            $countSql = "SELECT COUNT(*) as cnt FROM comment_likes WHERE comment_id = :comment_id";
+            $countQuery = $db->prepare($countSql);
+            $countQuery->execute(['comment_id' => $comment_id]);
+            $newCount = (int)$countQuery->fetch()['cnt'];
+            
+            // Update comments table
+            $updateSql = "UPDATE comments SET likes = :cnt WHERE id = :comment_id";
+            $db->prepare($updateSql)->execute(['cnt' => $newCount, 'comment_id' => $comment_id]);
+            
+            return ['liked' => $liked, 'total_likes' => $newCount, 'reaction_type' => $liked ? $reaction_type : null];
         } catch (Exception $e) {
             error_log("ToggleCommentLike error: " . $e->getMessage());
             return ['liked' => false, 'total_likes' => 0, 'error' => $e->getMessage()];
@@ -295,43 +292,67 @@ class PublicationC
     }
     
     /**
-     * Check if user has liked a comment
+     * Get like statuses for multiple comments
      */
-    public function HasUserLikedComment($comment_id, $user_id)
+    public function GetUserCommentLikes($user_id, $comment_ids = [])
     {
+        if (empty($comment_ids)) return [];
+        
         $db = config::getConnexion();
         try {
-            $sql = "SELECT id FROM comment_likes WHERE comment_id = :comment_id AND user_id = :user_id";
+            $placeholders = implode(',', array_fill(0, count($comment_ids), '?'));
+            $sql = "SELECT comment_id, reaction_type FROM comment_likes WHERE user_id = ? AND comment_id IN ($placeholders)";
+            $params = array_merge([$user_id], $comment_ids);
             $query = $db->prepare($sql);
-            $query->execute(['comment_id' => $comment_id, 'user_id' => $user_id]);
-            return $query->fetch() !== false;
+            $query->execute($params);
+            $results = $query->fetchAll(PDO::FETCH_ASSOC);
+            $likes = [];
+            foreach ($results as $row) {
+                $likes[$row['comment_id']] = $row['reaction_type'];
+            }
+            return $likes;
         } catch (Exception $e) {
-            return false;
+            return [];
         }
     }
 
     // ==================== COMMENTS ====================
 
-    public function ListeComments($publication_id)
+    public function ListeComments($publication_id, $user_id = null)
     {
         $db = config::getConnexion();
         try {
             $sql = "SELECT * FROM comments WHERE publication_id = :publication_id AND (parent_id IS NULL OR parent_id = 0) ORDER BY created_at ASC";
             $query = $db->prepare($sql);
             $query->execute(['publication_id' => $publication_id]);
-            $comments = $query->fetchAll();
+            $comments = $query->fetchAll(PDO::FETCH_ASSOC);
             
             foreach ($comments as &$comment) {
                 $sql2 = "SELECT * FROM comments WHERE parent_id = :parent_id ORDER BY created_at ASC";
                 $query2 = $db->prepare($sql2);
                 $query2->execute(['parent_id' => $comment['id']]);
-                $comment['replies'] = $query2->fetchAll();
+                $comment['replies'] = $query2->fetchAll(PDO::FETCH_ASSOC);
+                
+                if ($user_id) {
+                    $comment['user_reaction'] = $this->GetCommentReaction($comment['id'], $user_id);
+                    foreach ($comment['replies'] as &$reply) {
+                        $reply['user_reaction'] = $this->GetCommentReaction($reply['id'], $user_id);
+                    }
+                }
             }
             
             return $comments;
         } catch (Exception $e) {
             die("Error: " . $e->getMessage());
         }
+    }
+    
+    private function GetCommentReaction($comment_id, $user_id) {
+        $db = config::getConnexion();
+        $q = $db->prepare("SELECT reaction_type FROM comment_likes WHERE comment_id = ? AND user_id = ?");
+        $q->execute([$comment_id, $user_id]);
+        $row = $q->fetch(PDO::FETCH_ASSOC);
+        return $row ? $row['reaction_type'] : null;
     }
 
     public function AddComment($c)
@@ -482,8 +503,9 @@ if (!defined('ADMIN_AJAX_HANDLER') && $_SERVER['REQUEST_METHOD'] === 'POST' && i
             
         // ========== SMART LIKE ACTIONS ==========
         case 'toggle_like':
-            $result = $controller->TogglePublicationLike($_POST['publication_id'], $_POST['user_id']);
-            $response = ['success' => true, 'liked' => $result['liked'], 'total_likes' => $result['total_likes']];
+            $reaction_type = $_POST['reaction_type'] ?? 'like';
+            $result = $controller->TogglePublicationLike($_POST['publication_id'], $_POST['user_id'], $reaction_type);
+            $response = ['success' => true, 'liked' => $result['liked'], 'total_likes' => $result['total_likes'], 'reaction_type' => $result['reaction_type']];
             if (isset($result['error'])) {
                 $response['success'] = false;
                 $response['error'] = $result['error'];
@@ -491,8 +513,9 @@ if (!defined('ADMIN_AJAX_HANDLER') && $_SERVER['REQUEST_METHOD'] === 'POST' && i
             break;
             
         case 'toggle_comment_like':
-            $result = $controller->ToggleCommentLike($_POST['comment_id'], $_POST['user_id']);
-            $response = ['success' => true, 'liked' => $result['liked'], 'total_likes' => $result['total_likes']];
+            $reaction_type = $_POST['reaction_type'] ?? 'like';
+            $result = $controller->ToggleCommentLike($_POST['comment_id'], $_POST['user_id'], $reaction_type);
+            $response = ['success' => true, 'liked' => $result['liked'], 'total_likes' => $result['total_likes'], 'reaction_type' => $result['reaction_type']];
             if (isset($result['error'])) {
                 $response['success'] = false;
                 $response['error'] = $result['error'];
@@ -512,7 +535,8 @@ if (!defined('ADMIN_AJAX_HANDLER') && $_SERVER['REQUEST_METHOD'] === 'POST' && i
             
         // ========== COMMENT ACTIONS ==========
         case 'get_comments':
-            $comments = $controller->ListeComments($_POST['publication_id']);
+            $user_id = $_POST['user_id'] ?? null;
+            $comments = $controller->ListeComments($_POST['publication_id'], $user_id);
             $response = ['success' => true, 'comments' => $comments];
             break;
             
