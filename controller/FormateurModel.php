@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '/../config.php';
-require_once __DIR__ . '/formateur.php';
+require_once __DIR__ . '/../Model/formateur.php';
 
 class FormateurModel
 {

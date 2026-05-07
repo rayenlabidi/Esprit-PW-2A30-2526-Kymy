@@ -2,11 +2,11 @@
 require_once __DIR__ . '/../Model/formation.php';
 require_once __DIR__ . '/../Model/apprenant.php';
 require_once __DIR__ . '/../Model/inscriptionFormation.php';
-require_once __DIR__ . '/../Model/FormationModel.php';
-require_once __DIR__ . '/../Model/CategorieFormationModel.php';
-require_once __DIR__ . '/../Model/FormateurModel.php';
-require_once __DIR__ . '/../Model/ApprenantModel.php';
-require_once __DIR__ . '/../Model/InscriptionFormationModel.php';
+require_once __DIR__ . '/FormationModel.php';
+require_once __DIR__ . '/CategorieFormationModel.php';
+require_once __DIR__ . '/FormateurModel.php';
+require_once __DIR__ . '/ApprenantModel.php';
+require_once __DIR__ . '/InscriptionFormationModel.php';
 
 class FormationC
 {

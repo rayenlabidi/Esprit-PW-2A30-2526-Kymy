@@ -26,9 +26,19 @@ class categorieFormation
         return $this->nomCategorie;
     }
 
+    public function setNomCategorie($nomCategorie)
+    {
+        $this->nomCategorie = $nomCategorie;
+    }
+
     public function getDescriptionCategorie()
     {
         return $this->descriptionCategorie;
+    }
+
+    public function setDescriptionCategorie($descriptionCategorie)
+    {
+        $this->descriptionCategorie = $descriptionCategorie;
     }
 }
 ?>

@@ -17,14 +17,29 @@ class inscriptionFormation
         return $this->idApprenant;
     }
 
+    public function setIdApprenant($idApprenant)
+    {
+        $this->idApprenant = $idApprenant;
+    }
+
     public function getIdFormation()
     {
         return $this->idFormation;
     }
 
+    public function setIdFormation($idFormation)
+    {
+        $this->idFormation = $idFormation;
+    }
+
     public function getStatut()
     {
         return $this->statut;
+    }
+
+    public function setStatut($statut)
+    {
+        $this->statut = $statut;
     }
 }
 ?>

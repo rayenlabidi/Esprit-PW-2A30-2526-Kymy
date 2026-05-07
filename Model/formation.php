@@ -46,9 +46,19 @@ class formation
         return $this->titre;
     }
 
+    public function setTitre($titre)
+    {
+        $this->titre = $titre;
+    }
+
     public function getDescription()
     {
         return $this->description;
+    }
+
+    public function setDescription($description)
+    {
+        $this->description = $description;
     }
 
     public function getDateDebut()
@@ -56,9 +66,19 @@ class formation
         return $this->dateDebut;
     }
 
+    public function setDateDebut($dateDebut)
+    {
+        $this->dateDebut = $dateDebut;
+    }
+
     public function getDateFin()
     {
         return $this->dateFin;
+    }
+
+    public function setDateFin($dateFin)
+    {
+        $this->dateFin = $dateFin;
     }
 
     public function getDuree()
@@ -66,9 +86,19 @@ class formation
         return $this->duree;
     }
 
+    public function setDuree($duree)
+    {
+        $this->duree = $duree;
+    }
+
     public function getPrix()
     {
         return $this->prix;
+    }
+
+    public function setPrix($prix)
+    {
+        $this->prix = $prix;
     }
 
     public function getNiveau()
@@ -76,9 +106,19 @@ class formation
         return $this->niveau;
     }
 
+    public function setNiveau($niveau)
+    {
+        $this->niveau = $niveau;
+    }
+
     public function getStatut()
     {
         return $this->statut;
+    }
+
+    public function setStatut($statut)
+    {
+        $this->statut = $statut;
     }
 
     public function getMode()
@@ -86,9 +126,19 @@ class formation
         return $this->mode;
     }
 
+    public function setMode($mode)
+    {
+        $this->mode = $mode;
+    }
+
     public function getPlaces()
     {
         return $this->places;
+    }
+
+    public function setPlaces($places)
+    {
+        $this->places = $places;
     }
 
     public function getIdCategorie()
@@ -96,9 +146,19 @@ class formation
         return $this->idCategorie;
     }
 
+    public function setIdCategorie($idCategorie)
+    {
+        $this->idCategorie = $idCategorie;
+    }
+
     public function getIdFormateur()
     {
         return $this->idFormateur;
+    }
+
+    public function setIdFormateur($idFormateur)
+    {
+        $this->idFormateur = $idFormateur;
     }
 }
 ?>

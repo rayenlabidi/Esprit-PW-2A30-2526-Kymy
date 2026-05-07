@@ -79,13 +79,13 @@ include __DIR__ . '/../includes/header.php';
         </div>
 
         <div>
-            <label for="date_debut">Date debut (YYYY-MM-DD)</label>
-            <input id="date_debut" name="date_debut" value="<?= htmlspecialchars(isset($formData['date_debut']) ? $formData['date_debut'] : '', ENT_QUOTES); ?>">
+            <label for="date_debut">Date debut</label>
+            <input type="date" id="date_debut" name="date_debut" value="<?= htmlspecialchars(isset($formData['date_debut']) ? $formData['date_debut'] : '', ENT_QUOTES); ?>">
         </div>
 
         <div>
-            <label for="date_fin">Date fin (YYYY-MM-DD)</label>
-            <input id="date_fin" name="date_fin" value="<?= htmlspecialchars(isset($formData['date_fin']) ? $formData['date_fin'] : '', ENT_QUOTES); ?>">
+            <label for="date_fin">Date fin</label>
+            <input type="date" id="date_fin" name="date_fin" value="<?= htmlspecialchars(isset($formData['date_fin']) ? $formData['date_fin'] : '', ENT_QUOTES); ?>">
         </div>
 
         <div>

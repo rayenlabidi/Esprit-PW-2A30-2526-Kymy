@@ -28,14 +28,29 @@ class formateur
         return $this->nom;
     }
 
+    public function setNom($nom)
+    {
+        $this->nom = $nom;
+    }
+
     public function getEmail()
     {
         return $this->email;
     }
 
+    public function setEmail($email)
+    {
+        $this->email = $email;
+    }
+
     public function getSpecialite()
     {
         return $this->specialite;
+    }
+
+    public function setSpecialite($specialite)
+    {
+        $this->specialite = $specialite;
     }
 }
 ?>

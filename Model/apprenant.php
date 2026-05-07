@@ -28,14 +28,29 @@ class apprenant
         return $this->nom;
     }
 
+    public function setNom($nom)
+    {
+        $this->nom = $nom;
+    }
+
     public function getEmail()
     {
         return $this->email;
     }
 
+    public function setEmail($email)
+    {
+        $this->email = $email;
+    }
+
     public function getTelephone()
     {
         return $this->telephone;
+    }
+
+    public function setTelephone($telephone)
+    {
+        $this->telephone = $telephone;
     }
 }
 ?>

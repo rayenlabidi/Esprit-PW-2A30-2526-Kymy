@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/../Model/FormationModel.php';
+require_once __DIR__ . '/FormationModel.php';
 
 class HomeC
 {
