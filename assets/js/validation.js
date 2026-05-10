@@ -47,6 +47,22 @@ function validateForm(form) {
         validatePhone(form, 'telephone', 'Le telephone doit contenir au moins 8 chiffres.', errors);
     }
 
+    if (module === 'job') {
+        validateText(form, 'titre', 4, 'Le titre doit contenir au moins 4 caracteres.', errors);
+        validateText(form, 'description', 20, 'La description doit contenir au moins 20 caracteres.', errors);
+        validateNumber(form, 'budget', 0, 'Le budget doit etre un nombre positif.', errors);
+        validateSelect(form, 'id_categorie', 'Veuillez choisir une categorie.', errors);
+        validateText(form, 'localisation', 2, 'La localisation doit contenir au moins 2 caracteres.', errors);
+        validateSelect(form, 'type', 'Veuillez choisir un type.', errors);
+        validateSelect(form, 'statut', 'Veuillez choisir un statut.', errors);
+    }
+
+    if (module === 'candidature') {
+        validateText(form, 'nom', 3, 'Le nom doit contenir au moins 3 caracteres.', errors);
+        validateEmail(form, 'email', 'Veuillez saisir un email valide.', errors);
+        validateText(form, 'message', 20, 'Le message doit contenir au moins 20 caracteres.', errors);
+    }
+
     return errors;
 }
 

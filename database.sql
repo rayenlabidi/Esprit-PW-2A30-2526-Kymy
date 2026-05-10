@@ -2,6 +2,11 @@ CREATE DATABASE IF NOT EXISTS `2a30` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8m
 USE `2a30`;
 
 SET FOREIGN_KEY_CHECKS = 0;
+DROP TABLE IF EXISTS candidatures;
+DROP TABLE IF EXISTS jobs;
+DROP TABLE IF EXISTS utilisateurs;
+DROP TABLE IF EXISTS roles;
+DROP TABLE IF EXISTS categories;
 DROP TABLE IF EXISTS inscription_formation;
 DROP TABLE IF EXISTS apprenant;
 DROP TABLE IF EXISTS formation;
@@ -100,3 +105,108 @@ INSERT INTO inscription_formation (id_apprenant, id_formation, statut) VALUES
 (1, 1, 'acceptee'),
 (2, 1, 'en_attente'),
 (2, 2, 'en_attente');
+
+CREATE TABLE roles (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(60) NOT NULL,
+    slug VARCHAR(40) NOT NULL UNIQUE,
+    description VARCHAR(255) NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE utilisateurs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    role_id INT NOT NULL,
+    first_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100) NOT NULL,
+    email VARCHAR(190) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    headline VARCHAR(150) NOT NULL,
+    bio TEXT NOT NULL,
+    avatar_url VARCHAR(255) NULL,
+    status ENUM('active', 'pending', 'blocked') NOT NULL DEFAULT 'active',
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_utilisateurs_role
+        FOREIGN KEY (role_id)
+        REFERENCES roles(id)
+        ON UPDATE CASCADE
+        ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE categories (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(120) NOT NULL,
+    slug VARCHAR(120) NOT NULL UNIQUE,
+    scope ENUM('all', 'formation', 'job') NOT NULL DEFAULT 'all',
+    description VARCHAR(255) NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE jobs (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(180) NOT NULL,
+    description TEXT NOT NULL,
+    budget DECIMAL(10, 2) NOT NULL DEFAULT 0,
+    category_id INT NOT NULL,
+    location VARCHAR(120) NOT NULL,
+    is_remote TINYINT(1) NOT NULL DEFAULT 0,
+    job_type ENUM('Freelance', 'Full-time', 'Stage', 'Part-time') NOT NULL DEFAULT 'Freelance',
+    status ENUM('open', 'draft', 'closed') NOT NULL DEFAULT 'open',
+    publisher_id INT NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_jobs_category
+        FOREIGN KEY (category_id)
+        REFERENCES categories(id)
+        ON UPDATE CASCADE
+        ON DELETE RESTRICT,
+    CONSTRAINT fk_jobs_publisher
+        FOREIGN KEY (publisher_id)
+        REFERENCES utilisateurs(id)
+        ON UPDATE CASCADE
+        ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE candidatures (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    job_id INT NOT NULL,
+    cover_letter TEXT NOT NULL,
+    cv_url VARCHAR(255) NULL,
+    photo_url VARCHAR(255) NULL,
+    status ENUM('pending', 'reviewed', 'accepted', 'rejected') NOT NULL DEFAULT 'pending',
+    applied_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY unique_candidature (user_id, job_id),
+    CONSTRAINT fk_candidatures_user
+        FOREIGN KEY (user_id)
+        REFERENCES utilisateurs(id)
+        ON UPDATE CASCADE
+        ON DELETE CASCADE,
+    CONSTRAINT fk_candidatures_job
+        FOREIGN KEY (job_id)
+        REFERENCES jobs(id)
+        ON UPDATE CASCADE
+        ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+INSERT INTO roles (id, name, slug, description) VALUES
+(1, 'Admin', 'admin', 'Gere toute la plateforme'),
+(2, 'Freelancer', 'freelancer', 'Suit les formations et postule aux jobs'),
+(3, 'Boss', 'boss', 'Publie des jobs et recrute des freelances');
+
+INSERT INTO utilisateurs (id, role_id, first_name, last_name, email, password, headline, bio, avatar_url, status) VALUES
+(1, 1, 'Admin', 'Workify', 'admin@workify.com', '$2y$10$7ALOQvIWzngQAJ/eN3NsS.7HpVWVUVLlxv7KblJL4McnOLEJIKus6', 'Platform administrator', 'Compte admin pour tester toute la plateforme et gerer chaque module.', '', 'active'),
+(2, 2, 'Sami', 'Freelancer', 'freelancer@workify.com', '$2y$10$8zrsqRyUqyEqdh3xLvEOW.wNgPVfdGPdSFThS54XdcyVY4Oc3b/JO', 'Front-end freelancer', 'Freelancer de demo pour tester les candidatures.', '', 'active'),
+(3, 3, 'Lina', 'Boss', 'boss@workify.com', '$2y$10$HLpAbAB5hkZFjJmYnlsqNeBUQS186KVB.uhsU8RBO5LyC0WLyzBai', 'Talent recruiter', 'Boss de demo pour publier des jobs et recruter des profils.', '', 'active');
+
+INSERT INTO categories (id, name, slug, scope, description) VALUES
+(1, 'Developpement Web', 'developpement-web', 'all', 'Frontend, backend et full stack'),
+(2, 'UI UX Design', 'ui-ux-design', 'all', 'Parcours design et prototypage'),
+(3, 'Marketing Digital', 'marketing-digital', 'all', 'SEO, paid media et social media'),
+(4, 'Support Client', 'support-client', 'job', 'Experience client et assistance'),
+(5, 'Product Management', 'product-management', 'job', 'Pilotage produit et delivery');
+
+INSERT INTO jobs (id, title, description, budget, category_id, location, is_remote, job_type, status, publisher_id) VALUES
+(1, 'Developpeur PHP MVC pour plateforme locale', 'Nous cherchons un freelancer capable de finaliser un projet PHP MVC avec sessions, CRUD, jointures et validations JS.', 900.00, 1, 'Tunis', 1, 'Freelance', 'open', 3),
+(2, 'UX Designer pour espace formation premium', 'Mission sur une interface moderne pour une section de catalogue de formations avec cartes, filtres et details.', 650.00, 2, 'Sousse', 1, 'Part-time', 'open', 3),
+(3, 'Assistant marketing junior', 'Suivi de campagnes digitales et production de contenu pour une startup locale.', 550.00, 3, 'Remote', 1, 'Stage', 'draft', 1);
+
+INSERT INTO candidatures (id, user_id, job_id, cover_letter, status) VALUES
+(1, 2, 1, 'Je peux prendre en charge le projet Workify, integrer les modules et optimiser le rendu pour une demo professeur.', 'reviewed');

@@ -6,14 +6,22 @@ $officeLabel = $office === 'back' ? 'BackOffice' : 'FrontOffice';
 
 if ($office === 'back') {
     $switchLabel = 'FrontOffice';
-    $switchHref = $activeModule === 'formations'
-        ? '../controller/FormationC.php?office=front&action=list'
-        : '../controller/HomeC.php';
+    if ($activeModule === 'formations') {
+        $switchHref = '../controller/FormationC.php?office=front&action=list';
+    } elseif ($activeModule === 'jobs') {
+        $switchHref = '../controller/JobC.php?office=front&action=list';
+    } else {
+        $switchHref = '../controller/HomeC.php';
+    }
 } else {
     $switchLabel = 'BackOffice';
-    $switchHref = $activeModule === 'formations'
-        ? '../controller/FormationC.php?office=back&action=list'
-        : '../controller/BackDashboardC.php';
+    if ($activeModule === 'formations') {
+        $switchHref = '../controller/FormationC.php?office=back&action=list';
+    } elseif ($activeModule === 'jobs') {
+        $switchHref = '../controller/JobC.php?office=back&action=list';
+    } else {
+        $switchHref = '../controller/BackDashboardC.php';
+    }
 }
 ?>
 <!DOCTYPE html>
@@ -37,10 +45,10 @@ if ($office === 'back') {
                 <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 5h16v2H4V5zm0 6h16v2H4v-2zm0 6h10v2H4v-2z"/></svg></span>
                 Publications
             </span>
-            <span class="nav-link nav-disabled">
+            <a class="nav-link <?= $activeModule === 'jobs' ? 'active' : ''; ?>" href="../controller/JobC.php?office=<?= $office; ?>&action=list">
                 <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M10 4h4a2 2 0 0 1 2 2v2h4v12H4V8h4V6a2 2 0 0 1 2-2zm4 4V6h-4v2h4z"/></svg></span>
                 Jobs
-            </span>
+            </a>
             <span class="nav-link nav-disabled">
                 <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 2h2v3h6V2h2v3h3v17H4V5h3V2zm11 8H6v10h12V10z"/></svg></span>
                 Events

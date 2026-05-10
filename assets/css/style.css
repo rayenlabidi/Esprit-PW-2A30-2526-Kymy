@@ -343,6 +343,24 @@ textarea:focus {
     background: var(--white);
 }
 
+input[type="checkbox"] {
+    width: auto;
+}
+
+.inline-check {
+    width: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 42px;
+    padding: 0 4px;
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 800;
+    text-transform: none;
+    margin: 0;
+}
+
 textarea {
     min-height: 126px;
     resize: vertical;
