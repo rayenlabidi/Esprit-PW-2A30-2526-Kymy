@@ -7,25 +7,20 @@
     <title><?= h($pageTitle) ?> - Workify</title>
     <link rel="stylesheet" href="assets/style.css">
 </head>
-<body>
+<body class="module-<?= h(current_module()) ?>">
 <header class="site-header">
     <div class="container nav-shell">
         <a class="brand" href="<?= url(['module' => 'dashboard', 'action' => 'index']) ?>">
-            <span class="brand-logo" aria-hidden="true" title="Workify">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="3" y="5" width="18" height="16" rx="3"></rect>
-                    <path d="M9 5v-1a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v1"></path>
-                    <path d="M3 11h18"></path>
-                </svg>
-            </span>
+            <span class="brand-logo" aria-hidden="true" title="Workify">W</span>
             <span>Workify</span>
         </a>
+        <p class="nav-label">Navigation</p>
         <nav class="main-nav">
-            <a class="<?= is_active_module('dashboard') ? 'active' : '' ?>" href="<?= url(['module' => 'dashboard', 'action' => 'index']) ?>"><?= t('nav.home') ?></a>
-            <a class="<?= is_active_module('formations') ? 'active' : '' ?>" href="<?= url(['module' => 'formations', 'action' => 'index']) ?>"><?= t('nav.formations') ?></a>
-            <a class="<?= is_active_module('jobs') ? 'active' : '' ?>" href="<?= url(['module' => 'jobs', 'action' => 'index']) ?>"><?= t('nav.jobs') ?></a>
+            <a class="nav-link nav-link-dashboard <?= is_active_module('dashboard') ? 'active' : '' ?>" href="<?= url(['module' => 'dashboard', 'action' => 'index']) ?>"><?= t('nav.home') ?></a>
+            <a class="nav-link nav-link-jobs <?= is_active_module('jobs') ? 'active' : '' ?>" href="<?= url(['module' => 'jobs', 'action' => 'index']) ?>"><?= t('nav.jobs') ?></a>
+            <a class="nav-link nav-link-formations <?= is_active_module('formations') ? 'active' : '' ?>" href="<?= url(['module' => 'formations', 'action' => 'index']) ?>"><?= t('nav.formations') ?></a>
             <?php if (has_role(['admin'])): ?>
-                <a class="<?= is_active_module('users') ? 'active' : '' ?>" href="<?= url(['module' => 'users', 'action' => 'index']) ?>"><?= t('nav.users') ?></a>
+                <a class="nav-link nav-link-users <?= is_active_module('users') ? 'active' : '' ?>" href="<?= url(['module' => 'users', 'action' => 'index']) ?>"><?= t('nav.users') ?></a>
             <?php endif; ?>
         </nav>
         <div class="nav-actions">
