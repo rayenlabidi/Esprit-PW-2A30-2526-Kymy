@@ -1,5 +1,6 @@
 document.addEventListener('DOMContentLoaded', function () {
     var forms = document.querySelectorAll('[data-validate]');
+    setupCustomCaptchas();
 
     for (var i = 0; i < forms.length; i++) {
         forms[i].addEventListener('submit', function (event) {
@@ -18,6 +19,8 @@ function validateForm(form) {
 
     var module = form.getAttribute('data-validate');
     var errors = [];
+
+    validateCustomCaptcha(form, errors);
 
     if (module === 'formation') {
         validateText(form, 'titre', 3, 'Le titre doit contenir au moins 3 caracteres.', errors);
@@ -95,6 +98,174 @@ function validateForm(form) {
     }
 
     return errors;
+}
+
+function setupCustomCaptchas() {
+    var captchas = document.querySelectorAll('.workify-captcha');
+
+    for (var i = 0; i < captchas.length; i++) {
+        bindCaptcha(captchas[i]);
+    }
+}
+
+function bindCaptcha(captcha) {
+    if (captcha.getAttribute('data-captcha-bound') === '1') {
+        return;
+    }
+
+    captcha.setAttribute('data-captcha-bound', '1');
+    captcha.addEventListener('click', function (event) {
+        var choice = event.target.closest('[data-captcha-choice]');
+        var answer = captcha.querySelector('input[name="captcha_answer"]');
+
+        if (choice && captcha.contains(choice)) {
+            selectCaptchaChoice(captcha, choice, answer);
+            return;
+        }
+
+        if (event.target.closest('[data-captcha-refresh]')) {
+            refreshCaptcha(captcha);
+            return;
+        }
+
+        if (event.target.closest('[data-captcha-audio]')) {
+            speakCaptcha(captcha);
+        }
+    });
+}
+
+function selectCaptchaChoice(captcha, button, answer) {
+    var choices = captcha.querySelectorAll('[data-captcha-choice]');
+
+    for (var i = 0; i < choices.length; i++) {
+        choices[i].classList.remove('is-selected');
+        choices[i].setAttribute('aria-pressed', 'false');
+    }
+
+    button.classList.add('is-selected');
+    button.setAttribute('aria-pressed', 'true');
+
+    if (answer) {
+        answer.value = button.getAttribute('data-captcha-choice') || '';
+    }
+}
+
+function refreshCaptcha(captcha) {
+    var scope = captcha.getAttribute('data-captcha-scope') || 'default';
+    var refreshUrl = captcha.getAttribute('data-captcha-refresh-url') || 'CaptchaC.php';
+    var url = refreshUrl + '?scope=' + encodeURIComponent(scope) + '&t=' + Date.now();
+
+    captcha.classList.add('is-loading');
+
+    fetch(url, { credentials: 'same-origin' })
+        .then(function (response) {
+            if (!response.ok) {
+                throw new Error('captcha');
+            }
+            return response.json();
+        })
+        .then(function (data) {
+            renderCaptcha(captcha, data);
+        })
+        .catch(function () {
+            captcha.classList.add('has-refresh-error');
+        })
+        .finally(function () {
+            captcha.classList.remove('is-loading');
+        });
+}
+
+function renderCaptcha(captcha, data) {
+    var prompt = captcha.querySelector('[data-captcha-prompt]');
+    var id = captcha.querySelector('input[name="captcha_id"]');
+    var answer = captcha.querySelector('input[name="captcha_answer"]');
+    var options = captcha.querySelector('.captcha-options');
+
+    if (prompt) {
+        prompt.textContent = data.prompt || '';
+    }
+
+    if (id) {
+        id.value = data.id || '';
+    }
+
+    if (answer) {
+        answer.value = '';
+    }
+
+    if (!options || !data.choices) {
+        return;
+    }
+
+    options.innerHTML = '';
+    options.setAttribute('aria-label', data.prompt || '');
+
+    for (var i = 0; i < data.choices.length; i++) {
+        options.appendChild(createCaptchaChoice(data.choices[i]));
+    }
+
+    bindCaptcha(captcha);
+}
+
+function createCaptchaChoice(choice) {
+    var button = document.createElement('button');
+    var visual = document.createElement('span');
+    var label = document.createElement('span');
+    var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+
+    button.className = 'captcha-choice';
+    button.type = 'button';
+    button.setAttribute('data-captcha-choice', choice.key || '');
+    button.setAttribute('aria-pressed', 'false');
+
+    visual.className = 'captcha-visual';
+    visual.setAttribute('aria-hidden', 'true');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    path.setAttribute('d', choice.icon || '');
+    svg.appendChild(path);
+    visual.appendChild(svg);
+
+    label.textContent = choice.label || '';
+    button.appendChild(visual);
+    button.appendChild(label);
+
+    return button;
+}
+
+function speakCaptcha(captcha) {
+    if (!('speechSynthesis' in window) || typeof SpeechSynthesisUtterance === 'undefined') {
+        return;
+    }
+
+    var prompt = captcha.querySelector('[data-captcha-prompt]');
+    var text = prompt ? prompt.textContent : '';
+
+    if (text === '') {
+        return;
+    }
+
+    window.speechSynthesis.cancel();
+    var utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'fr-FR';
+    utterance.rate = 0.95;
+    window.speechSynthesis.speak(utterance);
+}
+
+function validateCustomCaptcha(form, errors) {
+    var captcha = form.querySelector('.workify-captcha');
+
+    if (!captcha) {
+        return;
+    }
+
+    var answer = captcha.querySelector('input[name="captcha_answer"]');
+    if (!answer || answer.value.trim() === '') {
+        captcha.classList.add('input-error');
+        errors.push('Choisissez l image demandee par le captcha.');
+    } else {
+        captcha.classList.remove('input-error');
+    }
 }
 
 function validateText(form, name, min, message, errors) {

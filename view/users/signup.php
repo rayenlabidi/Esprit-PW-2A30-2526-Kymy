@@ -54,13 +54,7 @@
             </div>
         </div>
 
-        <div class="captcha-box recaptcha-box">
-            <div>
-                <span class="captcha-label">Verification</span>
-                <strong>Protection Google reCAPTCHA</strong>
-            </div>
-            <div class="g-recaptcha" data-sitekey="<?= htmlspecialchars($recaptchaSiteKey, ENT_QUOTES); ?>"></div>
-        </div>
+        <?php $captchaScope = 'signup'; include __DIR__ . '/../includes/captcha.php'; ?>
 
         <div class="actions" style="margin-top: 18px;">
             <button class="btn btn-primary" type="submit">Creer mon compte</button>
@@ -68,7 +62,5 @@
         </div>
     </form>
 </div>
-
-<script src="https://www.google.com/recaptcha/api.js?hl=fr" async defer></script>
 
 <?php include __DIR__ . '/../includes/footer.php'; ?>

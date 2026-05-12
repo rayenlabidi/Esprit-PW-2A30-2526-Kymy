@@ -16,7 +16,7 @@
     });
 
     function setupRipples() {
-        var targets = document.querySelectorAll('.btn, .public-nav a, .nav-link, .module-tile, .formation-card');
+        var targets = document.querySelectorAll('.btn, .public-nav a, .nav-link, .module-tile, .formation-card, .captcha-choice, .captcha-icon-btn');
 
         targets.forEach(function (target) {
             target.classList.add('mui-ripple-surface');

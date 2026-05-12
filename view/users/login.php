@@ -7,7 +7,7 @@
         <p class="muted">Connectez-vous pour retrouver votre espace. Les comptes autorises peuvent ouvrir l'espace prive depuis leur session.</p>
     </div>
 
-    <form class="form-box auth-form" action="../controller/AuthController.php?action=login" method="post">
+    <form class="form-box auth-form" data-validate="login" action="../controller/AuthController.php?action=login" method="post">
         <?php if ($error !== '') { ?>
             <div class="error-box"><?= htmlspecialchars($error, ENT_QUOTES); ?></div>
         <?php } ?>
@@ -22,13 +22,7 @@
             <input id="password" name="password" type="password" placeholder="Votre mot de passe" required>
         </div>
 
-        <div class="captcha-box recaptcha-box">
-            <div>
-                <span class="captcha-label">Verification</span>
-                <strong>Protection Google reCAPTCHA</strong>
-            </div>
-            <div class="g-recaptcha" data-sitekey="<?= htmlspecialchars($recaptchaSiteKey, ENT_QUOTES); ?>"></div>
-        </div>
+        <?php $captchaScope = 'login'; include __DIR__ . '/../includes/captcha.php'; ?>
 
         <div class="actions" style="margin-top: 18px;">
             <button class="btn btn-primary" type="submit">Se connecter</button>
@@ -38,7 +32,5 @@
         </div>
     </form>
 </div>
-
-<script src="https://www.google.com/recaptcha/api.js?hl=fr" async defer></script>
 
 <?php include __DIR__ . '/../includes/footer.php'; ?>

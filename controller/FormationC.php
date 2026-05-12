@@ -9,6 +9,7 @@ require_once __DIR__ . '/ApprenantModel.php';
 require_once __DIR__ . '/InscriptionFormationModel.php';
 require_once __DIR__ . '/UtilisateurModel.php';
 require_once __DIR__ . '/AuthC.php';
+require_once __DIR__ . '/Mailer.php';
 
 class FormationC
 {
@@ -213,7 +214,10 @@ class FormationC
                     $inscription = new inscriptionFormation($idApprenant, $id, 'en_attente');
                     $this->inscriptionModel->addInscription($inscription);
                     $formation = $this->formationModel->getFormationById($id);
-                    $successMessage = 'Votre demande d inscription a ete envoyee.';
+                    $receiptSent = $this->sendInscriptionReceipt($connectedUser, $formation, $telephone);
+                    $successMessage = $receiptSent
+                        ? 'Votre demande d inscription a ete envoyee. Un recu vous a ete envoye par email.'
+                        : 'Votre demande d inscription a ete envoyee. Le recu email n a pas pu partir pour le moment.';
                 }
             }
         }
@@ -323,6 +327,55 @@ class FormationC
         }
 
         return $errors;
+    }
+
+    private function sendInscriptionReceipt($user, $formation, $telephone)
+    {
+        $email = trim(isset($user['email']) ? $user['email'] : '');
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            return false;
+        }
+
+        $name = trim((isset($user['first_name']) ? $user['first_name'] : '') . ' ' . (isset($user['last_name']) ? $user['last_name'] : ''));
+        $safeName = htmlspecialchars($name !== '' ? $name : 'Workify', ENT_QUOTES);
+        $safeTitle = htmlspecialchars($formation['titre'], ENT_QUOTES);
+        $safeCategory = htmlspecialchars($formation['nom_categorie'], ENT_QUOTES);
+        $safeTrainer = htmlspecialchars($formation['nom_formateur'], ENT_QUOTES);
+        $safeMode = htmlspecialchars($formation['mode'], ENT_QUOTES);
+        $safeStart = htmlspecialchars($formation['date_debut'], ENT_QUOTES);
+        $safeEnd = htmlspecialchars($formation['date_fin'], ENT_QUOTES);
+        $safePhone = htmlspecialchars($telephone, ENT_QUOTES);
+        $price = number_format((float) $formation['prix'], 0, '.', ' ');
+
+        $html = '<div style="font-family:Arial,sans-serif;color:#111827;line-height:1.6">'
+            . '<h2 style="color:#2563eb;margin-bottom:8px">Recu d inscription Workify</h2>'
+            . '<p>Bonjour ' . $safeName . ',</p>'
+            . '<p>Votre demande d inscription a bien ete recue. Elle est maintenant en attente de validation.</p>'
+            . '<div style="border:1px solid #dbeafe;border-radius:14px;padding:16px;background:#f8fbff">'
+            . '<strong style="font-size:18px">' . $safeTitle . '</strong>'
+            . '<p style="margin:8px 0 0">Categorie: ' . $safeCategory . '</p>'
+            . '<p style="margin:4px 0 0">Formateur: ' . $safeTrainer . '</p>'
+            . '<p style="margin:4px 0 0">Dates: ' . $safeStart . ' au ' . $safeEnd . '</p>'
+            . '<p style="margin:4px 0 0">Mode: ' . $safeMode . '</p>'
+            . '<p style="margin:4px 0 0">Prix: ' . $price . ' DT</p>'
+            . '<p style="margin:4px 0 0">Telephone: ' . $safePhone . '</p>'
+            . '</div>'
+            . '<p>Merci de garder ce message comme recu de votre demande.</p>'
+            . '</div>';
+
+        $text = "Recu d inscription Workify\n\n"
+            . "Bonjour " . $name . ",\n"
+            . "Votre demande d inscription a bien ete recue et elle est en attente de validation.\n\n"
+            . "Formation: " . $formation['titre'] . "\n"
+            . "Categorie: " . $formation['nom_categorie'] . "\n"
+            . "Formateur: " . $formation['nom_formateur'] . "\n"
+            . "Dates: " . $formation['date_debut'] . " au " . $formation['date_fin'] . "\n"
+            . "Mode: " . $formation['mode'] . "\n"
+            . "Prix: " . $price . " DT\n"
+            . "Telephone: " . $telephone . "\n";
+
+        $mailer = new WorkifyMailer();
+        return $mailer->send($email, 'Recu inscription formation - ' . $formation['titre'], $html, $text);
     }
 
     private function dateValide($date)

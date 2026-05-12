@@ -2,6 +2,7 @@
 require_once __DIR__ . '/AuthC.php';
 require_once __DIR__ . '/UtilisateurModel.php';
 require_once __DIR__ . '/Mailer.php';
+require_once __DIR__ . '/CaptchaGuard.php';
 
 class AuthController
 {
@@ -27,7 +28,6 @@ class AuthController
         $activeModule = '';
         $pageTitle = 'Connexion';
         $error = '';
-        $recaptchaSiteKey = WORKIFY_RECAPTCHA_SITE_KEY;
 
         if (!empty($_GET['redirect'])) {
             $_SESSION['redirect_after_login'] = $this->frontRedirect($_GET['redirect']);
@@ -39,32 +39,31 @@ class AuthController
         }
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            if (!$this->recaptchaValide($_POST['g-recaptcha-response'] ?? '')) {
-                $error = 'Veuillez confirmer la verification reCAPTCHA.';
-                include __DIR__ . '/../view/users/login.php';
-                return;
-            }
+            if (!$this->captchaValide('login')) {
+                $error = 'Choisissez l image demandee par le captcha.';
+            } else {
+                $user = AuthC::attempt($_POST['email'] ?? '', $_POST['password'] ?? '');
 
-            $user = AuthC::attempt($_POST['email'] ?? '', $_POST['password'] ?? '');
+                if ($user) {
+                    $storedRedirect = isset($_SESSION['redirect_after_login']) ? $_SESSION['redirect_after_login'] : '';
+                    unset($_SESSION['redirect_after_login']);
 
-            if ($user) {
-                $storedRedirect = isset($_SESSION['redirect_after_login']) ? $_SESSION['redirect_after_login'] : '';
-                unset($_SESSION['redirect_after_login']);
+                    if ($user['role_slug'] === 'admin') {
+                        $redirect = $storedRedirect !== '' ? $storedRedirect : 'BackDashboardC.php';
+                        header('Location: ' . $redirect);
+                        exit;
+                    }
 
-                if ($user['role_slug'] === 'admin') {
-                    $redirect = $storedRedirect !== '' ? $storedRedirect : 'BackDashboardC.php';
+                    $redirect = $this->frontRedirect($storedRedirect);
                     header('Location: ' . $redirect);
                     exit;
                 }
 
-                $redirect = $this->frontRedirect($storedRedirect);
-                header('Location: ' . $redirect);
-                exit;
+                $error = 'Email ou mot de passe incorrect.';
             }
-
-            $error = 'Email ou mot de passe incorrect.';
         }
 
+        $captcha = CaptchaGuard::challenge('login');
         include __DIR__ . '/../view/users/login.php';
     }
 
@@ -77,11 +76,10 @@ class AuthController
         $error = '';
         $successMessage = '';
         $email = isset($_POST['email']) ? trim($_POST['email']) : '';
-        $recaptchaSiteKey = WORKIFY_RECAPTCHA_SITE_KEY;
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            if (!$this->recaptchaValide($_POST['g-recaptcha-response'] ?? '')) {
-                $error = 'Veuillez confirmer la verification reCAPTCHA.';
+            if (!$this->captchaValide('forgot')) {
+                $error = 'Choisissez l image demandee par le captcha.';
             } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
                 $error = 'Veuillez saisir un email valide.';
             } else {
@@ -104,6 +102,7 @@ class AuthController
             }
         }
 
+        $captcha = CaptchaGuard::challenge('forgot');
         include __DIR__ . '/../view/users/forgot_password.php';
     }
 
@@ -115,7 +114,6 @@ class AuthController
         $pageTitle = 'Inscription';
         $error = '';
         $successMessage = '';
-        $recaptchaSiteKey = WORKIFY_RECAPTCHA_SITE_KEY;
         $formData = [
             'first_name' => trim($_POST['first_name'] ?? ''),
             'last_name' => trim($_POST['last_name'] ?? ''),
@@ -131,8 +129,8 @@ class AuthController
         }
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            if (!$this->recaptchaValide($_POST['g-recaptcha-response'] ?? '')) {
-                $error = 'Veuillez confirmer la verification reCAPTCHA.';
+            if (!$this->captchaValide('signup')) {
+                $error = 'Choisissez l image demandee par le captcha.';
             } else {
                 $utilisateurModel = new UtilisateurModel();
                 $errors = $this->validerInscription($formData, $_POST['password'] ?? '', $_POST['password_confirm'] ?? '', $utilisateurModel);
@@ -161,6 +159,7 @@ class AuthController
             }
         }
 
+        $captcha = CaptchaGuard::challenge('signup');
         include __DIR__ . '/../view/users/signup.php';
     }
 
@@ -234,57 +233,13 @@ class AuthController
         exit;
     }
 
-    private function recaptchaValide($token)
+    private function captchaValide($scope)
     {
-        $token = trim((string) $token);
-        if ($token === '' || WORKIFY_RECAPTCHA_SECRET_KEY === '') {
-            return false;
-        }
-
-        $payload = http_build_query([
-            'secret' => WORKIFY_RECAPTCHA_SECRET_KEY,
-            'response' => $token,
-            'remoteip' => isset($_SERVER['REMOTE_ADDR']) ? $_SERVER['REMOTE_ADDR'] : ''
-        ]);
-
-        $response = $this->postRecaptcha($payload);
-        if ($response === false) {
-            return false;
-        }
-
-        $data = json_decode($response, true);
-        return is_array($data) && !empty($data['success']);
-    }
-
-    private function postRecaptcha($payload)
-    {
-        $context = stream_context_create([
-            'http' => [
-                'method' => 'POST',
-                'header' => "Content-Type: application/x-www-form-urlencoded\r\n",
-                'content' => $payload,
-                'timeout' => 8
-            ]
-        ]);
-
-        $response = @file_get_contents('https://www.google.com/recaptcha/api/siteverify', false, $context);
-        if ($response !== false) {
-            return $response;
-        }
-
-        if (!function_exists('curl_init')) {
-            return false;
-        }
-
-        $curl = curl_init('https://www.google.com/recaptcha/api/siteverify');
-        curl_setopt($curl, CURLOPT_POST, true);
-        curl_setopt($curl, CURLOPT_POSTFIELDS, $payload);
-        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($curl, CURLOPT_TIMEOUT, 8);
-        $response = curl_exec($curl);
-        curl_close($curl);
-
-        return $response;
+        return CaptchaGuard::validate(
+            $scope,
+            $_POST['captcha_id'] ?? '',
+            $_POST['captcha_answer'] ?? ''
+        );
     }
 
     private function frontRedirect($redirect)
