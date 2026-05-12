@@ -19,8 +19,6 @@
 -- Current Database: `WORKIFY`
 --
 
-/*!40000 DROP DATABASE IF EXISTS `WORKIFY`*/;
-
 CREATE DATABASE /*!32312 IF NOT EXISTS*/ `WORKIFY` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci */;
 
 USE `WORKIFY`;
@@ -203,6 +201,75 @@ CREATE TABLE `contact_messages` (
 LOCK TABLES `contact_messages` WRITE;
 /*!40000 ALTER TABLE `contact_messages` DISABLE KEYS */;
 /*!40000 ALTER TABLE `contact_messages` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `event_categories`
+--
+
+DROP TABLE IF EXISTS `event_categories`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `event_categories` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(120) NOT NULL,
+  `description` text DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_event_categories_name` (`name`)
+) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `event_categories`
+--
+
+LOCK TABLES `event_categories` WRITE;
+/*!40000 ALTER TABLE `event_categories` DISABLE KEYS */;
+INSERT INTO `event_categories` VALUES (1,'Intelligence Artificielle & ML','Evenements dedies a l IA generative, machine learning, LLMs, automatisation intelligente et ethique de l IA.','2026-05-12 23:16:33'),(2,'Cybersecurite & Souverainete','Ateliers et conferences sur la securite des systemes, pentest, zero-trust, RGPD et souverainete numerique.','2026-05-12 23:16:33'),(3,'Web3 & Blockchain','Meetups autour de la DeFi, NFTs, smart contracts, DAOs et economie decentralisee.','2026-05-12 23:16:33'),(4,'DevOps & Cloud Native','Sessions sur Kubernetes, GitOps, infrastructure as code, observabilite et architectures cloud-native.','2026-05-12 23:16:33'),(5,'Realite Augmentee & Metavers','Demos, hackathons et conferences XR, AR, VR, MR, spatial computing et plateformes metavers.','2026-05-12 23:16:33'),(6,'Biotech & HealthTech','Evenements a l intersection de la biologie, la medecine et la technologie: genomique, telemedecine et IA medicale.','2026-05-12 23:16:33'),(7,'GreenTech & Tech Durable','Conferences sur la tech au service de l environnement, la sobriete numerique et les energies renouvelables.','2026-05-12 23:16:33'),(8,'Product & UX Design','Ateliers design thinking, prototypage, recherche utilisateur et strategie produit.','2026-05-12 23:16:33'),(9,'FinTech & InsurTech','Conferences sur la finance numerique, open banking, paiements, neo-banques et assurance technologique.','2026-05-12 23:16:33'),(10,'Robotique & IoT Industriel','Evenements sur la robotique collaborative, IIoT, industrie 4.0 et jumeaux numeriques.','2026-05-12 23:16:33'),(11,'No-Code & Citizen Development','Ateliers pour creer des applications sans code avec Bubble, Webflow, Make et democratiser le developpement.','2026-05-12 23:16:33'),(12,'Quantum Computing','Seminaires et workshops sur informatique quantique, ses algorithmes et ses applications futures.','2026-05-12 23:16:33');
+/*!40000 ALTER TABLE `event_categories` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `events`
+--
+
+DROP TABLE IF EXISTS `events`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `events` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `title` varchar(180) NOT NULL,
+  `description` text NOT NULL,
+  `event_date` datetime NOT NULL,
+  `location` varchar(255) NOT NULL,
+  `is_online` tinyint(1) NOT NULL DEFAULT 0,
+  `max_participants` int(11) NOT NULL DEFAULT 50,
+  `status` enum('upcoming','ongoing','completed','cancelled') NOT NULL DEFAULT 'upcoming',
+  `organizer_id` int(11) NOT NULL,
+  `event_category_id` int(11) DEFAULT NULL,
+  `image_url` text DEFAULT NULL,
+  `latitude` decimal(10,7) DEFAULT NULL,
+  `longitude` decimal(10,7) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `idx_events_date` (`event_date`),
+  KEY `idx_events_status` (`status`),
+  KEY `idx_events_organizer` (`organizer_id`),
+  KEY `idx_events_category` (`event_category_id`),
+  CONSTRAINT `fk_events_category` FOREIGN KEY (`event_category_id`) REFERENCES `event_categories` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_events_organizer` FOREIGN KEY (`organizer_id`) REFERENCES `utilisateurs` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `events`
+--
+
+LOCK TABLES `events` WRITE;
+/*!40000 ALTER TABLE `events` DISABLE KEYS */;
+/*!40000 ALTER TABLE `events` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -508,14 +575,6 @@ LOCK TABLES `utilisateurs` WRITE;
 INSERT INTO `utilisateurs` VALUES (1,1,'Equipe','Workify','admin@workify.com','22822870','$2y$10$7ALOQvIWzngQAJ/eN3NsS.7HpVWVUVLlxv7KblJL4McnOLEJIKus6','Responsable espace prive','Compte de gestion pour suivre les modules Workify.','','active','2026-05-12 14:45:45'),(2,2,'Sami','Freelancer','freelancer@workify.com','20606058','$2y$10$8zrsqRyUqyEqdh3xLvEOW.wNgPVfdGPdSFThS54XdcyVY4Oc3b/JO','Front-end freelancer','Freelancer de demo pour tester les candidatures.','','active','2026-05-12 14:45:45'),(3,3,'Lina','Boss','boss@workify.com','55123456','$2y$10$HLpAbAB5hkZFjJmYnlsqNeBUQS186KVB.uhsU8RBO5LyC0WLyzBai','Talent recruiter','Boss de demo pour publier des jobs et recruter des profils.','','active','2026-05-12 14:45:45'),(4,1,'rayen','laabidi','rayanlabidi.rl@gmail.com','52574198','$2y$10$A3GRoO40P2DnuTDGFBY6keYCphIYWke1Eo.PccJKEGxcDFzRw3TT6','test','zklmfslkfjsldfnslkjfnsdklf',NULL,'active','2026-05-12 14:46:36'),(6,2,'azeaze','azezae','rayanlabidi.rl@icloud.com','541113353','$2y$10$wYihqIK4alJiqgJ0FkMv3.u1vrrDyGKbefge3l1Ir.x/Somvwplwu','zefdzedz','Compte cree depuis l inscription publique Workify.',NULL,'active','2026-05-12 18:18:32'),(7,2,'wassim','byk','wassoubenyakhlef@gmail.com','13451531323','$2y$10$4572QhNJiTVTZMpYVlQLpOhyxNLYIii4HoNlgNMYK7PEU/Kt35lzq','4545646545','Compte cree depuis l inscription publique Workify.',NULL,'active','2026-05-12 22:21:20'),(8,2,'aziz','messaoud','messaoudaziz900@gmail.com','456431325','$2y$10$I2snUNrn0YU5rNLkcFjEQOYpR4YDbbOJigtEUyQYmqwt/rYD2JlDC','Talent Workify','Compte cree depuis l inscription publique Workify.',NULL,'active','2026-05-12 22:24:04'),(9,2,'Membre','Test','membre.test@workify.tn','22123456','$2y$10$8zrsqRyUqyEqdh3xLvEOW.wNgPVfdGPdSFThS54XdcyVY4Oc3b/JO','Apprenant Workify','Compte migre depuis les inscriptions formation.','','active','2026-05-12 22:52:32'),(10,2,'Etudiant','Workify','etudiant@workify.tn','55123456','$2y$10$8zrsqRyUqyEqdh3xLvEOW.wNgPVfdGPdSFThS54XdcyVY4Oc3b/JO','Apprenant Workify','Compte migre depuis les inscriptions formation.','','active','2026-05-12 22:52:32');
 /*!40000 ALTER TABLE `utilisateurs` ENABLE KEYS */;
 UNLOCK TABLES;
-
---
--- Dumping events for database 'workify'
---
-
---
--- Dumping routines for database 'workify'
---
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
@@ -526,4 +585,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-05-12 22:54:05
+-- Dump completed on 2026-05-13  0:16:43

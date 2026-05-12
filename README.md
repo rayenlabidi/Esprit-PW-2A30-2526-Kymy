@@ -118,8 +118,16 @@ Main shared tables include:
 - `publication`
 - `messages`
 - `contact_messages`
+- `event_categories`
+- `events`
 
 The formations module now links inscriptions directly to `utilisateurs.id` through `inscription_formation.user_id`. This avoids duplicate user tables and keeps the users, jobs, formations, publications and messages modules on the same identity source.
+
+The optional event migration is available here:
+
+```text
+migration_gps_categories.sql
+```
 
 The SQL dump is available here:
 
