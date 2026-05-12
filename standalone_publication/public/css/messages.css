@@ -663,3 +663,55 @@
   background: var(--red);
   color: white;
 }
+
+/* ============================================
+   SKELETON LOADING STATE
+   ============================================ */
+.msg-skeleton-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+.msg-skeleton-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  max-width: 68%;
+  animation: pulse 1.5s infinite ease-in-out;
+}
+
+.msg-skeleton-row.their {
+  align-self: flex-start;
+}
+
+.msg-skeleton-row.mine {
+  align-self: flex-end;
+  flex-direction: row-reverse;
+}
+
+.msg-skeleton-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--border);
+  flex-shrink: 0;
+}
+
+.msg-skeleton-bubble {
+  height: 42px;
+  border-radius: 18px;
+  background: var(--border);
+  flex: 1;
+}
+
+.msg-skeleton-row.mine .msg-skeleton-bubble {
+  background: var(--blue-light);
+}
+
+@keyframes pulse {
+  0% { opacity: 0.6; }
+  50% { opacity: 0.3; }
+  100% { opacity: 0.6; }
+}

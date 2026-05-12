@@ -3,6 +3,7 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 require_once __DIR__ . '/../../controllers/PublicationC.php';
+require_once __DIR__ . '/../includes/workify_shell.php';
 
 $current_user_id     = 'current_user';
 $current_user_name   = 'You';
@@ -61,32 +62,9 @@ $posts      = $controller->ListePublications();
 }
 </style>
 </head>
-<body>
+<body class="front-mode feed-front">
 
-<nav class="wf-nav">
-  <a href="#" class="wf-nav-logo">
-    <div class="wf-nav-logo-box">
-      <svg viewBox="0 0 16 16"><rect x="2" y="4" width="5" height="8" rx="1"/>
-        <rect x="9" y="4" width="5" height="8" rx="1"/><rect x="2" y="1" width="12" height="2" rx="1"/>
-      </svg>
-    </div>
-    Workify
-  </a>
-  <ul class="wf-nav-links">
-    <li><a href="#" onclick="filterFeed('all'); return false;">Home</a></li>
-    <li><a href="#" onclick="filterFeed('browse'); return false;">Browse jobs</a></li>
-    <li><a href="#" class="active" onclick="filterFeed('all'); return false;">Publications</a></li>
-    <li><a href="../front/messages.php">Messages</a></li>
-  </ul>
-  <div class="wf-nav-right">
-    <a href="../back/admin.php" class="wf-nav-icon-btn" style="text-decoration:none;" title="Admin">
-      <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
-      </svg>
-    </a>
-    <div class="wf-avatar wf-avatar-36 av-blue" style="cursor:pointer;"><?php echo $current_user_init; ?></div>
-  </div>
-</nav>
+<?php feed_public_header('publications'); ?>
 
 <div class="pub-shell">
   <div class="pub-grid">
@@ -255,6 +233,8 @@ $posts      = $controller->ListePublications();
 
   </div>
 </div>
+
+<?php feed_public_footer(); ?>
 
 <div id="validationModal" class="modal" style="background:rgba(0,0,0,.55);backdrop-filter:blur(3px);">
   <div class="validation-modal-content" style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--bg-card);padding:30px;border-radius:var(--radius-lg);width:420px;max-width:90%;text-align:center;box-shadow:var(--shadow-lg);animation:slideIn .25s ease;">

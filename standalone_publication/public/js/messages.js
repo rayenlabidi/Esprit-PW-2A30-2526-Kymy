@@ -216,7 +216,21 @@ function openConversation(otherUserId, name, init, avatar) {
   if (messageCache[otherUserId]) {
     renderMessages(messageCache[otherUserId]);
   } else if (body) {
-    body.innerHTML = '<div style="flex:1;display:flex;align-items:center;justify-content:center;color:var(--text-4);font-size:13px;">Loading...</div>';
+    body.innerHTML = `
+      <div class="msg-skeleton-wrap" style="padding: 20px;">
+        <div class="msg-skeleton-row their">
+          <div class="msg-skeleton-avatar"></div>
+          <div class="msg-skeleton-bubble" style="width: 220px;"></div>
+        </div>
+        <div class="msg-skeleton-row mine">
+          <div class="msg-skeleton-bubble" style="width: 180px;"></div>
+        </div>
+        <div class="msg-skeleton-row their">
+          <div class="msg-skeleton-avatar"></div>
+          <div class="msg-skeleton-bubble" style="width: 140px;"></div>
+        </div>
+      </div>
+    `;
   }
 
   loadMessages(otherUserId);

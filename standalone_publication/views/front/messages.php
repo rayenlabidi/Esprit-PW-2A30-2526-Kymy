@@ -3,6 +3,7 @@ if (session_status() === PHP_SESSION_NONE) {
   session_start();
 }
 require_once __DIR__ . '/../../controllers/MessageC.php';
+require_once __DIR__ . '/../includes/workify_shell.php';
 
 $current_user_id     = 'current_user';
 $current_user_name   = 'You';
@@ -28,35 +29,9 @@ $post_id_from_url = isset($_GET['post_id']) ? (int)$_GET['post_id'] : null;
   <link rel="stylesheet" href="../../public/css/chatbot.css?v=<?php echo time(); ?>">
 </head>
 
-<body>
+<body class="front-mode feed-front">
 
-  <nav class="wf-nav">
-    <a href="#" class="wf-nav-logo">
-      <div class="wf-nav-logo-box">
-        <svg viewBox="0 0 16 16">
-          <rect x="2" y="4" width="5" height="8" rx="1" />
-          <rect x="9" y="4" width="5" height="8" rx="1" />
-          <rect x="2" y="1" width="12" height="2" rx="1" />
-        </svg>
-      </div>
-      Workify
-    </a>
-    <ul class="wf-nav-links">
-      <li><a href="#">Home</a></li>
-      <li><a href="#">Browse jobs</a></li>
-      <li><a href="publications.php">Publications</a></li>
-      <li><a href="#" class="active">Messages</a></li>
-    </ul>
-    <div class="wf-nav-right">
-      <a href="../back/admin_messages.php" class="wf-nav-icon-btn" style="text-decoration:none;" title="Admin">
-        <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-          <circle cx="12" cy="7" r="4" />
-        </svg>
-      </a>
-      <div class="wf-avatar wf-avatar-36 av-blue" style="cursor:pointer;"><?php echo $current_user_init; ?></div>
-    </div>
-  </nav>
+  <?php feed_public_header('messages'); ?>
 
   <div class="msg-shell">
     <!-- LEFT PANEL -->
@@ -124,6 +99,8 @@ $post_id_from_url = isset($_GET['post_id']) ? (int)$_GET['post_id'] : null;
       </div>
     </section>
   </div>
+
+  <?php feed_public_footer(); ?>
 
   <div id="validationModal" class="validation-modal">
     <div class="validation-modal-content">

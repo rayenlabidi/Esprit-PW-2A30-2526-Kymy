@@ -6,6 +6,7 @@ if (session_status() === PHP_SESSION_NONE) {
 define('ADMIN_AJAX_HANDLER', true);
 
 require_once __DIR__ . '/../../controllers/MessageC.php';
+require_once __DIR__ . '/../includes/workify_shell.php';
 require_once __DIR__ . '/../../controllers/PublicationC.php';
 
 $controller = new MessageC();
@@ -67,7 +68,7 @@ $error = '';
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Admin Panel - Messages | Workify</title>
+<title>Espace prive - Messages | Workify</title>
 <link rel="stylesheet" href="../../public/css/workify-tokens.css">
 <link rel="stylesheet" href="../../public/css/admin.css">
 <style>
@@ -261,47 +262,9 @@ $error = '';
 }
 </style>
 </head>
-<body>
+<body class="back-mode feed-back">
 
-<nav class="wf-nav">
-  <a href="admin_dashboard.php" class="wf-nav-logo">
-    <div class="wf-nav-logo-box">
-      <svg viewBox="0 0 16 16"><rect x="2" y="4" width="5" height="8" rx="1"/><rect x="9" y="4" width="5" height="8" rx="1"/><rect x="2" y="1" width="12" height="2" rx="1"/></svg>
-    </div>
-    Workify Admin
-  </a>
-  <div class="wf-nav-right">
-    <div class="wf-avatar wf-avatar-36 av-blue">AD</div>
-  </div>
-</nav>
-
-<div class="admin-layout">
-  <!-- Left Sidebar Dashboard -->
-  <aside class="admin-sidebar">
-    <div class="admin-sidebar-header">
-      <h3>Admin Panel</h3>
-      <p>Manage your platform</p>
-    </div>
-    <ul class="admin-nav">
-      <li><a href="admin_dashboard.php" class="admin-nav-item">
-        <span class="nav-icon">📊</span>
-        <span>Dashboard</span>
-      </a></li>
-      <li><a href="admin.php" class="admin-nav-item">
-        <span class="nav-icon">📝</span>
-        <span>Publications</span>
-        <span class="nav-badge"><?php echo count($posts); ?></span>
-      </a></li>
-      <li><a href="admin_messages.php" class="admin-nav-item active">
-        <span class="nav-icon">💬</span>
-        <span>Messages</span>
-        <span class="nav-badge"><?php echo count($messages); ?></span>
-      </a></li>
-    </ul>
-  </aside>
-
-  <!-- Main Content -->
-  <main class="admin-main">
+<?php feed_admin_shell_start('Gestion Message', 'messages', ['posts' => count($posts), 'messages' => count($messages)]); ?>
     <div class="admin-header">
       <h1>💬 Message Management</h1>
       <p>Total messages: <?php echo count($messages); ?> | Total users: <?php echo count($users); ?></p>
@@ -419,8 +382,7 @@ $error = '';
         </table>
       </div>
     </div>
-  </main>
-</div>
+  <?php feed_admin_shell_end(); ?>
 
 <!-- Edit Message Modal -->
 <div id="adminEditModal" class="modal">

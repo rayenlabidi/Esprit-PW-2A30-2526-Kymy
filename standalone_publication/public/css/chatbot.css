@@ -6,7 +6,7 @@
 #wf-chatbot-fab {
   position: fixed;
   bottom: 28px;
-  right: 28px;
+  left: 28px;
   z-index: 9000;
   width: 58px;
   height: 58px;
@@ -19,16 +19,16 @@
   align-items: center;
   justify-content: center;
   box-shadow: 0 6px 20px rgba(26, 86, 232, 0.4),
-              0 2px 6px rgba(0, 0, 0, 0.12);
+    0 2px 6px rgba(0, 0, 0, 0.12);
   transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
-              box-shadow 0.25s ease;
+    box-shadow 0.25s ease;
   animation: chatbot-fab-pulse 3s ease-in-out infinite;
 }
 
 #wf-chatbot-fab:hover {
   transform: scale(1.1);
   box-shadow: 0 8px 28px rgba(26, 86, 232, 0.5),
-              0 3px 8px rgba(0, 0, 0, 0.15);
+    0 3px 8px rgba(0, 0, 0, 0.15);
 }
 
 #wf-chatbot-fab:active {
@@ -36,14 +36,24 @@
 }
 
 @keyframes chatbot-fab-pulse {
-  0%, 100% { box-shadow: 0 6px 20px rgba(26, 86, 232, 0.4), 0 2px 6px rgba(0,0,0,0.12); }
-  50%      { box-shadow: 0 6px 28px rgba(26, 86, 232, 0.55), 0 2px 6px rgba(0,0,0,0.12); }
+
+  0%,
+  100% {
+    box-shadow: 0 6px 20px rgba(26, 86, 232, 0.4), 0 2px 6px rgba(0, 0, 0, 0.12);
+  }
+
+  50% {
+    box-shadow: 0 6px 28px rgba(26, 86, 232, 0.55), 0 2px 6px rgba(0, 0, 0, 0.12);
+  }
 }
 
 /* --- Modal Backdrop --- */
 #wf-chatbot-modal {
   position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   z-index: 9500;
   background: rgba(0, 0, 0, 0);
   backdrop-filter: blur(0px);
@@ -69,7 +79,7 @@
   background: var(--bg-card, #ffffff);
   border-radius: 20px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18),
-              0 4px 12px rgba(0, 0, 0, 0.06);
+    0 4px 12px rgba(0, 0, 0, 0.06);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -158,6 +168,7 @@
 .wf-chatbot-messages::-webkit-scrollbar {
   width: 4px;
 }
+
 .wf-chatbot-messages::-webkit-scrollbar-thumb {
   background: var(--border, #e3e3e0);
   border-radius: 4px;
@@ -200,8 +211,15 @@
 }
 
 @keyframes chatbot-msg-in {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* --- Typing Indicator --- */
@@ -229,8 +247,18 @@
 }
 
 @keyframes chatbot-typing {
-  0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
-  30%           { transform: translateY(-6px); opacity: 1; }
+
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.4;
+  }
+
+  30% {
+    transform: translateY(-6px);
+    opacity: 1;
+  }
 }
 
 /* --- Input Bar --- */
@@ -300,7 +328,7 @@
 
   #wf-chatbot-fab {
     bottom: 18px;
-    right: 18px;
+    left: 18px;
     width: 52px;
     height: 52px;
   }
