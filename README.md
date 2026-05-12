@@ -241,7 +241,11 @@ Deployment checklist:
 
 ## Contributors
 
-- Rayen Labidi - Workify integration, users, jobs, formations, database unification and MVC coordination.
+- Rayen Labidi - Workify integration , formations, database unification and MVC coordination.
+- Yassine Chaouachi - Users Management
+- Koussay Ftouhi - Feed and Messages management
+- Montassar Benrejeb - Jobs Management
+- Ranim Elleuch - Events Management
 - Workify Team - module development and academic project collaboration.
 
 ## Academic Context
