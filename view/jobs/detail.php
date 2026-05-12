@@ -19,7 +19,7 @@ include __DIR__ . '/../includes/header.php';
             <h2><?= htmlspecialchars($job['title'], ENT_QUOTES); ?></h2>
             <p class="muted">Publie par: <?= htmlspecialchars($job['nom_publisher'], ENT_QUOTES); ?> - <?= htmlspecialchars($job['email_publisher'], ENT_QUOTES); ?></p>
         </div>
-        <span class="badge badge-green"><?= $job['is_remote'] ? 'Remote' : 'Sur site'; ?></span>
+        <span class="badge badge-green"><?= $job['is_remote'] ? 'A distance' : 'Sur site'; ?></span>
     </div>
 
     <p><?= nl2br(htmlspecialchars($job['description'], ENT_QUOTES)); ?></p>

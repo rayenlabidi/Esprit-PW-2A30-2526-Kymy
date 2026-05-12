@@ -1,5 +1,5 @@
 <?php
-$pageTitle = $office === 'back' ? 'Gestion Jobs' : 'Browse Jobs';
+$pageTitle = $office === 'back' ? 'Gestion Jobs' : 'Jobs';
 $activeModule = 'jobs';
 $jobs = isset($jobs) ? $jobs : [];
 $categories = isset($categories) ? $categories : [];
@@ -15,8 +15,8 @@ include __DIR__ . '/../includes/header.php';
 
 <div class="toolbar">
     <div>
-        <p class="eyebrow"><?= $office === 'back' ? 'Resource control' : 'Workify opportunities'; ?></p>
-        <h2><?= $office === 'back' ? 'Job Control Center' : 'Find your next mission'; ?></h2>
+        <p class="eyebrow"><?= $office === 'back' ? 'Gestion des ressources' : 'Opportunites Workify'; ?></p>
+        <h2><?= $office === 'back' ? 'Centre des jobs' : 'Trouver votre prochaine mission'; ?></h2>
     </div>
     <?php if ($office === 'back') { ?>
         <div class="actions">
@@ -42,7 +42,7 @@ include __DIR__ . '/../includes/header.php';
 <form class="filters" action="../controller/JobC.php" method="get">
     <input type="hidden" name="office" value="<?= htmlspecialchars($office, ENT_QUOTES); ?>">
     <input type="hidden" name="action" value="list">
-    <input name="search" placeholder="Search by title or location" value="<?= htmlspecialchars($search, ENT_QUOTES); ?>">
+    <input name="search" placeholder="Rechercher par titre ou localisation" value="<?= htmlspecialchars($search, ENT_QUOTES); ?>">
     <select name="id_categorie">
         <option value="">Toutes les categories</option>
         <?php foreach ($categories as $categorie) { ?>
@@ -59,9 +59,9 @@ include __DIR__ . '/../includes/header.php';
     </select>
     <select name="statut">
         <option value="">Tous les statuts</option>
-        <option value="open" <?= $statut === 'open' ? 'selected' : ''; ?>>Open</option>
-        <option value="draft" <?= $statut === 'draft' ? 'selected' : ''; ?>>Draft</option>
-        <option value="closed" <?= $statut === 'closed' ? 'selected' : ''; ?>>Closed</option>
+        <option value="open" <?= $statut === 'open' ? 'selected' : ''; ?>>Ouvert</option>
+        <option value="draft" <?= $statut === 'draft' ? 'selected' : ''; ?>>Brouillon</option>
+        <option value="closed" <?= $statut === 'closed' ? 'selected' : ''; ?>>Ferme</option>
     </select>
     <select name="sort">
         <option value="date_desc" <?= $sort === 'date_desc' ? 'selected' : ''; ?>>Plus recents</option>
@@ -71,7 +71,7 @@ include __DIR__ . '/../includes/header.php';
     </select>
     <label class="inline-check">
         <input type="checkbox" name="remote" value="1" <?= $remoteOnly === '1' ? 'checked' : ''; ?>>
-        Remote
+        A distance
     </label>
     <button class="btn btn-green" type="submit">Rechercher</button>
     <a class="btn" href="../controller/JobC.php?office=<?= $office; ?>&action=list">Initialiser</a>
@@ -96,7 +96,7 @@ include __DIR__ . '/../includes/header.php';
                 <div class="card-meta">
                     <span class="badge"><?= htmlspecialchars($jobItem['nom_categorie'], ENT_QUOTES); ?></span>
                     <span class="badge badge-green"><?= htmlspecialchars($jobItem['job_type'], ENT_QUOTES); ?></span>
-                    <span class="badge badge-amber"><?= $jobItem['is_remote'] ? 'Remote' : 'Sur site'; ?></span>
+                    <span class="badge badge-amber"><?= $jobItem['is_remote'] ? 'A distance' : 'Sur site'; ?></span>
                 </div>
                 <p><strong><?= number_format((float) $jobItem['budget'], 2, '.', ' '); ?> DT</strong> - <?= htmlspecialchars($jobItem['location'], ENT_QUOTES); ?></p>
                 <p class="muted">Publie par: <?= htmlspecialchars($jobItem['nom_publisher'], ENT_QUOTES); ?></p>
@@ -126,7 +126,7 @@ include __DIR__ . '/../includes/header.php';
                 <?php } ?>
                 <?php foreach ($jobs as $jobItem) { ?>
                     <tr>
-                        <td data-label="Titre"><strong><?= htmlspecialchars($jobItem['title'], ENT_QUOTES); ?></strong><br><span class="muted"><?= htmlspecialchars($jobItem['location'], ENT_QUOTES); ?> - <?= $jobItem['is_remote'] ? 'Remote' : 'Sur site'; ?></span></td>
+                        <td data-label="Titre"><strong><?= htmlspecialchars($jobItem['title'], ENT_QUOTES); ?></strong><br><span class="muted"><?= htmlspecialchars($jobItem['location'], ENT_QUOTES); ?> - <?= $jobItem['is_remote'] ? 'A distance' : 'Sur site'; ?></span></td>
                         <td data-label="Categorie"><?= htmlspecialchars($jobItem['nom_categorie'], ENT_QUOTES); ?></td>
                         <td data-label="Publie par"><?= htmlspecialchars($jobItem['nom_publisher'], ENT_QUOTES); ?></td>
                         <td data-label="Type"><?= htmlspecialchars($jobItem['job_type'], ENT_QUOTES); ?></td>

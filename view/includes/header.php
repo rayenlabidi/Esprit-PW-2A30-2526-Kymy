@@ -48,7 +48,7 @@ $backLinks = [
 
                 <div class="nav-title">Navigation</div>
                 <?php foreach ($backLinks as $link) { ?>
-                    <a class="nav-link <?= $activeModule === $link['key'] ? 'active' : ''; ?>" href="<?= htmlspecialchars($link['href'], ENT_QUOTES); ?>">
+                    <a class="nav-link <?= $activeModule === $link['key'] ? 'active' : ''; ?>" data-module="<?= htmlspecialchars($link['key'], ENT_QUOTES); ?>" href="<?= htmlspecialchars($link['href'], ENT_QUOTES); ?>">
                         <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="<?= htmlspecialchars($link['icon'], ENT_QUOTES); ?>"/></svg></span>
                         <?= htmlspecialchars($link['label'], ENT_QUOTES); ?>
                     </a>
@@ -77,7 +77,7 @@ $backLinks = [
                 </a>
                 <nav class="public-nav" aria-label="Navigation principale">
                     <?php foreach ($frontLinks as $link) { ?>
-                        <a class="<?= $activeModule === $link['key'] ? 'active' : ''; ?>" href="<?= htmlspecialchars($link['href'], ENT_QUOTES); ?>">
+                        <a class="<?= $activeModule === $link['key'] ? 'active' : ''; ?>" data-module="<?= htmlspecialchars($link['key'], ENT_QUOTES); ?>" href="<?= htmlspecialchars($link['href'], ENT_QUOTES); ?>">
                             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="<?= htmlspecialchars($link['icon'], ENT_QUOTES); ?>"/></svg>
                             <?= htmlspecialchars($link['label'], ENT_QUOTES); ?>
                         </a>

@@ -22,19 +22,22 @@
             <input id="password" name="password" type="password" placeholder="Votre mot de passe" required>
         </div>
 
-        <div class="captcha-box">
+        <div class="captcha-box recaptcha-box">
             <div>
-                <span class="captcha-label">Captcha</span>
-                <strong><?= htmlspecialchars($captcha, ENT_QUOTES); ?> = ?</strong>
+                <span class="captcha-label">Verification</span>
+                <strong>Protection Google reCAPTCHA</strong>
             </div>
-            <input id="captcha_answer" name="captcha_answer" inputmode="numeric" placeholder="Reponse" required>
+            <div class="g-recaptcha" data-sitekey="<?= htmlspecialchars($recaptchaSiteKey, ENT_QUOTES); ?>"></div>
         </div>
 
         <div class="actions" style="margin-top: 18px;">
             <button class="btn btn-primary" type="submit">Se connecter</button>
             <a class="btn" href="../controller/HomeC.php">Retour accueil</a>
+            <a class="btn btn-link" href="../controller/AuthController.php?action=forgot">Mot de passe oublie</a>
         </div>
     </form>
 </div>
+
+<script src="https://www.google.com/recaptcha/api.js?hl=fr" async defer></script>
 
 <?php include __DIR__ . '/../includes/footer.php'; ?>

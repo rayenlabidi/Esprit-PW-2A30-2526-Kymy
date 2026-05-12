@@ -193,7 +193,7 @@ INSERT INTO roles (id, name, slug, description) VALUES
 (3, 'Boss', 'boss', 'Publie des jobs et recrute des freelances');
 
 INSERT INTO utilisateurs (id, role_id, first_name, last_name, email, phone, password, headline, bio, avatar_url, status) VALUES
-(1, 1, 'Admin', 'Workify', 'admin@workify.com', '22822870', '$2y$10$7ALOQvIWzngQAJ/eN3NsS.7HpVWVUVLlxv7KblJL4McnOLEJIKus6', 'Platform administrator', 'Compte admin pour tester toute la plateforme et gerer chaque module.', '', 'active'),
+(1, 1, 'Equipe', 'Workify', 'admin@workify.com', '22822870', '$2y$10$7ALOQvIWzngQAJ/eN3NsS.7HpVWVUVLlxv7KblJL4McnOLEJIKus6', 'Responsable espace prive', 'Compte de gestion pour suivre les modules Workify.', '', 'active'),
 (2, 2, 'Sami', 'Freelancer', 'freelancer@workify.com', '20606058', '$2y$10$8zrsqRyUqyEqdh3xLvEOW.wNgPVfdGPdSFThS54XdcyVY4Oc3b/JO', 'Front-end freelancer', 'Freelancer de demo pour tester les candidatures.', '', 'active'),
 (3, 3, 'Lina', 'Boss', 'boss@workify.com', '55123456', '$2y$10$HLpAbAB5hkZFjJmYnlsqNeBUQS186KVB.uhsU8RBO5LyC0WLyzBai', 'Talent recruiter', 'Boss de demo pour publier des jobs et recruter des profils.', '', 'active');
 

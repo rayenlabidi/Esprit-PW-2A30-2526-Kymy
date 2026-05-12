@@ -78,9 +78,9 @@ include __DIR__ . '/../includes/header.php';
             <label for="statut">Statut</label>
             <select id="statut" name="statut">
                 <?php $selectedStatus = isset($formData['status']) ? $formData['status'] : (isset($formData['statut']) ? $formData['statut'] : 'open'); ?>
-                <option value="open" <?= $selectedStatus === 'open' ? 'selected' : ''; ?>>Open</option>
-                <option value="draft" <?= $selectedStatus === 'draft' ? 'selected' : ''; ?>>Draft</option>
-                <option value="closed" <?= $selectedStatus === 'closed' ? 'selected' : ''; ?>>Closed</option>
+                <option value="open" <?= $selectedStatus === 'open' ? 'selected' : ''; ?>>Ouvert</option>
+                <option value="draft" <?= $selectedStatus === 'draft' ? 'selected' : ''; ?>>Brouillon</option>
+                <option value="closed" <?= $selectedStatus === 'closed' ? 'selected' : ''; ?>>Ferme</option>
             </select>
         </div>
 

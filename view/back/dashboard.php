@@ -1,5 +1,5 @@
 <?php
-$pageTitle = 'Workify Admin';
+$pageTitle = 'Espace Workify';
 $office = 'back';
 $activeModule = 'dashboard';
 include __DIR__ . '/../includes/header.php';
@@ -7,9 +7,9 @@ include __DIR__ . '/../includes/header.php';
 
 <div class="toolbar">
     <div>
-        <p class="eyebrow">Workify management</p>
-        <h2>Integrated Control Center</h2>
-        <p class="muted">Manage Workify formations, jobs, trainers, publishers and candidatures.</p>
+        <p class="eyebrow">Gestion Workify</p>
+        <h2>Centre de pilotage</h2>
+        <p class="muted">Suivez les formations, les jobs, les utilisateurs et les candidatures depuis un seul espace.</p>
     </div>
     <div class="actions">
         <a class="btn" href="../controller/JobC.php?office=back&action=add">Ajouter job</a>

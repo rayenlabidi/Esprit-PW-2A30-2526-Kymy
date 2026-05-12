@@ -1,5 +1,5 @@
 <?php
-$pageTitle = $office === 'back' ? 'Gestion Formations' : 'Browse Formations';
+$pageTitle = $office === 'back' ? 'Gestion Formations' : 'Formations';
 $activeModule = 'formations';
 $search = isset($search) ? $search : '';
 $idCategorie = isset($idCategorie) ? $idCategorie : '';
@@ -13,8 +13,8 @@ include __DIR__ . '/../includes/header.php';
 
 <div class="toolbar">
     <div>
-        <p class="eyebrow"><?= $office === 'back' ? 'Resource control' : 'Workify learning'; ?></p>
-        <h2><?= $office === 'back' ? 'Training Control Center' : 'Find your next skill'; ?></h2>
+        <p class="eyebrow"><?= $office === 'back' ? 'Gestion des ressources' : 'Workify learning'; ?></p>
+        <h2><?= $office === 'back' ? 'Centre des formations' : 'Choisir votre prochaine competence'; ?></h2>
     </div>
     <?php if ($office === 'back') { ?>
         <div class="actions">
@@ -40,7 +40,7 @@ include __DIR__ . '/../includes/header.php';
 <form class="filters" action="../controller/FormationC.php" method="get">
     <input type="hidden" name="office" value="<?= htmlspecialchars($office, ENT_QUOTES); ?>">
     <input type="hidden" name="action" value="list">
-    <input name="search" placeholder="Search by title or trainer" value="<?= htmlspecialchars($search, ENT_QUOTES); ?>">
+    <input name="search" placeholder="Rechercher par titre ou formateur" value="<?= htmlspecialchars($search, ENT_QUOTES); ?>">
     <select name="id_categorie">
         <option value="">Toutes les categories</option>
         <?php foreach ($categories as $categorie) { ?>

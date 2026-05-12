@@ -13,7 +13,7 @@ include __DIR__ . '/../includes/header.php';
 <div class="toolbar">
     <div>
         <p class="eyebrow">Espace prive</p>
-        <h2>User Control Center</h2>
+        <h2>Centre utilisateurs</h2>
     </div>
     <a class="btn btn-primary" href="../controller/UtilisateurC.php?action=add">
         <svg viewBox="0 0 24 24"><path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6V5z"/></svg>
@@ -23,14 +23,14 @@ include __DIR__ . '/../includes/header.php';
 
 <div class="stats-grid">
     <div class="card">Total <strong><?= isset($statistiques['total']) ? (int) $statistiques['total'] : 0; ?></strong></div>
-    <div class="card">Admins <strong><?= isset($statistiques['admins']) ? (int) $statistiques['admins'] : 0; ?></strong></div>
+    <div class="card">Administrateurs <strong><?= isset($statistiques['admins']) ? (int) $statistiques['admins'] : 0; ?></strong></div>
     <div class="card">Freelancers <strong><?= isset($statistiques['freelancers']) ? (int) $statistiques['freelancers'] : 0; ?></strong></div>
     <div class="card">Boss <strong><?= isset($statistiques['boss']) ? (int) $statistiques['boss'] : 0; ?></strong></div>
 </div>
 
 <form class="filters" action="../controller/UtilisateurC.php" method="get">
     <input type="hidden" name="action" value="list">
-    <input name="search" placeholder="Search by name or email" value="<?= htmlspecialchars($search, ENT_QUOTES); ?>">
+    <input name="search" placeholder="Rechercher par nom ou email" value="<?= htmlspecialchars($search, ENT_QUOTES); ?>">
     <select name="role">
         <option value="">Tous les roles</option>
         <?php foreach ($roles as $roleItem) { ?>
@@ -41,9 +41,9 @@ include __DIR__ . '/../includes/header.php';
     </select>
     <select name="status">
         <option value="">Tous les statuts</option>
-        <option value="active" <?= $status === 'active' ? 'selected' : ''; ?>>Active</option>
-        <option value="pending" <?= $status === 'pending' ? 'selected' : ''; ?>>Pending</option>
-        <option value="blocked" <?= $status === 'blocked' ? 'selected' : ''; ?>>Blocked</option>
+        <option value="active" <?= $status === 'active' ? 'selected' : ''; ?>>Actif</option>
+        <option value="pending" <?= $status === 'pending' ? 'selected' : ''; ?>>En attente</option>
+        <option value="blocked" <?= $status === 'blocked' ? 'selected' : ''; ?>>Bloque</option>
     </select>
     <button class="btn btn-green" type="submit">Rechercher</button>
     <a class="btn" href="../controller/UtilisateurC.php?action=list">Initialiser</a>

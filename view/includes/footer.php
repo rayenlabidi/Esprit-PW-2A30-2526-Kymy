@@ -2,6 +2,7 @@
         </main>
     </div>
     <script src="../assets/js/validation.js"></script>
+    <script src="../assets/js/mui-motion.js"></script>
 
     <?php if (isset($activeModule) && $activeModule === 'formations') { ?>
         <div id="chatbot-toggle">

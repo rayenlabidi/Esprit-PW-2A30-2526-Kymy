@@ -66,6 +66,23 @@ class UtilisateurModel
         }
     }
 
+    public function getUtilisateurByEmail($email)
+    {
+        $sql = 'SELECT u.*, r.name AS role_name, r.slug AS role_slug
+                FROM utilisateurs u
+                INNER JOIN roles r ON u.role_id = r.id
+                WHERE u.email = :email
+                LIMIT 1';
+        $db = config::getConnexion();
+        try {
+            $query = $db->prepare($sql);
+            $query->execute(['email' => trim($email)]);
+            return $query->fetch();
+        } catch (Exception $e) {
+            die('Erreur: ' . $e->getMessage());
+        }
+    }
+
     public function emailExiste($email, $ignoreId = 0)
     {
         $sql = 'SELECT COUNT(*) AS total FROM utilisateurs WHERE email = :email';
@@ -142,6 +159,21 @@ class UtilisateurModel
         try {
             $query = $db->prepare($sql);
             $query->execute($params);
+        } catch (Exception $e) {
+            die('Erreur: ' . $e->getMessage());
+        }
+    }
+
+    public function updatePassword($id, $password)
+    {
+        $sql = 'UPDATE utilisateurs SET password = :password WHERE id = :id';
+        $db = config::getConnexion();
+        try {
+            $query = $db->prepare($sql);
+            $query->execute([
+                'password' => password_hash($password, PASSWORD_DEFAULT),
+                'id' => (int) $id
+            ]);
         } catch (Exception $e) {
             die('Erreur: ' . $e->getMessage());
         }

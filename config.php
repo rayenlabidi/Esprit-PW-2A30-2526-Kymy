@@ -1,5 +1,42 @@
 <?php
 
+$localConfigPath = __DIR__ . '/config.local.php';
+if (file_exists($localConfigPath)) {
+  require_once $localConfigPath;
+}
+
+if (!defined('WORKIFY_RECAPTCHA_SITE_KEY')) {
+  define('WORKIFY_RECAPTCHA_SITE_KEY', '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI');
+}
+
+if (!defined('WORKIFY_RECAPTCHA_SECRET_KEY')) {
+  define('WORKIFY_RECAPTCHA_SECRET_KEY', '6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe');
+}
+
+if (!defined('WORKIFY_MAIL_HOST')) {
+  define('WORKIFY_MAIL_HOST', 'smtp.gmail.com');
+}
+
+if (!defined('WORKIFY_MAIL_PORT')) {
+  define('WORKIFY_MAIL_PORT', 587);
+}
+
+if (!defined('WORKIFY_MAIL_USERNAME')) {
+  define('WORKIFY_MAIL_USERNAME', 'workifytn@gmail.com');
+}
+
+if (!defined('WORKIFY_MAIL_PASSWORD')) {
+  define('WORKIFY_MAIL_PASSWORD', '');
+}
+
+if (!defined('WORKIFY_MAIL_FROM')) {
+  define('WORKIFY_MAIL_FROM', WORKIFY_MAIL_USERNAME);
+}
+
+if (!defined('WORKIFY_MAIL_FROM_NAME')) {
+  define('WORKIFY_MAIL_FROM_NAME', 'Workify');
+}
+
 
 
 class config

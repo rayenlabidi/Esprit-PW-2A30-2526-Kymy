@@ -76,54 +76,46 @@ include __DIR__ . '/../includes/header.php';
     <a class="module-tile" href="../controller/JobC.php?office=front&action=list">
         <span class="tile-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 4h4a2 2 0 0 1 2 2v2h4v12H4V8h4V6a2 2 0 0 1 2-2zm4 4V6h-4v2h4z"/></svg></span>
         <h3>Jobs</h3>
-        <p class="muted">Find missions and apply quickly.</p>
+        <p class="muted">Trouver des missions et postuler avec votre compte.</p>
     </a>
     <a class="module-tile" href="../controller/PublicationC.php?office=front&action=list">
         <span class="tile-icon tile-icon-teal"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v2H4V5zm0 6h16v2H4v-2zm0 6h10v2H4v-2z"/></svg></span>
         <h3>Publication</h3>
-        <p class="muted">Follow updates from the community.</p>
+        <p class="muted">Consulter les annonces et les nouveautes de la communaute.</p>
     </a>
     <a class="module-tile" href="#events">
         <span class="tile-icon tile-icon-amber"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 2h2v3h6V2h2v3h3v17H4V5h3V2zm11 8H6v10h12V10z"/></svg></span>
         <h3>Evenement</h3>
-        <p class="muted">Reserved for the next module.</p>
+        <p class="muted">Suivre les rencontres, ateliers et sessions utiles.</p>
     </a>
     <a class="module-tile" href="#messages">
         <span class="tile-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v12H7l-3 4V4z"/></svg></span>
         <h3>Message</h3>
-        <p class="muted">Messaging entry ready for integration.</p>
+        <p class="muted">Centraliser les echanges importants de vos projets.</p>
     </a>
     <a class="module-tile" href="../controller/FormationC.php?office=front&action=list">
         <span class="tile-icon tile-icon-teal"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v14H7l-3 3V4zm4 4v2h8V8H8zm0 4v2h6v-2H8z"/></svg></span>
         <h3>Formation</h3>
-        <p class="muted">Learn skills with guided tracks.</p>
+        <p class="muted">Developper vos competences avec des parcours guides.</p>
     </a>
 </section>
 
 <section class="audience-band" id="events">
     <article class="audience-card">
-        <p class="eyebrow">For freelancers</p>
-        <h3>Build skills and apply with confidence.</h3>
-        <p class="muted">Move between learning and job opportunities without leaving the platform.</p>
+        <p class="eyebrow">Freelances</p>
+        <h3>Monter en competence et postuler avec confiance.</h3>
+        <p class="muted">Passer de la formation aux opportunites sans quitter Workify.</p>
     </article>
     <article class="audience-card">
-        <p class="eyebrow">For trainers</p>
-        <h3>Showcase practical courses.</h3>
-        <p class="muted">Create formations that connect directly with market needs and job categories.</p>
+        <p class="eyebrow">Formateurs</p>
+        <h3>Valoriser des formations pratiques.</h3>
+        <p class="muted">Partager des parcours clairs, lies aux besoins reels du marche.</p>
     </article>
     <article class="audience-card">
-        <p class="eyebrow">For bosses</p>
-        <h3>Find people already growing.</h3>
-        <p class="muted">Post jobs, receive candidatures, and match with profiles shaped by training.</p>
+        <p class="eyebrow">Entreprises</p>
+        <h3>Rencontrer des profils deja actifs.</h3>
+        <p class="muted">Publier des missions et suivre les candidatures dans un meme espace.</p>
     </article>
-</section>
-
-<section class="placeholder-band" id="messages">
-    <div>
-        <p class="eyebrow">Bientot disponible</p>
-        <h2>Evenement et Message sont prets dans la navigation.</h2>
-        <p class="muted">Les boutons existent deja pour garder la plateforme complete pendant l'integration des prochains modules.</p>
-    </div>
 </section>
 
 <?php include __DIR__ . '/../includes/footer.php'; ?>
