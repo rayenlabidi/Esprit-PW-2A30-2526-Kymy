@@ -3,6 +3,7 @@ require_once __DIR__ . '/../Model/job.php';
 require_once __DIR__ . '/../Model/candidature.php';
 require_once __DIR__ . '/JobModel.php';
 require_once __DIR__ . '/ApplicationModel.php';
+require_once __DIR__ . '/AuthC.php';
 
 class JobC
 {
@@ -46,6 +47,10 @@ class JobC
     private function liste()
     {
         $office = $this->office();
+        if ($office === 'back') {
+            AuthC::requireAdmin();
+        }
+
         $search = isset($_GET['search']) ? trim($_GET['search']) : '';
         $idCategorie = isset($_GET['id_categorie']) ? trim($_GET['id_categorie']) : '';
         $type = isset($_GET['type']) ? trim($_GET['type']) : '';
@@ -62,6 +67,7 @@ class JobC
 
     private function ajouter()
     {
+        AuthC::requireAdmin();
         $office = 'back';
         $categories = $this->jobModel->listeCategories();
         $publishers = $this->jobModel->listePublishers();
@@ -85,6 +91,7 @@ class JobC
 
     private function modifier()
     {
+        AuthC::requireAdmin();
         $office = 'back';
         $id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
         $job = $this->jobModel->getJobById($id);
@@ -116,6 +123,7 @@ class JobC
 
     private function supprimer()
     {
+        AuthC::requireAdmin();
         $id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
 
         if ($id > 0) {
@@ -129,6 +137,10 @@ class JobC
     private function detail()
     {
         $office = $this->office();
+        if ($office === 'back') {
+            AuthC::requireAdmin();
+        }
+
         $id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
         $job = $this->jobModel->getJobById($id);
         $candidatures = $office === 'back' ? $this->applicationModel->listeCandidatures($id) : [];
@@ -184,6 +196,7 @@ class JobC
 
     private function listeCandidatures()
     {
+        AuthC::requireAdmin();
         $office = 'back';
         $candidatures = $this->applicationModel->listeCandidatures();
         include __DIR__ . '/../view/jobs/applications.php';
@@ -191,6 +204,7 @@ class JobC
 
     private function changerStatutCandidature()
     {
+        AuthC::requireAdmin();
         $id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
         $statut = isset($_GET['statut']) ? trim($_GET['statut']) : '';
         $candidature = $this->applicationModel->getCandidatureById($id);

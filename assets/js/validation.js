@@ -63,6 +63,21 @@ function validateForm(form) {
         validateText(form, 'message', 20, 'Le message doit contenir au moins 20 caracteres.', errors);
     }
 
+    if (module === 'user') {
+        validateSelect(form, 'role_id', 'Veuillez choisir un role.', errors);
+        validateText(form, 'first_name', 2, 'Le prenom doit contenir au moins 2 caracteres.', errors);
+        validateText(form, 'last_name', 2, 'Le nom doit contenir au moins 2 caracteres.', errors);
+        validateEmail(form, 'email', 'Veuillez saisir un email valide.', errors);
+        validateText(form, 'headline', 3, 'Le titre doit contenir au moins 3 caracteres.', errors);
+        validateText(form, 'bio', 10, 'La bio doit contenir au moins 10 caracteres.', errors);
+        validateSelect(form, 'status', 'Veuillez choisir un statut.', errors);
+
+        if (form.elements.password && form.elements.password.value.trim() !== '' && form.elements.password.value.trim().length < 6) {
+            addFieldError(form, 'password', 'Le mot de passe doit contenir au moins 6 caracteres.');
+            errors.push('Le mot de passe doit contenir au moins 6 caracteres.');
+        }
+    }
+
     return errors;
 }
 

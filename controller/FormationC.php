@@ -7,6 +7,7 @@ require_once __DIR__ . '/CategorieFormationModel.php';
 require_once __DIR__ . '/FormateurModel.php';
 require_once __DIR__ . '/ApprenantModel.php';
 require_once __DIR__ . '/InscriptionFormationModel.php';
+require_once __DIR__ . '/AuthC.php';
 
 class FormationC
 {
@@ -54,6 +55,10 @@ class FormationC
     private function liste()
     {
         $office = $this->office();
+        if ($office === 'back') {
+            AuthC::requireAdmin();
+        }
+
         $search = isset($_GET['search']) ? trim($_GET['search']) : '';
         $idCategorie = isset($_GET['id_categorie']) ? trim($_GET['id_categorie']) : '';
         $statut = isset($_GET['statut']) ? trim($_GET['statut']) : '';
@@ -68,6 +73,7 @@ class FormationC
 
     private function ajouter()
     {
+        AuthC::requireAdmin();
         $office = $this->office();
         $categories = $this->categorieModel->listeCategories();
         $formateurs = $this->formateurModel->listeFormateurs();
@@ -91,6 +97,7 @@ class FormationC
 
     private function modifier()
     {
+        AuthC::requireAdmin();
         $office = $this->office();
         $id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
         $formation = $this->formationModel->getFormationById($id);
@@ -122,6 +129,7 @@ class FormationC
 
     private function supprimer()
     {
+        AuthC::requireAdmin();
         $office = $this->office();
         $id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
 
@@ -136,6 +144,10 @@ class FormationC
     private function detail()
     {
         $office = $this->office();
+        if ($office === 'back') {
+            AuthC::requireAdmin();
+        }
+
         $id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
         $formation = $this->formationModel->getFormationById($id);
         $errors = [];
@@ -188,6 +200,7 @@ class FormationC
 
     private function listeInscriptions()
     {
+        AuthC::requireAdmin();
         $office = 'back';
         $inscriptions = $this->inscriptionModel->listeInscriptions();
         include __DIR__ . '/../view/formations/inscriptions.php';
