@@ -40,7 +40,7 @@ The project provides one unified workspace for freelancers, trainers, recruiters
 
 ### Frontend
 
-- HTML5
+- HTML
 - CSS3
 - JavaScript
 - Responsive CSS layout
