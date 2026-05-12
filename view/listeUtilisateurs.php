@@ -1,4 +1,6 @@
 <?php
+// Vue principale: liste des utilisateurs.
+// L'admin voit le tableau complet; un utilisateur normal voit seulement son profil.
 include_once '../controller/UtilisateurController.php';
 
 $pageData = (new UtilisateurController())->prepareListPage();
@@ -8,6 +10,7 @@ $search = $pageData['search'];
 $sort = $pageData['sort'];
 
 $liste = $pageData['liste'];
+
 include_once 'header.php';
 ?>
 
@@ -15,7 +18,7 @@ include_once 'header.php';
     <h2 class="mb-0 text-dark fw-bold" style="font-family: 'Outfit', sans-serif;"><i class="fa-solid fa-users me-2 text-primary"></i>Gestion des utilisateurs</h2>
     <?php if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'admin'): ?>
         <div class="d-flex align-items-center gap-2">
-            <a href="exportUsersPdf.php?search=<?= urlencode($search) ?>&sort=<?= urlencode($sort) ?>" class="btn btn-outline-secondary px-4 py-2">
+            <a href="../controller/UtilisateurRouter.php?action=export-pdf&search=<?= urlencode($search) ?>&sort=<?= urlencode($sort) ?>" class="btn btn-outline-secondary px-4 py-2">
                 <i class="fa-solid fa-file-pdf me-2"></i> Exporter PDF
             </a>
             <a href="stats.php" class="btn btn-outline-primary px-4 py-2"><i class="fa-solid fa-chart-simple me-2"></i> Statistiques</a>
@@ -61,13 +64,14 @@ include_once 'header.php';
                 <th class="border-0">Utilisateur</th>
                 <th class="border-0">Contact</th>
                 <th class="border-0">Statut</th>
+                <th class="border-0 text-center">QR</th>
                 <th class="text-end border-0">Actions</th>
             </tr>
         </thead>
         <tbody>
             <?php if (empty($liste)): ?>
             <tr>
-                <td colspan="6" class="text-center py-5 text-muted">
+                <td colspan="7" class="text-center py-5 text-muted">
                     <i class="fa-solid fa-folder-open mb-3" style="font-size: 3rem; color: #93c5fd;"></i>
                     <h5 class="fw-bold">Aucun utilisateur trouvé</h5>
                     <p>Essayez de modifier vos critères de recherche.</p>
@@ -76,6 +80,9 @@ include_once 'header.php';
             <?php else: ?>
                 <?php foreach ($liste as $u): 
                     $roleName = !empty($u['role_name']) ? $u['role_name'] : 'USER';
+                    $profileUrl = $u['profile_url'] ?? ('profile.php?id=' . urlencode((string)$u['id']));
+                    $fullName = $u['full_name'] ?? trim(($u['first_name'] ?? '') . ' ' . ($u['last_name'] ?? ''));
+                    $qrPayload = $u['qr_payload'] ?? $profileUrl;
                 ?>
                     <tr>
                         <td><span class="badge bg-secondary">#<?= htmlspecialchars($u['id']); ?></span></td>
@@ -99,9 +106,23 @@ include_once 'header.php';
                                 <span class="badge bg-warning"><i class="fa-solid fa-circle-xmark me-1"></i>Inactif</span>
                             <?php endif; ?>
                         </td>
+                        <td class="text-center">
+                            <button
+                                type="button"
+                                class="btn btn-sm btn-light text-primary border shadow-sm js-open-qr"
+                                data-qr-payload="<?= htmlspecialchars($qrPayload, ENT_QUOTES, 'UTF-8') ?>"
+                                data-qr-url="<?= htmlspecialchars($profileUrl, ENT_QUOTES, 'UTF-8') ?>"
+                                data-user-name="<?= htmlspecialchars($fullName, ENT_QUOTES, 'UTF-8') ?>"
+                                title="Afficher le QR code personnel"
+                                aria-label="Afficher le QR code personnel"
+                            >
+                                <i class="fa-solid fa-qrcode"></i>
+                            </button>
+                        </td>
                         <td class="text-end">
+                            <a href="profile.php?id=<?= $u['id']; ?>" class="btn btn-sm btn-light text-success border me-1 shadow-sm" title="Voir le profil"><i class="fa-solid fa-id-card"></i></a>
                             <a href="update.php?id=<?= $u['id']; ?>" class="btn btn-sm btn-light text-primary border me-1 shadow-sm"><i class="fa-solid fa-pen"></i></a> 
-                            <a href="delete.php?id=<?= $u['id']; ?>" class="btn btn-sm btn-light text-danger border shadow-sm" onclick="return confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ?');"><i class="fa-solid fa-trash"></i></a>
+                            <a href="../controller/UtilisateurRouter.php?action=delete&id=<?= $u['id']; ?>" class="btn btn-sm btn-light text-danger border shadow-sm" onclick="return confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ?');"><i class="fa-solid fa-trash"></i></a>
                         </td>
                     </tr>
                 <?php endforeach; ?>
@@ -109,6 +130,67 @@ include_once 'header.php';
         </tbody>
     </table>
 </div>
+
+<div class="modal fade" id="qrModal" tabindex="-1" aria-labelledby="qrModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 18px;">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold text-primary" id="qrModalLabel">
+                    <i class="fa-solid fa-qrcode me-2"></i>QR code personnel
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+            </div>
+            <div class="modal-body text-center px-4 pb-4">
+                <div id="qrUserName" class="fw-bold mb-3"></div>
+                <div id="qrCodeBox" class="d-inline-block p-3 rounded-4 bg-white border"></div>
+                <div class="mt-3">
+                    <a id="qrProfileLink" href="#" class="fw-bold text-primary" target="_blank" rel="noopener">
+                        Ouvrir le profil
+                    </a>
+                </div>
+                <div class="small text-muted mt-2">Scannez ce code pour lire les informations personnelles et le lien profil.</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="../assets/js/qrcode.min.js"></script>
+<script>
+    // Au clic, on genere le QR code a partir du contenu vCard prepare par le service QR.
+    document.querySelectorAll('.js-open-qr').forEach((button) => {
+        button.addEventListener('click', () => {
+            const qrPayload = button.dataset.qrPayload || '';
+            const qrUrl = button.dataset.qrUrl || '';
+            const userName = button.dataset.userName || 'Utilisateur';
+            const qrBox = document.getElementById('qrCodeBox');
+            const qrUserName = document.getElementById('qrUserName');
+            const qrProfileLink = document.getElementById('qrProfileLink');
+
+            if (!qrBox || !qrUserName || !qrProfileLink || !qrPayload) {
+                return;
+            }
+
+            qrBox.innerHTML = '';
+            qrUserName.textContent = userName;
+            qrProfileLink.href = qrUrl;
+
+            if (window.QRCode) {
+                new QRCode(qrBox, {
+                    text: qrPayload,
+                    width: 210,
+                    height: 210,
+                    colorDark: '#111827',
+                    colorLight: '#ffffff',
+                    correctLevel: QRCode.CorrectLevel.Q
+                });
+            } else {
+                qrBox.innerHTML = '<div class="text-muted small">Bibliotheque QR indisponible.</div>';
+            }
+
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('qrModal')).show();
+        });
+    });
+</script>
 
 <?php else: ?>
 
@@ -139,7 +221,7 @@ include_once 'header.php';
                 </div>
 
                 <?php if (isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'user' && (int)($_SESSION['user_id'] ?? 0) === (int)$u['id']): ?>
-                    <form action="uploadAvatar.php" method="POST" enctype="multipart/form-data" class="d-inline-flex align-items-center justify-content-center mt-2" id="avatarForm">
+                    <form action="../controller/UtilisateurRouter.php?action=upload-avatar" method="POST" enctype="multipart/form-data" class="d-inline-flex align-items-center justify-content-center mt-2" id="avatarForm">
                         <input
                             type="file"
                             name="avatar"

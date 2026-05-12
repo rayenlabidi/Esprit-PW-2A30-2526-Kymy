@@ -1,4 +1,5 @@
 <?php
+// Vue publique: demande de reinitialisation du mot de passe.
 include_once '../controller/AuthController.php';
 $pageData = (new AuthController())->prepareForgotPasswordPage();
 $success = $pageData['success'];

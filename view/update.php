@@ -1,4 +1,5 @@
 <?php
+// Vue admin: formulaire de modification d'un utilisateur.
 include_once '../controller/UtilisateurController.php';
 $pageData = (new UtilisateurController())->prepareUpdatePage();
 $roles = $pageData['roles'];

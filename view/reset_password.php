@@ -1,4 +1,5 @@
 <?php
+// Vue publique: formulaire pour choisir un nouveau mot de passe.
 include_once '../controller/AuthController.php';
 $pageData = (new AuthController())->prepareResetPasswordPage();
 $error = $pageData['error'];

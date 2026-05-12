@@ -1,4 +1,8 @@
 <?php
+/*
+ * Modele d'authentification.
+ * Il contient les requetes SQL pour login et reinitialisation du mot de passe.
+ */
 include_once __DIR__ . "/../config.php";
 
 class AuthC

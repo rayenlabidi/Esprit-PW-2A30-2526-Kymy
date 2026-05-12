@@ -1,4 +1,8 @@
 <?php
+/*
+ * Modele SQL des utilisateurs.
+ * Toutes les requetes vers la table utilisateurs sont regroupees ici.
+ */
 include_once __DIR__ . "/../config.php";
 
 class UtilisateurC
@@ -45,7 +49,7 @@ class UtilisateurC
 
     public function RecupererUtilisateur($id)
     {
-        $sql = "SELECT * FROM utilisateurs WHERE id= :id";
+        $sql = "SELECT u.*, r.name AS role_name FROM utilisateurs u LEFT JOIN roles r ON r.id = u.role_id WHERE u.id = :id";
         $db = config::getConnexion();
         try {
             $query = $db->prepare($sql);

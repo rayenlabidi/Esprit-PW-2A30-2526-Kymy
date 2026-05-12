@@ -1,5 +1,10 @@
 <?php
 
+/*
+ * Fichier de configuration global.
+ * Il contient les parametres SMTP pour les emails et la connexion PDO vers MySQL.
+ */
+
 // Configuration SMTP pour l'envoi des emails.
 // Remplacez ces valeurs par le compte email qui enverra les messages Workify.
 // Gmail: host smtp.gmail.com, port 587, encryption tls, password = mot de passe d'application.
@@ -17,7 +22,7 @@ if (!defined('MAIL_SMTP_USERNAME')) {
     define('MAIL_SMTP_USERNAME', 'yassinebenromthane21@gmail.com');
 }
 if (!defined('MAIL_SMTP_PASSWORD')) {
-    define('MAIL_SMTP_PASSWORD', 'mblw jqtn uqjt amxq');
+    define('MAIL_SMTP_PASSWORD', 'mblw jqtn uqjt amxq');//MOT PAASSE D'APPLICATION
 }
 if (!defined('MAIL_FROM_EMAIL')) {
     define('MAIL_FROM_EMAIL', MAIL_SMTP_USERNAME);
@@ -30,6 +35,7 @@ class config
 {
     private static $pdo = null;
 
+    // Cree une connexion PDO une seule fois, puis la reutilise partout.
     public static function getConnexion()
     {
         if (!isset(self::$pdo)) {

@@ -1,4 +1,8 @@
 <?php
+/*
+ * Routeur des actions utilisateur.
+ * Il recoit action=add/update/delete/etc. et appelle le controleur correspondant.
+ */
 include_once __DIR__ . '/UtilisateurController.php';
 
 $controller = new UtilisateurController();

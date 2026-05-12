@@ -1,4 +1,5 @@
 <?php
+// Vue admin: statistiques des utilisateurs.
 include_once '../controller/UtilisateurController.php';
 $pageData = (new UtilisateurController())->prepareStatsPage();
 $stats = $pageData['stats'];

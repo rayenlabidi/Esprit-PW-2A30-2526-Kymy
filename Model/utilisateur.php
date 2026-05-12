@@ -1,6 +1,11 @@
 <?php
+/*
+ * Modele utilisateur.
+ * Cette classe represente les donnees d'un utilisateur dans l'application MVC.
+ */
 class utilisateur
 {
+    // Proprietes correspondant aux champs principaux de la table utilisateurs.
     private $id;
     private $role_id;
     private $first_name;
@@ -12,6 +17,7 @@ class utilisateur
     private $bio;
     private $status;
 
+    // Constructeur appele quand on cree ou modifie un utilisateur.
     public function __construct(int $role_id, string $first_name, string $last_name, string $email, string $phone, string $password, string $headline, string $bio, string $status)
     {
         $this->role_id = $role_id;

@@ -1,0 +1,16 @@
+{
+	"folders": [
+		{
+			"path": "assets"
+		},
+		{
+			"path": "controller"
+		},
+		{
+			"path": "Model"
+		},
+		{
+			"path": "view"
+		}
+	]
+}

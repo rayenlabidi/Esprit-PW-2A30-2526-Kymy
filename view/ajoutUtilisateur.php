@@ -1,4 +1,6 @@
 <?php
+// Vue: formulaire admin pour ajouter un nouvel utilisateur.
+// Les roles sont prepares par UtilisateurController::prepareAddPage().
 include_once '../controller/UtilisateurController.php';
 $pageData = (new UtilisateurController())->prepareAddPage();
 $roles = $pageData['roles'];
@@ -12,6 +14,7 @@ include_once 'header.php';
 
 <div class="card mb-5 animate-fade-in border-0" style="background: rgba(255, 255, 255, 0.7); box-shadow: 0 10px 30px rgba(0,0,0,0.05);">
     <div class="card-body p-4 p-md-5">
+        <!-- Le formulaire envoie l'action au routeur, puis le controleur ajoute l'utilisateur. -->
         <form action="../controller/UtilisateurRouter.php?action=add" method="POST" class="row g-4">
             <div class="col-md-6">
                 <label class="form-label fw-bold text-muted">Role</label>

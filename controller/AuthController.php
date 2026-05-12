@@ -1,6 +1,11 @@
 <?php
+/*
+ * Controleur d'authentification.
+ * Il prepare les pages login/reset et gere la session de connexion.
+ */
 include_once __DIR__ . '/AuthC.php';
 include_once __DIR__ . '/MailC.php';
+include_once __DIR__ . '/../lib/CaptchaService.php';
 
 class AuthController
 {
@@ -18,22 +23,38 @@ class AuthController
     {
         $error = '';
 
-        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'], $_POST['password'])) {
-            $user = $this->auth->login($_POST['email'], $_POST['password']);
-
-            if ($user) {
-                $_SESSION['user_id'] = $user['id'];
-                $_SESSION['user_name'] = $user['first_name'] . ' ' . $user['last_name'];
-                $_SESSION['user_role'] = strtolower(trim($user['email'])) === 'admin@workify.com' ? 'admin' : 'user';
-
-                header('Location: listeUtilisateurs.php');
-                exit();
-            }
-
-            $error = 'Email ou mot de passe incorrect.';
+        if (isset($_GET['captcha_refresh'])) {
+            CaptchaService::refreshChallenge();
+            header('Location: login.php');
+            exit();
         }
 
-        return ['error' => $error];
+        $captcha = CaptchaService::getChallenge();
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['email'], $_POST['password'])) {
+            if (!CaptchaService::validate($_POST)) {
+                $error = 'Captcha incorrect. Reessayez avec le nouveau defi affiche.';
+                $captcha = CaptchaService::refreshChallenge();
+            } else {
+                $user = $this->auth->login($_POST['email'], $_POST['password']);
+
+                if ($user) {
+                    CaptchaService::clear();
+
+                    $_SESSION['user_id'] = $user['id'];
+                    $_SESSION['user_name'] = $user['first_name'] . ' ' . $user['last_name'];
+                    $_SESSION['user_role'] = strtolower(trim($user['email'])) === 'admin@workify.com' ? 'admin' : 'user';
+
+                    header('Location: listeUtilisateurs.php');
+                    exit();
+                }
+
+                $error = 'Email ou mot de passe incorrect.';
+                $captcha = CaptchaService::refreshChallenge();
+            }
+        }
+
+        return ['error' => $error, 'captcha' => $captcha];
     }
 
     public function prepareForgotPasswordPage()
@@ -118,6 +139,7 @@ class AuthController
 
         return $scheme . '://' . $host . $basePath . '/reset_password.php?token=' . urlencode($token);
     }
+
 }
 
 ?>

@@ -1,5 +1,10 @@
 <?php
 
+/*
+ * Generateur PDF simple.
+ * Il sert a exporter les utilisateurs sans installer de bibliotheque externe.
+ */
+
 // Lightweight PDF generator with basic table support (Helvetica).
 // Note: This is not a full PDF library; it is tailored for the Users export.
 class SimplePdf
