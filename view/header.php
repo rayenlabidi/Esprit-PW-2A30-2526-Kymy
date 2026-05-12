@@ -428,7 +428,13 @@ $sessionUserRole = $_SESSION['user_role'] ?? '';
                 </div>
                 <nav class="nav flex-column sidebar-nav sidebar-main-links">
                     <a class="nav-link" href="listeUtilisateurs.php">
+                        <i class="fa-solid fa-chart-pie"></i>Dashboard
+                    </a>
+                    <a class="nav-link" href="listeUtilisateurs.php">
                         <i class="fa-solid fa-briefcase"></i>Jobs
+                    </a>
+                    <a class="nav-link" href="index.php" target="_blank" rel="noopener">
+                        <i class="fa-solid fa-newspaper"></i>Publication
                     </a>
                     <a class="nav-link" href="stats.php">
                         <i class="fa-solid fa-calendar-days"></i>Événement
