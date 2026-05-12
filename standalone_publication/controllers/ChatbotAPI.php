@@ -14,15 +14,48 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 // ── API Configuration ──────────────────────────────────────────
+$GEMINI_API_KEY = '';
+
+// Strategy 1: Load from .env file relative to this controller
 $envFile = __DIR__ . '/../.env';
-$envVars = [];
 if (file_exists($envFile)) {
-    $envVars = parse_ini_file($envFile);
+    // Try parse_ini_file first
+    $envVars = @parse_ini_file($envFile);
+    if (is_array($envVars) && !empty($envVars['GEMINI_API_KEY'])) {
+        $GEMINI_API_KEY = trim($envVars['GEMINI_API_KEY']);
+    }
+    
+    // Fallback: manual line-by-line parsing
+    if (empty($GEMINI_API_KEY)) {
+        $lines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        if ($lines) {
+            foreach ($lines as $line) {
+                $line = trim($line);
+                if (empty($line) || $line[0] === '#') continue;
+                if (strpos($line, '=') !== false) {
+                    list($key, $value) = explode('=', $line, 2);
+                    if (trim($key) === 'GEMINI_API_KEY') {
+                        $GEMINI_API_KEY = trim($value);
+                        break;
+                    }
+                }
+            }
+        }
+    }
 }
-$GEMINI_API_KEY  = $envVars['GEMINI_API_KEY'] ?? '';
+
+// Strategy 2: Check environment variable (set via Apache/php.ini)
+if (empty($GEMINI_API_KEY) && getenv('GEMINI_API_KEY')) {
+    $GEMINI_API_KEY = getenv('GEMINI_API_KEY');
+}
+
 if (empty($GEMINI_API_KEY)) {
     http_response_code(500);
-    echo json_encode(['error' => 'API key configuration missing']);
+    echo json_encode([
+        'error' => 'API key configuration missing',
+        'debug' => 'Checked: ' . realpath($envFile) ?: $envFile,
+        'exists' => file_exists($envFile)
+    ]);
     exit;
 }
 

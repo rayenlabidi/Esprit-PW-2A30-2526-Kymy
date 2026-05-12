@@ -1,3 +1,4 @@
 config.local.php
 uploads/mail_debug.log
 *.rar
+.env
