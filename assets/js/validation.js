@@ -74,6 +74,26 @@ function validateForm(form) {
         }
     }
 
+    if (module === 'signup') {
+        validateText(form, 'first_name', 2, 'Le prenom doit contenir au moins 2 caracteres.', errors);
+        validateText(form, 'last_name', 2, 'Le nom doit contenir au moins 2 caracteres.', errors);
+        validateEmail(form, 'email', 'Veuillez saisir un email valide.', errors);
+        validateSelect(form, 'role', 'Veuillez choisir un type de compte.', errors);
+        validateText(form, 'password', 8, 'Le mot de passe doit contenir au moins 8 caracteres.', errors);
+
+        if (getValue(form, 'password') !== getValue(form, 'password_confirm')) {
+            addFieldError(form, 'password_confirm', 'Les mots de passe ne correspondent pas.');
+            errors.push('Les mots de passe ne correspondent pas.');
+        }
+    }
+
+    if (module === 'contact') {
+        validateText(form, 'full_name', 3, 'Le nom doit contenir au moins 3 caracteres.', errors);
+        validateEmail(form, 'email', 'Veuillez saisir un email valide.', errors);
+        validateText(form, 'subject', 4, 'Le sujet doit contenir au moins 4 caracteres.', errors);
+        validateText(form, 'message', 20, 'Le message doit contenir au moins 20 caracteres.', errors);
+    }
+
     return errors;
 }
 

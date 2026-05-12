@@ -3,6 +3,7 @@ USE `2a30`;
 
 SET FOREIGN_KEY_CHECKS = 0;
 DROP TABLE IF EXISTS candidatures;
+DROP TABLE IF EXISTS contact_messages;
 DROP TABLE IF EXISTS jobs;
 DROP TABLE IF EXISTS utilisateurs;
 DROP TABLE IF EXISTS roles;
@@ -187,6 +188,16 @@ CREATE TABLE candidatures (
         ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE contact_messages (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    full_name VARCHAR(120) NOT NULL,
+    email VARCHAR(190) NOT NULL,
+    subject VARCHAR(160) NOT NULL,
+    message TEXT NOT NULL,
+    status ENUM('new', 'read', 'archived') NOT NULL DEFAULT 'new',
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 INSERT INTO roles (id, name, slug, description) VALUES
 (1, 'Admin', 'admin', 'Gere toute la plateforme'),
 (2, 'Freelancer', 'freelancer', 'Suit les formations et postule aux jobs'),
@@ -211,3 +222,6 @@ INSERT INTO jobs (id, title, description, budget, category_id, location, is_remo
 
 INSERT INTO candidatures (id, user_id, job_id, cover_letter, status) VALUES
 (1, 2, 1, 'Je peux prendre en charge le projet Workify, integrer les modules et optimiser le rendu pour une demo professeur.', 'reviewed');
+
+INSERT INTO contact_messages (id, full_name, email, subject, message, status) VALUES
+(1, 'Nour Ben Salem', 'nour@example.com', 'Besoin d un formateur', 'Je souhaite organiser une session PHP MVC pour mon equipe.', 'new');

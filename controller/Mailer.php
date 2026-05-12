@@ -20,8 +20,18 @@ class WorkifyMailer
         $fromName = WORKIFY_MAIL_FROM_NAME;
         $message = $this->buildMessage($from, $fromName, $to, $subject, $htmlMessage, $textMessage);
 
+        if ($this->sendViaSmtp($from, $to, $message, false, (int) WORKIFY_MAIL_PORT)) {
+            return true;
+        }
+
+        return $this->sendViaSmtp($from, $to, $message, true, 465);
+    }
+
+    private function sendViaSmtp($from, $to, $message, $ssl, $port)
+    {
+        $transport = $ssl ? 'ssl://' : 'tcp://';
         $this->socket = @stream_socket_client(
-            'tcp://' . WORKIFY_MAIL_HOST . ':' . WORKIFY_MAIL_PORT,
+            $transport . WORKIFY_MAIL_HOST . ':' . $port,
             $errno,
             $errstr,
             15,
@@ -29,16 +39,21 @@ class WorkifyMailer
         );
 
         if (!$this->socket) {
+            $this->logFailure('Connection failed on port ' . $port . ': ' . $errstr);
             return false;
         }
 
         stream_set_timeout($this->socket, 15);
-
         $ok = $this->expect([220])
-            && $this->command('EHLO localhost', [250])
-            && $this->command('STARTTLS', [220])
-            && $this->enableCrypto()
-            && $this->command('EHLO localhost', [250])
+            && $this->command('EHLO localhost', [250]);
+
+        if ($ok && !$ssl) {
+            $ok = $this->command('STARTTLS', [220])
+                && $this->enableCrypto()
+                && $this->command('EHLO localhost', [250]);
+        }
+
+        $ok = $ok
             && $this->command('AUTH LOGIN', [334])
             && $this->command(base64_encode(WORKIFY_MAIL_USERNAME), [334])
             && $this->command(base64_encode(WORKIFY_MAIL_PASSWORD), [235])
@@ -49,6 +64,11 @@ class WorkifyMailer
 
         $this->command('QUIT', [221]);
         fclose($this->socket);
+
+        if (!$ok) {
+            $this->logFailure('SMTP failed on port ' . $port . ': ' . trim($this->lastResponse));
+        }
+
         return $ok;
     }
 
@@ -125,6 +145,16 @@ class WorkifyMailer
         $this->lastResponse = $response;
         $code = (int) substr($response, 0, 3);
         return in_array($code, $expectedCodes);
+    }
+
+    private function logFailure($message)
+    {
+        $dir = __DIR__ . '/../uploads';
+        if (!is_dir($dir)) {
+            mkdir($dir, 0777, true);
+        }
+
+        file_put_contents($dir . '/mail_debug.log', '[' . date('Y-m-d H:i:s') . '] ' . $message . PHP_EOL, FILE_APPEND);
     }
 }
 ?>

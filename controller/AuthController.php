@@ -13,6 +13,8 @@ class AuthController
             $this->logout();
         } elseif ($action === 'forgot') {
             $this->forgotPassword();
+        } elseif ($action === 'signup') {
+            $this->signup();
         } else {
             $this->login();
         }
@@ -105,6 +107,63 @@ class AuthController
         include __DIR__ . '/../view/users/forgot_password.php';
     }
 
+    private function signup()
+    {
+        AuthC::startSession();
+        $office = 'front';
+        $activeModule = '';
+        $pageTitle = 'Inscription';
+        $error = '';
+        $successMessage = '';
+        $recaptchaSiteKey = WORKIFY_RECAPTCHA_SITE_KEY;
+        $formData = [
+            'first_name' => trim($_POST['first_name'] ?? ''),
+            'last_name' => trim($_POST['last_name'] ?? ''),
+            'email' => trim($_POST['email'] ?? ''),
+            'phone' => trim($_POST['phone'] ?? ''),
+            'role' => trim($_POST['role'] ?? 'freelancer'),
+            'headline' => trim($_POST['headline'] ?? '')
+        ];
+
+        if (AuthC::isLoggedIn()) {
+            header('Location: HomeC.php');
+            exit;
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            if (!$this->recaptchaValide($_POST['g-recaptcha-response'] ?? '')) {
+                $error = 'Veuillez confirmer la verification reCAPTCHA.';
+            } else {
+                $utilisateurModel = new UtilisateurModel();
+                $errors = $this->validerInscription($formData, $_POST['password'] ?? '', $_POST['password_confirm'] ?? '', $utilisateurModel);
+
+                if (empty($errors)) {
+                    $roleId = $utilisateurModel->getRoleIdBySlug($formData['role']);
+                    $headline = $formData['headline'] !== '' ? $formData['headline'] : ($formData['role'] === 'boss' ? 'Porteur de projet' : 'Talent Workify');
+                    $bio = 'Compte cree depuis l inscription publique Workify.';
+                    $user = new utilisateur(
+                        $roleId,
+                        $this->clean($formData['first_name']),
+                        $this->clean($formData['last_name']),
+                        $this->clean($formData['email']),
+                        $this->clean($formData['phone']),
+                        trim($_POST['password']),
+                        $this->clean($headline),
+                        $bio,
+                        'active'
+                    );
+                    $utilisateurModel->addUtilisateur($user);
+                    $successMessage = 'Compte cree avec succes. Vous pouvez maintenant vous connecter.';
+                    $formData = ['first_name' => '', 'last_name' => '', 'email' => '', 'phone' => '', 'role' => 'freelancer', 'headline' => ''];
+                } else {
+                    $error = implode(' ', $errors);
+                }
+            }
+        }
+
+        include __DIR__ . '/../view/users/signup.php';
+    }
+
     private function sendResetMail($email, $user, $temporaryPassword)
     {
         $name = trim($user['first_name'] . ' ' . $user['last_name']);
@@ -120,6 +179,47 @@ class AuthController
 
         $mailer = new WorkifyMailer();
         return $mailer->send($email, 'Recuperation de votre compte Workify', $html, $text);
+    }
+
+    private function validerInscription($data, $password, $confirmPassword, $utilisateurModel)
+    {
+        $errors = [];
+        $allowedRoles = ['freelancer', 'boss'];
+
+        if (strlen($data['first_name']) < 2) {
+            $errors[] = 'Le prenom doit contenir au moins 2 caracteres.';
+        }
+
+        if (strlen($data['last_name']) < 2) {
+            $errors[] = 'Le nom doit contenir au moins 2 caracteres.';
+        }
+
+        if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
+            $errors[] = 'Veuillez saisir un email valide.';
+        } elseif ($utilisateurModel->emailExiste($data['email'])) {
+            $errors[] = 'Cet email est deja utilise.';
+        }
+
+        if (!in_array($data['role'], $allowedRoles)) {
+            $errors[] = 'Veuillez choisir un type de compte valide.';
+        } elseif ($utilisateurModel->getRoleIdBySlug($data['role']) <= 0) {
+            $errors[] = 'Le type de compte choisi est indisponible.';
+        }
+
+        if (strlen(trim($password)) < 8) {
+            $errors[] = 'Le mot de passe doit contenir au moins 8 caracteres.';
+        }
+
+        if (trim($password) !== trim($confirmPassword)) {
+            $errors[] = 'Les mots de passe ne correspondent pas.';
+        }
+
+        return $errors;
+    }
+
+    private function clean($value)
+    {
+        return trim(strip_tags($value));
     }
 
     private function temporaryPassword()

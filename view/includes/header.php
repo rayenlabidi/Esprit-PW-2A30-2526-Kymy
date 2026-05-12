@@ -12,8 +12,8 @@ $isBackOffice = $office === 'back' && $isAdmin;
 $frontLinks = [
     ['key' => 'jobs', 'label' => 'Jobs', 'href' => '../controller/JobC.php?office=front&action=list', 'icon' => 'M10 4h4a2 2 0 0 1 2 2v2h4v12H4V8h4V6a2 2 0 0 1 2-2zm4 4V6h-4v2h4z'],
     ['key' => 'publications', 'label' => 'Publication', 'href' => '../controller/PublicationC.php?office=front&action=list', 'icon' => 'M4 5h16v2H4V5zm0 6h16v2H4v-2zm0 6h10v2H4v-2z'],
-    ['key' => 'events', 'label' => 'Evenement', 'href' => '#events', 'icon' => 'M7 2h2v3h6V2h2v3h3v17H4V5h3V2zm11 8H6v10h12V10z'],
-    ['key' => 'messages', 'label' => 'Message', 'href' => '#messages', 'icon' => 'M4 4h16v12H7l-3 4V4z'],
+    ['key' => 'events', 'label' => 'Evenement', 'href' => '../controller/HomeC.php#services', 'icon' => 'M7 2h2v3h6V2h2v3h3v17H4V5h3V2zm11 8H6v10h12V10z'],
+    ['key' => 'messages', 'label' => 'Message', 'href' => '../controller/HomeC.php#contact', 'icon' => 'M4 4h16v12H7l-3 4V4z'],
     ['key' => 'formations', 'label' => 'Formation', 'href' => '../controller/FormationC.php?office=front&action=list', 'icon' => 'M4 4h16v14H7l-3 3V4zm4 4v2h8V8H8zm0 4v2h6v-2H8z']
 ];
 
@@ -24,7 +24,8 @@ $backLinks = [
     ['key' => 'events', 'label' => 'Evenement', 'href' => '#events', 'icon' => 'M7 2h2v3h6V2h2v3h3v17H4V5h3V2zm11 8H6v10h12V10z'],
     ['key' => 'messages', 'label' => 'Message', 'href' => '#messages', 'icon' => 'M4 4h16v12H7l-3 4V4z'],
     ['key' => 'formations', 'label' => 'Formation', 'href' => '../controller/FormationC.php?office=back&action=list', 'icon' => 'M4 4h16v14H7l-3 3V4zm4 4v2h8V8H8zm0 4v2h6v-2H8z'],
-    ['key' => 'users', 'label' => 'Users', 'href' => '../controller/UtilisateurC.php?action=list', 'icon' => 'M12 12c2.2 0 4-1.8 4-4s-1.8-4-4-4-4 1.8-4 4 1.8 4 4 4zm0 2c-2.7 0-8 1.4-8 4.2V20h16v-1.8c0-2.8-5.3-4.2-8-4.2z']
+    ['key' => 'users', 'label' => 'Users', 'href' => '../controller/UtilisateurC.php?action=list', 'icon' => 'M12 12c2.2 0 4-1.8 4-4s-1.8-4-4-4-4 1.8-4 4 1.8 4 4 4zm0 2c-2.7 0-8 1.4-8 4.2V20h16v-1.8c0-2.8-5.3-4.2-8-4.2z'],
+    ['key' => 'contacts', 'label' => 'Contacts', 'href' => '../controller/ContactC.php?action=list', 'icon' => 'M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4-8 5-8-5V6l8 5 8-5v2z']
 ];
 ?>
 <!DOCTYPE html>
@@ -91,6 +92,7 @@ $backLinks = [
                         <?php } ?>
                         <a class="btn" href="../controller/AuthController.php?action=logout">Deconnexion</a>
                     <?php } else { ?>
+                        <a class="btn" href="../controller/AuthController.php?action=signup">Inscription</a>
                         <a class="btn btn-primary" href="../controller/AuthController.php?action=login">Connexion</a>
                     <?php } ?>
                 </div>

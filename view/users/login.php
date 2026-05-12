@@ -32,6 +32,7 @@
 
         <div class="actions" style="margin-top: 18px;">
             <button class="btn btn-primary" type="submit">Se connecter</button>
+            <a class="btn" href="../controller/AuthController.php?action=signup">Creer un compte</a>
             <a class="btn" href="../controller/HomeC.php">Retour accueil</a>
             <a class="btn btn-link" href="../controller/AuthController.php?action=forgot">Mot de passe oublie</a>
         </div>

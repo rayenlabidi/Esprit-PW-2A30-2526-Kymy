@@ -50,6 +50,20 @@ class UtilisateurModel
         }
     }
 
+    public function getRoleIdBySlug($slug)
+    {
+        $sql = 'SELECT id FROM roles WHERE slug = :slug LIMIT 1';
+        $db = config::getConnexion();
+        try {
+            $query = $db->prepare($sql);
+            $query->execute(['slug' => $slug]);
+            $row = $query->fetch();
+            return $row ? (int) $row['id'] : 0;
+        } catch (Exception $e) {
+            die('Erreur: ' . $e->getMessage());
+        }
+    }
+
     public function getUtilisateurById($id)
     {
         $sql = 'SELECT u.*, r.name AS role_name, r.slug AS role_slug

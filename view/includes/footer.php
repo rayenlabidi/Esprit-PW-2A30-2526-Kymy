@@ -1,4 +1,47 @@
             </section>
+            <?php if (!isset($isBackOffice) || !$isBackOffice) { ?>
+                <footer class="site-footer">
+                    <div class="footer-grid">
+                        <div>
+                            <a class="public-brand footer-brand" href="../controller/HomeC.php">
+                                <span class="brand-mark brand-briefcase" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24"><path d="M10 5h4a2 2 0 0 1 2 2v2h4v10H4V9h4V7a2 2 0 0 1 2-2zm4 4V7h-4v2h4zm-8 4v4h12v-4h-3v2H9v-2H6z"/></svg>
+                                </span>
+                                <span class="brand-text">Workify</span>
+                            </a>
+                            <p class="muted">Une plateforme professionnelle pour apprendre, recruter, postuler et collaborer avec une experience fluide.</p>
+                        </div>
+                        <div>
+                            <h3>Navigation</h3>
+                            <a href="../controller/HomeC.php#services">Services</a>
+                            <a href="../controller/HomeC.php#about">A propos</a>
+                            <a href="../controller/HomeC.php#projects">Projets</a>
+                            <a href="../controller/HomeC.php#contact">Contact</a>
+                        </div>
+                        <div>
+                            <h3>Modules</h3>
+                            <a href="../controller/JobC.php?office=front&action=list">Jobs</a>
+                            <a href="../controller/FormationC.php?office=front&action=list">Formations</a>
+                            <a href="../controller/PublicationC.php?office=front&action=list">Publications</a>
+                            <a href="../controller/AuthController.php?action=signup">Inscription</a>
+                        </div>
+                        <div>
+                            <h3>Contact</h3>
+                            <span>workifytn@gmail.com</span>
+                            <span>Tunis, Tunisie</span>
+                            <div class="social-links">
+                                <a href="#contact">LinkedIn</a>
+                                <a href="#contact">Instagram</a>
+                                <a href="#contact">Facebook</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="footer-bottom">
+                        <span>&copy; <?= date('Y'); ?> Workify. Tous droits reserves.</span>
+                        <a href="../controller/AuthController.php?action=login">Connexion</a>
+                    </div>
+                </footer>
+            <?php } ?>
         </main>
     </div>
     <script src="../assets/js/validation.js"></script>

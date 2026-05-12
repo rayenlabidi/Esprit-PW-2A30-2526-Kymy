@@ -33,6 +33,11 @@ include __DIR__ . '/../includes/header.php';
         <strong><?= isset($stats['users']) ? (int) $stats['users'] : 0; ?></strong>
         <a class="btn btn-primary" href="../controller/UtilisateurC.php?action=list">Gerer</a>
     </div>
+    <div class="card">
+        Contacts
+        <strong><?= isset($stats['contacts']) ? (int) $stats['contacts'] : 0; ?></strong>
+        <a class="btn btn-primary" href="../controller/ContactC.php?action=list">Lire</a>
+    </div>
 </div>
 
 <?php include __DIR__ . '/../includes/footer.php'; ?>
