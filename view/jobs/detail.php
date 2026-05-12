@@ -4,6 +4,7 @@ $activeModule = 'jobs';
 $errors = isset($errors) ? $errors : [];
 $successMessage = isset($successMessage) ? $successMessage : '';
 $candidatures = isset($candidatures) ? $candidatures : [];
+$viewerLoggedIn = AuthC::isLoggedIn();
 include __DIR__ . '/../includes/header.php';
 ?>
 
@@ -43,8 +44,19 @@ include __DIR__ . '/../includes/header.php';
 </div>
 
 <?php if ($office === 'front') { ?>
+    <?php if (!$viewerLoggedIn) { ?>
+        <div class="detail-box gated-box" style="margin-top: 20px;">
+            <div>
+                <p class="eyebrow">Compte requis</p>
+                <h2>Connectez-vous pour postuler</h2>
+                <p class="muted">Les candidatures sont envoyees depuis un compte Workify pour garder votre profil et vos fichiers au meme endroit.</p>
+            </div>
+            <a class="btn btn-primary" href="../controller/AuthController.php?action=login&redirect=<?= urlencode('JobC.php?office=front&action=detail&id=' . (int) $job['id']); ?>">Connexion</a>
+        </div>
+    <?php } else { ?>
     <form class="form-box" data-validate="candidature" action="../controller/JobC.php?action=apply&id=<?= (int) $job['id']; ?>" method="post" enctype="multipart/form-data" style="margin-top: 20px;">
         <h2>Postuler a ce job</h2>
+        <p class="muted">Votre candidature sera envoyee avec le compte <?= htmlspecialchars(AuthC::currentUserName(), ENT_QUOTES); ?> (<?= htmlspecialchars(AuthC::currentUserEmail(), ENT_QUOTES); ?>).</p>
 
         <div class="error-box">
             <?php if (!empty($errors)) { ?>
@@ -57,14 +69,6 @@ include __DIR__ . '/../includes/header.php';
         </div>
 
         <div class="form-grid">
-            <div>
-                <label for="nom">Nom complet</label>
-                <input id="nom" name="nom">
-            </div>
-            <div>
-                <label for="email">Email</label>
-                <input id="email" name="email">
-            </div>
             <div class="field-full">
                 <label for="message">Message de candidature</label>
                 <textarea id="message" name="message"></textarea>
@@ -81,6 +85,7 @@ include __DIR__ . '/../includes/header.php';
 
         <button class="btn btn-primary" type="submit" style="margin-top: 16px;">Envoyer ma candidature</button>
     </form>
+    <?php } ?>
 <?php } ?>
 
 <?php if ($office === 'back') { ?>

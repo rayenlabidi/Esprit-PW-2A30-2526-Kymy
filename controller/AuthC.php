@@ -61,6 +61,18 @@ class AuthC
         return isset($_SESSION['user_name']) ? $_SESSION['user_name'] : '';
     }
 
+    public static function currentUserId()
+    {
+        self::startSession();
+        return isset($_SESSION['user_id']) ? (int) $_SESSION['user_id'] : 0;
+    }
+
+    public static function currentUserEmail()
+    {
+        self::startSession();
+        return isset($_SESSION['user_email']) ? $_SESSION['user_email'] : '';
+    }
+
     public static function currentUserRole()
     {
         self::startSession();

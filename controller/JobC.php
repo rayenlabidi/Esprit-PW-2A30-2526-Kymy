@@ -167,18 +167,20 @@ class JobC
             die('Job introuvable.');
         }
 
+        if (!AuthC::isLoggedIn()) {
+            AuthC::startSession();
+            $_SESSION['redirect_after_login'] = 'JobC.php?office=front&action=detail&id=' . $id;
+            header('Location: AuthController.php?action=login');
+            exit;
+        }
+
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $errors = $this->validerCandidature($_POST);
             $cvUrl = $this->sauverFichier('cv_file', 'cv', ['pdf']);
             $photoUrl = $this->sauverFichier('photo_file', 'photo', ['jpg', 'jpeg', 'png', 'webp']);
 
             if (empty($errors)) {
-                $utilisateur = $this->applicationModel->getUtilisateurByEmail(trim($_POST['email']));
-                if ($utilisateur) {
-                    $idUtilisateur = (int) $utilisateur['id'];
-                } else {
-                    $idUtilisateur = (int) $this->applicationModel->addFreelancer(trim($_POST['nom']), trim($_POST['email']));
-                }
+                $idUtilisateur = AuthC::currentUserId();
 
                 if ($this->applicationModel->candidatureExiste($idUtilisateur, $id)) {
                     $errors[] = 'Vous avez deja postule a ce job.';
@@ -280,14 +282,6 @@ class JobC
     private function validerCandidature($data)
     {
         $errors = [];
-
-        if (!isset($data['nom']) || strlen(trim($data['nom'])) < 3) {
-            $errors[] = 'Le nom doit contenir au moins 3 caracteres.';
-        }
-
-        if (!isset($data['email']) || !filter_var(trim($data['email']), FILTER_VALIDATE_EMAIL)) {
-            $errors[] = 'Veuillez saisir un email valide.';
-        }
 
         if (!isset($data['message']) || strlen(trim($data['message'])) < 20) {
             $errors[] = 'Le message doit contenir au moins 20 caracteres.';

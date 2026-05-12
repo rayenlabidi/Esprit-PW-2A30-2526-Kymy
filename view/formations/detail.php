@@ -3,6 +3,8 @@ $pageTitle = 'Detail Formation';
 $activeModule = 'formations';
 $errors = isset($errors) ? $errors : [];
 $successMessage = isset($successMessage) ? $successMessage : '';
+$connectedUser = isset($connectedUser) ? $connectedUser : null;
+$viewerLoggedIn = AuthC::isLoggedIn();
 include __DIR__ . '/../includes/header.php';
 ?>
 
@@ -41,8 +43,19 @@ include __DIR__ . '/../includes/header.php';
 </div>
 
 <?php if ($office === 'front') { ?>
+    <?php if (!$viewerLoggedIn) { ?>
+        <div class="detail-box gated-box" style="margin-top: 20px;">
+            <div>
+                <p class="eyebrow">Compte requis</p>
+                <h2>Connectez-vous pour vous inscrire</h2>
+                <p class="muted">Les inscriptions sont envoyees avec un compte Workify afin que votre demande reste liee a votre profil.</p>
+            </div>
+            <a class="btn btn-primary" href="../controller/AuthController.php?action=login&redirect=<?= urlencode('FormationC.php?office=front&action=detail&id=' . (int) $formation['id_formation']); ?>">Connexion</a>
+        </div>
+    <?php } else { ?>
     <form class="form-box" data-validate="inscription" action="../controller/FormationC.php?action=enroll&id=<?= (int) $formation['id_formation']; ?>" method="post" style="margin-top: 20px;">
-        <h2>Postuler / s'inscrire a cette formation</h2>
+        <h2>S'inscrire a cette formation</h2>
+        <p class="muted">Votre demande sera envoyee avec le compte <?= htmlspecialchars(AuthC::currentUserName(), ENT_QUOTES); ?> (<?= htmlspecialchars(AuthC::currentUserEmail(), ENT_QUOTES); ?>).</p>
 
         <div class="error-box">
             <?php if (!empty($errors)) { ?>
@@ -56,21 +69,14 @@ include __DIR__ . '/../includes/header.php';
 
         <div class="form-grid">
             <div>
-                <label for="nom">Nom complet</label>
-                <input id="nom" name="nom">
-            </div>
-            <div>
-                <label for="email">Email</label>
-                <input id="email" name="email">
-            </div>
-            <div>
                 <label for="telephone">Telephone</label>
-                <input id="telephone" name="telephone">
+                <input id="telephone" name="telephone" value="<?= htmlspecialchars(isset($connectedUser['phone']) ? $connectedUser['phone'] : '', ENT_QUOTES); ?>">
             </div>
         </div>
 
         <button class="btn btn-primary" type="submit" style="margin-top: 16px;">Envoyer l inscription</button>
     </form>
+    <?php } ?>
 <?php } ?>
 
 <?php include __DIR__ . '/../includes/footer.php'; ?>

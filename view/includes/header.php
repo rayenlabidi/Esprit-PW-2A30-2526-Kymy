@@ -10,11 +10,11 @@ $isLoggedIn = AuthC::isLoggedIn();
 $isBackOffice = $office === 'back' && $isAdmin;
 
 $frontLinks = [
-    ['key' => 'jobs', 'label' => 'Jobs', 'href' => '../controller/JobC.php?office=front&action=list'],
-    ['key' => 'publications', 'label' => 'Publication', 'href' => '../controller/PublicationC.php?office=front&action=list'],
-    ['key' => 'events', 'label' => 'Evenement', 'href' => '#events'],
-    ['key' => 'messages', 'label' => 'Message', 'href' => '#messages'],
-    ['key' => 'formations', 'label' => 'Formation', 'href' => '../controller/FormationC.php?office=front&action=list']
+    ['key' => 'jobs', 'label' => 'Jobs', 'href' => '../controller/JobC.php?office=front&action=list', 'icon' => 'M10 4h4a2 2 0 0 1 2 2v2h4v12H4V8h4V6a2 2 0 0 1 2-2zm4 4V6h-4v2h4z'],
+    ['key' => 'publications', 'label' => 'Publication', 'href' => '../controller/PublicationC.php?office=front&action=list', 'icon' => 'M4 5h16v2H4V5zm0 6h16v2H4v-2zm0 6h10v2H4v-2z'],
+    ['key' => 'events', 'label' => 'Evenement', 'href' => '#events', 'icon' => 'M7 2h2v3h6V2h2v3h3v17H4V5h3V2zm11 8H6v10h12V10z'],
+    ['key' => 'messages', 'label' => 'Message', 'href' => '#messages', 'icon' => 'M4 4h16v12H7l-3 4V4z'],
+    ['key' => 'formations', 'label' => 'Formation', 'href' => '../controller/FormationC.php?office=front&action=list', 'icon' => 'M4 4h16v14H7l-3 3V4zm4 4v2h8V8H8zm0 4v2h6v-2H8z']
 ];
 
 $backLinks = [
@@ -40,7 +40,9 @@ $backLinks = [
         <?php if ($isBackOffice) { ?>
             <aside class="sidebar">
                 <a class="brand" href="../controller/BackDashboardC.php">
-                    <span class="brand-mark">W</span>
+                    <span class="brand-mark brand-briefcase" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M10 5h4a2 2 0 0 1 2 2v2h4v10H4V9h4V7a2 2 0 0 1 2-2zm4 4V7h-4v2h4zm-8 4v4h12v-4h-3v2H9v-2H6z"/></svg>
+                    </span>
                     <span class="brand-text">Workify</span>
                 </a>
 
@@ -61,7 +63,6 @@ $backLinks = [
                     </div>
                     <div class="topbar-actions">
                         <span class="admin-pill"><?= htmlspecialchars(AuthC::currentUserName(), ENT_QUOTES); ?></span>
-                        <a class="btn" href="../controller/HomeC.php">FrontOffice</a>
                         <a class="btn btn-danger" href="../controller/AuthController.php?action=logout">Deconnexion</a>
                     </div>
                 </header>
@@ -69,12 +70,15 @@ $backLinks = [
         <?php } else { ?>
             <header class="public-header">
                 <a class="public-brand" href="../controller/HomeC.php">
-                    <span class="brand-mark">W</span>
+                    <span class="brand-mark brand-briefcase" aria-hidden="true">
+                        <svg viewBox="0 0 24 24"><path d="M10 5h4a2 2 0 0 1 2 2v2h4v10H4V9h4V7a2 2 0 0 1 2-2zm4 4V7h-4v2h4zm-8 4v4h12v-4h-3v2H9v-2H6z"/></svg>
+                    </span>
                     <span class="brand-text">Workify</span>
                 </a>
                 <nav class="public-nav" aria-label="Navigation principale">
                     <?php foreach ($frontLinks as $link) { ?>
                         <a class="<?= $activeModule === $link['key'] ? 'active' : ''; ?>" href="<?= htmlspecialchars($link['href'], ENT_QUOTES); ?>">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="<?= htmlspecialchars($link['icon'], ENT_QUOTES); ?>"/></svg>
                             <?= htmlspecialchars($link['label'], ENT_QUOTES); ?>
                         </a>
                     <?php } ?>

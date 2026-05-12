@@ -7,6 +7,7 @@ require_once __DIR__ . '/CategorieFormationModel.php';
 require_once __DIR__ . '/FormateurModel.php';
 require_once __DIR__ . '/ApprenantModel.php';
 require_once __DIR__ . '/InscriptionFormationModel.php';
+require_once __DIR__ . '/UtilisateurModel.php';
 require_once __DIR__ . '/AuthC.php';
 
 class FormationC
@@ -16,6 +17,7 @@ class FormationC
     private $formateurModel;
     private $apprenantModel;
     private $inscriptionModel;
+    private $utilisateurModel;
 
     public function __construct()
     {
@@ -24,6 +26,7 @@ class FormationC
         $this->formateurModel = new FormateurModel();
         $this->apprenantModel = new ApprenantModel();
         $this->inscriptionModel = new InscriptionFormationModel();
+        $this->utilisateurModel = new UtilisateurModel();
     }
 
     public function handleRequest()
@@ -152,6 +155,7 @@ class FormationC
         $formation = $this->formationModel->getFormationById($id);
         $errors = [];
         $successMessage = '';
+        $connectedUser = AuthC::isLoggedIn() ? $this->utilisateurModel->getUtilisateurById(AuthC::currentUserId()) : null;
 
         if (!$formation) {
             die('Formation introuvable.');
@@ -172,15 +176,34 @@ class FormationC
             die('Formation introuvable.');
         }
 
+        if (!AuthC::isLoggedIn()) {
+            AuthC::startSession();
+            $_SESSION['redirect_after_login'] = 'FormationC.php?office=front&action=detail&id=' . $id;
+            header('Location: AuthController.php?action=login');
+            exit;
+        }
+
+        $connectedUser = $this->utilisateurModel->getUtilisateurById(AuthC::currentUserId());
+        if (!$connectedUser) {
+            die('Utilisateur introuvable.');
+        }
+
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $errors = $this->validerInscription($_POST);
+            $telephone = isset($_POST['telephone']) ? trim($_POST['telephone']) : '';
+            if ($telephone === '' && isset($connectedUser['phone'])) {
+                $telephone = trim($connectedUser['phone']);
+            }
+
+            $errors = $this->validerInscription(['telephone' => $telephone]);
 
             if (empty($errors)) {
-                $apprenant = $this->apprenantModel->getApprenantByEmail(trim($_POST['email']));
+                $nom = trim($connectedUser['first_name'] . ' ' . $connectedUser['last_name']);
+                $email = trim($connectedUser['email']);
+                $apprenant = $this->apprenantModel->getApprenantByEmail($email);
                 if ($apprenant) {
                     $idApprenant = (int) $apprenant['id_apprenant'];
                 } else {
-                    $apprenantObjet = new apprenant(trim($_POST['nom']), trim($_POST['email']), trim($_POST['telephone']));
+                    $apprenantObjet = new apprenant($nom, $email, $telephone);
                     $idApprenant = (int) $this->apprenantModel->addApprenant($apprenantObjet);
                 }
 
@@ -294,14 +317,6 @@ class FormationC
     private function validerInscription($data)
     {
         $errors = [];
-
-        if (!isset($data['nom']) || strlen(trim($data['nom'])) < 3) {
-            $errors[] = 'Le nom doit contenir au moins 3 caracteres.';
-        }
-
-        if (!isset($data['email']) || !filter_var(trim($data['email']), FILTER_VALIDATE_EMAIL)) {
-            $errors[] = 'Veuillez saisir un email valide.';
-        }
 
         if (!isset($data['telephone']) || strlen(trim($data['telephone'])) < 8) {
             $errors[] = 'Le telephone doit contenir au moins 8 chiffres.';

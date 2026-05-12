@@ -23,6 +23,10 @@ class AuthController
         $error = '';
         $captcha = $this->captcha();
 
+        if (!empty($_GET['redirect'])) {
+            $_SESSION['redirect_after_login'] = $this->frontRedirect($_GET['redirect']);
+        }
+
         if (AuthC::isLoggedIn()) {
             header('Location: HomeC.php');
             exit;
@@ -39,15 +43,17 @@ class AuthController
             $user = AuthC::attempt($_POST['email'] ?? '', $_POST['password'] ?? '');
 
             if ($user) {
+                $storedRedirect = isset($_SESSION['redirect_after_login']) ? $_SESSION['redirect_after_login'] : '';
+                unset($_SESSION['redirect_after_login']);
+
                 if ($user['role_slug'] === 'admin') {
-                    $redirect = isset($_SESSION['redirect_after_login']) ? $_SESSION['redirect_after_login'] : 'BackDashboardC.php';
-                    unset($_SESSION['redirect_after_login']);
+                    $redirect = $storedRedirect !== '' ? $storedRedirect : 'BackDashboardC.php';
                     header('Location: ' . $redirect);
                     exit;
                 }
 
-                unset($_SESSION['redirect_after_login']);
-                header('Location: HomeC.php');
+                $redirect = $this->frontRedirect($storedRedirect);
+                header('Location: ' . $redirect);
                 exit;
             }
 
@@ -90,6 +96,26 @@ class AuthController
         unset($_SESSION['captcha_question'], $_SESSION['captcha_answer']);
 
         return $valid;
+    }
+
+    private function frontRedirect($redirect)
+    {
+        if ($redirect === '') {
+            return 'HomeC.php';
+        }
+
+        if (strpos($redirect, '://') !== false || strpos($redirect, '//') === 0) {
+            return 'HomeC.php';
+        }
+
+        $blocked = ['BackDashboardC.php', 'UtilisateurC.php', 'office=back'];
+        foreach ($blocked as $needle) {
+            if (strpos($redirect, $needle) !== false) {
+                return 'HomeC.php';
+            }
+        }
+
+        return $redirect;
     }
 }
 

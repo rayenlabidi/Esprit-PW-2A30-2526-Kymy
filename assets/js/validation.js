@@ -42,8 +42,6 @@ function validateForm(form) {
     }
 
     if (module === 'inscription') {
-        validateText(form, 'nom', 3, 'Le nom doit contenir au moins 3 caracteres.', errors);
-        validateEmail(form, 'email', 'Veuillez saisir un email valide.', errors);
         validatePhone(form, 'telephone', 'Le telephone doit contenir au moins 8 chiffres.', errors);
     }
 
@@ -58,8 +56,6 @@ function validateForm(form) {
     }
 
     if (module === 'candidature') {
-        validateText(form, 'nom', 3, 'Le nom doit contenir au moins 3 caracteres.', errors);
-        validateEmail(form, 'email', 'Veuillez saisir un email valide.', errors);
         validateText(form, 'message', 20, 'Le message doit contenir au moins 20 caracteres.', errors);
     }
 

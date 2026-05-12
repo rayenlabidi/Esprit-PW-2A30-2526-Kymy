@@ -14,12 +14,12 @@
 
         <div>
             <label for="email">Email</label>
-            <input id="email" name="email" type="email" placeholder="email@workify.com" required>
+            <input id="email" name="email" type="email" placeholder="Votre email" required>
         </div>
 
         <div>
             <label for="password">Mot de passe</label>
-            <input id="password" name="password" type="password" placeholder="admin123" required>
+            <input id="password" name="password" type="password" placeholder="Votre mot de passe" required>
         </div>
 
         <div class="captcha-box">
