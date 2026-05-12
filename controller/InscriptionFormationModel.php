@@ -6,13 +6,13 @@ class InscriptionFormationModel
 {
     public function addInscription($inscription)
     {
-        $sql = 'INSERT INTO inscription_formation (id_apprenant, id_formation, statut)
-                VALUES (:id_apprenant, :id_formation, :statut)';
+        $sql = 'INSERT INTO inscription_formation (user_id, id_formation, statut)
+                VALUES (:user_id, :id_formation, :statut)';
         $db = config::getConnexion();
         try {
             $query = $db->prepare($sql);
             $query->execute([
-                'id_apprenant' => $inscription->getIdApprenant(),
+                'user_id' => $inscription->getUserId(),
                 'id_formation' => $inscription->getIdFormation(),
                 'statut' => $inscription->getStatut()
             ]);
@@ -21,16 +21,16 @@ class InscriptionFormationModel
         }
     }
 
-    public function inscriptionExiste($idApprenant, $idFormation)
+    public function inscriptionExiste($userId, $idFormation)
     {
         $sql = 'SELECT COUNT(*) AS total
                 FROM inscription_formation
-                WHERE id_apprenant = :id_apprenant AND id_formation = :id_formation';
+                WHERE user_id = :user_id AND id_formation = :id_formation';
         $db = config::getConnexion();
         try {
             $query = $db->prepare($sql);
             $query->execute([
-                'id_apprenant' => $idApprenant,
+                'user_id' => $userId,
                 'id_formation' => $idFormation
             ]);
             $row = $query->fetch();
@@ -42,10 +42,13 @@ class InscriptionFormationModel
 
     public function listeInscriptions()
     {
-        $sql = 'SELECT i.*, a.nom AS nom_apprenant, a.email, a.telephone,
+        $sql = 'SELECT i.*,
+                       CONCAT(u.first_name, " ", u.last_name) AS nom_apprenant,
+                       u.email,
+                       u.phone AS telephone,
                        f.titre AS titre_formation, fo.nom AS nom_formateur
                 FROM inscription_formation i
-                INNER JOIN apprenant a ON i.id_apprenant = a.id_apprenant
+                INNER JOIN utilisateurs u ON i.user_id = u.id
                 INNER JOIN formation f ON i.id_formation = f.id_formation
                 INNER JOIN formateur fo ON f.id_formateur = fo.id_formateur
                 ORDER BY i.date_inscription DESC';

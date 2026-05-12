@@ -12,7 +12,8 @@ class WorkifyMailer
             return false;
         }
 
-        if (WORKIFY_MAIL_PASSWORD === '') {
+        $mailPassword = $this->mailPassword();
+        if ($mailPassword === '') {
             return false;
         }
 
@@ -56,7 +57,7 @@ class WorkifyMailer
         $ok = $ok
             && $this->command('AUTH LOGIN', [334])
             && $this->command(base64_encode(WORKIFY_MAIL_USERNAME), [334])
-            && $this->command(base64_encode(WORKIFY_MAIL_PASSWORD), [235])
+            && $this->command(base64_encode($this->mailPassword()), [235])
             && $this->command('MAIL FROM:<' . $from . '>', [250])
             && $this->command('RCPT TO:<' . $to . '>', [250, 251])
             && $this->command('DATA', [354])
@@ -111,6 +112,11 @@ class WorkifyMailer
     private function enableCrypto()
     {
         return stream_socket_enable_crypto($this->socket, true, STREAM_CRYPTO_METHOD_TLS_CLIENT) === true;
+    }
+
+    private function mailPassword()
+    {
+        return preg_replace('/\s+/', '', WORKIFY_MAIL_PASSWORD);
     }
 
     private function command($command, $expectedCodes)

@@ -49,7 +49,7 @@ class config
 
         self::$pdo = new PDO(
 
-          'mysql:host=localhost;dbname=workify',
+          'mysql:host=localhost;dbname=WORKIFY',
 
           'root',
 

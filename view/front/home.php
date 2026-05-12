@@ -99,7 +99,7 @@ unset($_SESSION['contact_errors'], $_SESSION['contact_success'], $_SESSION['cont
         <h3>Evenement</h3>
         <p class="muted">Suivre les rencontres, ateliers et sessions utiles.</p>
     </a>
-    <a class="module-tile" href="#contact">
+    <a class="module-tile" href="../controller/MessageC.php?office=front&action=list">
         <span class="tile-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v12H7l-3 4V4z"/></svg></span>
         <h3>Message</h3>
         <p class="muted">Centraliser les echanges importants de vos projets.</p>

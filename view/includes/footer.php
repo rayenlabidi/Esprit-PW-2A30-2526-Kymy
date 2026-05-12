@@ -23,6 +23,7 @@
                             <a href="../controller/JobC.php?office=front&action=list">Jobs</a>
                             <a href="../controller/FormationC.php?office=front&action=list">Formations</a>
                             <a href="../controller/PublicationC.php?office=front&action=list">Publications</a>
+                            <a href="../controller/MessageC.php?office=front&action=list">Messages</a>
                             <a href="../controller/AuthController.php?action=signup">Inscription</a>
                         </div>
                         <div>

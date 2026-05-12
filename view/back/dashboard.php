@@ -9,7 +9,7 @@ include __DIR__ . '/../includes/header.php';
     <div>
         <p class="eyebrow">Gestion Workify</p>
         <h2>Centre de pilotage</h2>
-        <p class="muted">Suivez les formations, les jobs, les utilisateurs et les candidatures depuis un seul espace.</p>
+        <p class="muted">Suivez les formations, les jobs, les utilisateurs, publications et messages depuis un seul espace.</p>
     </div>
     <div class="actions">
         <a class="btn" href="../controller/JobC.php?office=back&action=add">Ajouter job</a>
@@ -37,6 +37,16 @@ include __DIR__ . '/../includes/header.php';
         Contacts
         <strong><?= isset($stats['contacts']) ? (int) $stats['contacts'] : 0; ?></strong>
         <a class="btn btn-primary" href="../controller/ContactC.php?action=list">Lire</a>
+    </div>
+    <div class="card">
+        Publications
+        <strong><?= isset($stats['publications']) ? (int) $stats['publications'] : 0; ?></strong>
+        <a class="btn btn-primary" href="../controller/PublicationC.php?office=back&action=list">Gerer</a>
+    </div>
+    <div class="card">
+        Messages
+        <strong><?= isset($stats['messages']) ? (int) $stats['messages'] : 0; ?></strong>
+        <a class="btn btn-primary" href="../controller/MessageC.php?office=back&action=list">Lire</a>
     </div>
 </div>
 

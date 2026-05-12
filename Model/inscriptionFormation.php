@@ -1,25 +1,35 @@
 <?php
 class inscriptionFormation
 {
-    private $idApprenant;
+    private $userId;
     private $idFormation;
     private $statut;
 
-    public function __construct(int $idApprenant, int $idFormation, string $statut)
+    public function __construct(int $userId, int $idFormation, string $statut)
     {
-        $this->idApprenant = $idApprenant;
+        $this->userId = $userId;
         $this->idFormation = $idFormation;
         $this->statut = $statut;
     }
 
+    public function getUserId()
+    {
+        return $this->userId;
+    }
+
+    public function setUserId($userId)
+    {
+        $this->userId = $userId;
+    }
+
     public function getIdApprenant()
     {
-        return $this->idApprenant;
+        return $this->getUserId();
     }
 
     public function setIdApprenant($idApprenant)
     {
-        $this->idApprenant = $idApprenant;
+        $this->setUserId($idApprenant);
     }
 
     public function getIdFormation()

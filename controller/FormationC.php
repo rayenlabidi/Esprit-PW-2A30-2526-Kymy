@@ -1,11 +1,9 @@
 <?php
 require_once __DIR__ . '/../Model/formation.php';
-require_once __DIR__ . '/../Model/apprenant.php';
 require_once __DIR__ . '/../Model/inscriptionFormation.php';
 require_once __DIR__ . '/FormationModel.php';
 require_once __DIR__ . '/CategorieFormationModel.php';
 require_once __DIR__ . '/FormateurModel.php';
-require_once __DIR__ . '/ApprenantModel.php';
 require_once __DIR__ . '/InscriptionFormationModel.php';
 require_once __DIR__ . '/UtilisateurModel.php';
 require_once __DIR__ . '/AuthC.php';
@@ -16,7 +14,6 @@ class FormationC
     private $formationModel;
     private $categorieModel;
     private $formateurModel;
-    private $apprenantModel;
     private $inscriptionModel;
     private $utilisateurModel;
 
@@ -25,7 +22,6 @@ class FormationC
         $this->formationModel = new FormationModel();
         $this->categorieModel = new CategorieFormationModel();
         $this->formateurModel = new FormateurModel();
-        $this->apprenantModel = new ApprenantModel();
         $this->inscriptionModel = new InscriptionFormationModel();
         $this->utilisateurModel = new UtilisateurModel();
     }
@@ -198,20 +194,12 @@ class FormationC
             $errors = $this->validerInscription(['telephone' => $telephone]);
 
             if (empty($errors)) {
-                $nom = trim($connectedUser['first_name'] . ' ' . $connectedUser['last_name']);
-                $email = trim($connectedUser['email']);
-                $apprenant = $this->apprenantModel->getApprenantByEmail($email);
-                if ($apprenant) {
-                    $idApprenant = (int) $apprenant['id_apprenant'];
-                } else {
-                    $apprenantObjet = new apprenant($nom, $email, $telephone);
-                    $idApprenant = (int) $this->apprenantModel->addApprenant($apprenantObjet);
-                }
+                $userId = (int) $connectedUser['id'];
 
-                if ($this->inscriptionModel->inscriptionExiste($idApprenant, $id)) {
+                if ($this->inscriptionModel->inscriptionExiste($userId, $id)) {
                     $errors[] = 'Vous etes deja inscrit a cette formation.';
                 } else {
-                    $inscription = new inscriptionFormation($idApprenant, $id, 'en_attente');
+                    $inscription = new inscriptionFormation($userId, $id, 'en_attente');
                     $this->inscriptionModel->addInscription($inscription);
                     $formation = $this->formationModel->getFormationById($id);
                     $receiptSent = $this->sendInscriptionReceipt($connectedUser, $formation, $telephone);
