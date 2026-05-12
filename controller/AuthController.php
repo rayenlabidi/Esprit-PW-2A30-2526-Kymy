@@ -19,26 +19,40 @@ class AuthController
         AuthC::startSession();
         $office = 'front';
         $activeModule = '';
-        $pageTitle = 'Connexion Admin';
+        $pageTitle = 'Connexion';
         $error = '';
+        $captcha = $this->captcha();
 
-        if (AuthC::isAdmin()) {
-            header('Location: BackDashboardC.php');
+        if (AuthC::isLoggedIn()) {
+            header('Location: HomeC.php');
             exit;
         }
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            if (!$this->captchaValide($_POST['captcha_answer'] ?? '')) {
+                $error = 'Verification incorrecte. Essayez avec le nouveau code.';
+                $captcha = $this->refreshCaptcha();
+                include __DIR__ . '/../view/users/login.php';
+                return;
+            }
+
             $user = AuthC::attempt($_POST['email'] ?? '', $_POST['password'] ?? '');
 
-            if ($user && $user['role_slug'] === 'admin') {
-                $redirect = isset($_SESSION['redirect_after_login']) ? $_SESSION['redirect_after_login'] : 'BackDashboardC.php';
+            if ($user) {
+                if ($user['role_slug'] === 'admin') {
+                    $redirect = isset($_SESSION['redirect_after_login']) ? $_SESSION['redirect_after_login'] : 'BackDashboardC.php';
+                    unset($_SESSION['redirect_after_login']);
+                    header('Location: ' . $redirect);
+                    exit;
+                }
+
                 unset($_SESSION['redirect_after_login']);
-                header('Location: ' . $redirect);
+                header('Location: HomeC.php');
                 exit;
             }
 
-            AuthC::logout();
-            $error = 'Acces refuse. Seuls les comptes admin peuvent ouvrir le BackOffice.';
+            $error = 'Email ou mot de passe incorrect.';
+            $captcha = $this->refreshCaptcha();
         }
 
         include __DIR__ . '/../view/users/login.php';
@@ -49,6 +63,33 @@ class AuthController
         AuthC::logout();
         header('Location: HomeC.php');
         exit;
+    }
+
+    private function captcha()
+    {
+        if (!isset($_SESSION['captcha_question'], $_SESSION['captcha_answer'])) {
+            return $this->refreshCaptcha();
+        }
+
+        return $_SESSION['captcha_question'];
+    }
+
+    private function refreshCaptcha()
+    {
+        $a = random_int(2, 9);
+        $b = random_int(2, 9);
+        $_SESSION['captcha_question'] = $a . ' + ' . $b;
+        $_SESSION['captcha_answer'] = (string) ($a + $b);
+
+        return $_SESSION['captcha_question'];
+    }
+
+    private function captchaValide($answer)
+    {
+        $valid = isset($_SESSION['captcha_answer']) && trim((string) $answer) === (string) $_SESSION['captcha_answer'];
+        unset($_SESSION['captcha_question'], $_SESSION['captcha_answer']);
+
+        return $valid;
     }
 }
 

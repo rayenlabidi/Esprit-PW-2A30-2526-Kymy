@@ -61,6 +61,12 @@ class AuthC
         return isset($_SESSION['user_name']) ? $_SESSION['user_name'] : '';
     }
 
+    public static function currentUserRole()
+    {
+        self::startSession();
+        return isset($_SESSION['user_role']) ? $_SESSION['user_role'] : '';
+    }
+
     public static function requireAdmin()
     {
         self::startSession();

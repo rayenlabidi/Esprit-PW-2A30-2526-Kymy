@@ -2,9 +2,9 @@
 
 <div class="auth-panel">
     <div>
-        <p class="eyebrow">BackOffice securise</p>
-        <h2>Connexion administrateur</h2>
-        <p class="muted">Le BackOffice Workify est reserve aux comptes admin. Les visiteurs peuvent consulter les modules publics sans connexion.</p>
+        <p class="eyebrow">Workify access</p>
+        <h2>Connexion Workify</h2>
+        <p class="muted">Connectez-vous pour retrouver votre espace. Les comptes autorises peuvent ouvrir l'espace prive depuis leur session.</p>
     </div>
 
     <form class="form-box auth-form" action="../controller/AuthController.php?action=login" method="post">
@@ -13,8 +13,8 @@
         <?php } ?>
 
         <div>
-            <label for="email">Email admin</label>
-            <input id="email" name="email" type="email" placeholder="admin@workify.com" required>
+            <label for="email">Email</label>
+            <input id="email" name="email" type="email" placeholder="email@workify.com" required>
         </div>
 
         <div>
@@ -22,9 +22,17 @@
             <input id="password" name="password" type="password" placeholder="admin123" required>
         </div>
 
+        <div class="captcha-box">
+            <div>
+                <span class="captcha-label">Captcha</span>
+                <strong><?= htmlspecialchars($captcha, ENT_QUOTES); ?> = ?</strong>
+            </div>
+            <input id="captcha_answer" name="captcha_answer" inputmode="numeric" placeholder="Reponse" required>
+        </div>
+
         <div class="actions" style="margin-top: 18px;">
             <button class="btn btn-primary" type="submit">Se connecter</button>
-            <a class="btn" href="../controller/HomeC.php">Retour FrontOffice</a>
+            <a class="btn" href="../controller/HomeC.php">Retour accueil</a>
         </div>
     </form>
 </div>

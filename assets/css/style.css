@@ -34,6 +34,207 @@ body {
     letter-spacing: 0;
 }
 
+.front-mode {
+    min-height: 100vh;
+    background:
+        linear-gradient(rgba(248, 251, 255, 0.88), rgba(232, 244, 255, 0.94)),
+        url('https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1800&q=80') center/cover fixed;
+}
+
+.front-shell {
+    min-height: 100vh;
+}
+
+.public-header {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    min-height: 86px;
+    padding: 16px 44px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 22px;
+    background: rgba(255, 255, 255, 0.9);
+    border-bottom: 1px solid var(--line);
+    backdrop-filter: blur(18px);
+}
+
+.public-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--ink);
+    font-size: 22px;
+    font-weight: 800;
+}
+
+.public-nav,
+.public-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.public-nav a {
+    color: var(--muted);
+    border-radius: 12px;
+    padding: 10px 12px;
+    font-weight: 800;
+}
+
+.public-nav a:hover,
+.public-nav a.active {
+    color: var(--blue);
+    background: var(--blue-soft);
+}
+
+.public-main .page {
+    padding: 34px 44px 56px;
+}
+
+.hero-home {
+    min-height: calc(100vh - 150px);
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.8fr);
+    gap: 30px;
+    align-items: center;
+}
+
+.hero-copy {
+    animation: riseIn 0.7s ease both;
+}
+
+.hero-copy h2 {
+    max-width: 760px;
+    margin: 0;
+    font-size: 64px;
+    line-height: 0.95;
+    letter-spacing: 0;
+}
+
+.hero-copy p {
+    max-width: 680px;
+    font-size: 18px;
+    line-height: 1.7;
+}
+
+.hero-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 22px;
+}
+
+.hero-board {
+    position: relative;
+    min-height: 520px;
+    animation: floatIn 0.9s ease both;
+}
+
+.hero-photo {
+    position: absolute;
+    inset: 34px 0 76px 58px;
+    border-radius: 26px;
+    background:
+        linear-gradient(rgba(15, 23, 42, 0.06), rgba(37, 99, 235, 0.22)),
+        url('https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1200&q=80') center/cover;
+    box-shadow: var(--shadow);
+}
+
+.floating-card {
+    position: absolute;
+    width: min(280px, 70%);
+    padding: 18px;
+    background: rgba(255, 255, 255, 0.92);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    box-shadow: var(--shadow-soft);
+    backdrop-filter: blur(16px);
+    animation: softFloat 4s ease-in-out infinite;
+}
+
+.floating-card strong {
+    display: block;
+    margin-top: 8px;
+    color: var(--blue-dark);
+    font-size: 28px;
+}
+
+.floating-card.one {
+    top: 0;
+    left: 0;
+}
+
+.floating-card.two {
+    right: 0;
+    bottom: 30px;
+    animation-delay: 1.1s;
+}
+
+.module-strip {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(150px, 1fr));
+    gap: 14px;
+    margin: 20px 0 28px;
+}
+
+.module-tile {
+    min-height: 120px;
+    padding: 18px;
+    color: var(--ink);
+    background: rgba(255, 255, 255, 0.88);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    box-shadow: var(--shadow-soft);
+    transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.module-tile:hover {
+    transform: translateY(-4px);
+    border-color: rgba(37, 99, 235, 0.28);
+}
+
+.module-tile span {
+    color: var(--blue);
+    font-weight: 800;
+}
+
+.module-tile h3 {
+    margin: 10px 0 0;
+}
+
+.audience-band {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(220px, 1fr));
+    gap: 16px;
+}
+
+.audience-card {
+    padding: 22px;
+    min-height: 170px;
+    background: rgba(255, 255, 255, 0.86);
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    box-shadow: var(--shadow-soft);
+}
+
+@keyframes riseIn {
+    from { opacity: 0; transform: translateY(18px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes floatIn {
+    from { opacity: 0; transform: translateY(24px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes softFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
 a {
     color: var(--blue);
     text-decoration: none;
@@ -508,6 +709,181 @@ th {
     margin-bottom: 16px;
 }
 
+.captcha-box {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 150px;
+    gap: 12px;
+    align-items: center;
+    margin-top: 16px;
+    padding: 14px;
+    border: 1px dashed rgba(37, 99, 235, 0.35);
+    border-radius: 16px;
+    background: var(--blue-soft);
+}
+
+.captcha-label {
+    display: block;
+    color: var(--blue);
+    font-size: 12px;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.qr-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgba(15, 23, 42, 0.45);
+}
+
+.qr-modal.is-open {
+    display: flex;
+}
+
+.qr-dialog {
+    width: min(420px, 100%);
+    padding: 24px;
+    border-radius: 20px;
+    background: var(--white);
+    box-shadow: var(--shadow);
+}
+
+.qr-code-box {
+    min-height: 220px;
+    display: grid;
+    place-items: center;
+    margin: 18px 0;
+}
+
+.qr-code-box canvas,
+.qr-code-box img {
+    width: 220px;
+    height: 220px;
+}
+
+#chatbot-widget {
+    position: fixed;
+    bottom: 80px;
+    right: 20px;
+    width: 320px;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    display: none;
+    flex-direction: column;
+    z-index: 1000;
+    overflow: hidden;
+    font-family: 'Outfit', Arial, sans-serif;
+    border: 1px solid #e0e0e0;
+}
+
+#chatbot-header {
+    background: var(--blue);
+    color: #fff;
+    padding: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: bold;
+}
+
+#chatbot-close {
+    border: 0;
+    background: transparent;
+    color: #fff;
+    cursor: pointer;
+    font-size: 18px;
+}
+
+#chatbot-messages {
+    height: 300px;
+    overflow-y: auto;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    font-size: 14px;
+    background: #f8fafc;
+}
+
+.chat-msg {
+    max-width: 80%;
+    line-height: 1.4;
+    word-wrap: break-word;
+}
+
+.chat-msg.user {
+    align-self: flex-end;
+    background: var(--blue);
+    color: white;
+    padding: 10px;
+    border-radius: 12px 12px 0 12px;
+}
+
+.chat-msg.bot {
+    align-self: flex-start;
+    background: #e2e8f0;
+    color: #1e293b;
+    padding: 10px;
+    border-radius: 12px 12px 12px 0;
+}
+
+#chatbot-input-container {
+    display: flex;
+    padding: 10px;
+    background: #fff;
+    border-top: 1px solid #e2e8f0;
+}
+
+#chatbot-input {
+    flex: 1;
+}
+
+#chatbot-send {
+    margin-left: 8px;
+    padding: 10px 15px;
+    background: var(--blue);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+#chatbot-toggle {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: var(--blue);
+    color: #fff;
+    padding: 15px 20px;
+    border-radius: 50px;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.28);
+    z-index: 999;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: transform 0.2s;
+}
+
+#chatbot-toggle:hover {
+    transform: scale(1.05);
+}
+
+.chatbot-typing {
+    align-self: flex-start;
+    background: transparent;
+    color: var(--muted);
+    font-size: 12px;
+    font-style: italic;
+}
+
 .auth-panel {
     display: grid;
     grid-template-columns: minmax(0, 0.85fr) minmax(320px, 0.7fr);
@@ -522,7 +898,9 @@ th {
 @media (max-width: 1100px) {
     .formation-grid,
     .stats-grid,
-    .grid {
+    .grid,
+    .module-strip,
+    .audience-band {
         grid-template-columns: repeat(2, minmax(180px, 1fr));
     }
 }
@@ -539,16 +917,39 @@ th {
     }
 
     .topbar,
-    .page {
+    .page,
+    .public-main .page {
         padding-left: 18px;
         padding-right: 18px;
+    }
+
+    .public-header {
+        align-items: flex-start;
+        padding: 16px 18px;
+        flex-direction: column;
+    }
+
+    .hero-home {
+        grid-template-columns: 1fr;
+        min-height: auto;
+    }
+
+    .hero-copy h2 {
+        font-size: 42px;
+    }
+
+    .hero-board {
+        min-height: 420px;
     }
 
     .form-grid,
     .formation-grid,
     .stats-grid,
     .grid,
-    .auth-panel {
+    .auth-panel,
+    .module-strip,
+    .audience-band,
+    .captcha-box {
         grid-template-columns: 1fr;
     }
 
