@@ -6,6 +6,7 @@ $successMessage = isset($successMessage) ? $successMessage : '';
 $connectedUser = isset($connectedUser) ? $connectedUser : null;
 $viewerLoggedIn = AuthC::isLoggedIn();
 include __DIR__ . '/../includes/header.php';
+$formationImage = !empty($formation['image_url']) ? $formation['image_url'] : 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1200&q=80';
 ?>
 
 <div class="detail-box">
@@ -21,6 +22,8 @@ include __DIR__ . '/../includes/header.php';
         </div>
         <span class="badge badge-green"><?= htmlspecialchars($formation['mode'], ENT_QUOTES); ?></span>
     </div>
+
+    <img class="detail-hero-image" src="<?= htmlspecialchars($formationImage, ENT_QUOTES); ?>" alt="<?= htmlspecialchars($formation['titre'], ENT_QUOTES); ?>">
 
     <p><?= nl2br(htmlspecialchars($formation['description'], ENT_QUOTES)); ?></p>
 

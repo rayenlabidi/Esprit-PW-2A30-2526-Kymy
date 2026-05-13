@@ -76,9 +76,13 @@ include __DIR__ . '/../includes/header.php';
         <?php } ?>
 
         <?php foreach ($liste as $formation) { ?>
+            <?php $formationImage = !empty($formation['image_url']) ? $formation['image_url'] : 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1200&q=80'; ?>
             <article class="formation-card">
-                <div class="course-icon">
-                    <svg viewBox="0 0 24 24"><path d="M4 5h16v12H7l-3 3V5zm4 4v2h8V9H8zm0 4v2h6v-2H8z"/></svg>
+                <div class="formation-card-media">
+                    <img src="<?= htmlspecialchars($formationImage, ENT_QUOTES); ?>" alt="<?= htmlspecialchars($formation['titre'], ENT_QUOTES); ?>">
+                    <span class="course-icon">
+                        <svg viewBox="0 0 24 24"><path d="M4 5h16v12H7l-3 3V5zm4 4v2h8V9H8zm0 4v2h6v-2H8z"/></svg>
+                    </span>
                 </div>
                 <h3><?= htmlspecialchars($formation['titre'], ENT_QUOTES); ?></h3>
                 <p class="muted"><?= htmlspecialchars(substr($formation['description'], 0, 120), ENT_QUOTES); ?>...</p>

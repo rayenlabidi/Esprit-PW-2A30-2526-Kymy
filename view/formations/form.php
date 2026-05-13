@@ -56,6 +56,18 @@ include __DIR__ . '/../includes/header.php';
             <textarea id="description" name="description"><?= htmlspecialchars(isset($formData['description']) ? $formData['description'] : '', ENT_QUOTES); ?></textarea>
         </div>
 
+        <div class="field-full">
+            <label for="image_url">Image de la formation</label>
+            <input id="image_url" name="image_url" type="url" value="<?= htmlspecialchars(isset($formData['image_url']) ? $formData['image_url'] : '', ENT_QUOTES); ?>" placeholder="https://...">
+            <div class="formation-image-preview" id="formationImagePreview">
+                <?php if (!empty($formData['image_url'])) { ?>
+                    <img src="<?= htmlspecialchars($formData['image_url'], ENT_QUOTES); ?>" alt="Apercu formation">
+                <?php } else { ?>
+                    <span>Le bouton Generer un plan choisit aussi une image adaptee.</span>
+                <?php } ?>
+            </div>
+        </div>
+
         <div>
             <label for="id_formateur">Formateur</label>
             <select id="id_formateur" name="id_formateur">

@@ -235,7 +235,8 @@ class FormationC
             trim($data['mode']),
             (int) $data['places'],
             (int) $data['id_categorie'],
-            (int) $data['id_formateur']
+            (int) $data['id_formateur'],
+            $this->cleanFormationImage(isset($data['image_url']) ? $data['image_url'] : '', isset($data['titre']) ? $data['titre'] : '')
         );
     }
 
@@ -303,7 +304,45 @@ class FormationC
             $errors[] = 'Veuillez choisir un mode valide.';
         }
 
+        if (isset($data['image_url']) && trim($data['image_url']) !== '' && !filter_var(trim($data['image_url']), FILTER_VALIDATE_URL)) {
+            $errors[] = 'L image de la formation doit etre une URL valide.';
+        }
+
         return $errors;
+    }
+
+    private function cleanFormationImage($imageUrl, $title)
+    {
+        $imageUrl = trim((string) $imageUrl);
+
+        if ($imageUrl !== '' && filter_var($imageUrl, FILTER_VALIDATE_URL)) {
+            return $imageUrl;
+        }
+
+        return $this->formationImageFor($title);
+    }
+
+    private function formationImageFor($title)
+    {
+        $text = strtolower((string) $title);
+
+        if (strpos($text, 'mysql') !== false || strpos($text, 'data') !== false || strpos($text, 'sql') !== false) {
+            return 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=1200&q=80';
+        }
+
+        if (strpos($text, 'ui') !== false || strpos($text, 'ux') !== false || strpos($text, 'design') !== false) {
+            return 'https://images.unsplash.com/photo-1559028012-481c04fa702d?auto=format&fit=crop&w=1200&q=80';
+        }
+
+        if (strpos($text, 'marketing') !== false || strpos($text, 'content') !== false) {
+            return 'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=1200&q=80';
+        }
+
+        if (strpos($text, 'php') !== false || strpos($text, 'mvc') !== false || strpos($text, 'web') !== false) {
+            return 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?auto=format&fit=crop&w=1200&q=80';
+        }
+
+        return 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1200&q=80';
     }
 
     private function validerInscription($data)

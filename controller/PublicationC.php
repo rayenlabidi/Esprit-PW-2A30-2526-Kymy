@@ -21,6 +21,8 @@ class PublicationC
 
         if ($action === 'add') {
             $this->ajouter();
+        } elseif ($action === 'like') {
+            $this->aimer();
         } elseif ($action === 'comment') {
             $this->commenter();
         } elseif ($action === 'delete') {
@@ -51,6 +53,9 @@ class PublicationC
         foreach ($publications as $publicationItem) {
             $commentaires[(int) $publicationItem['id']] = $this->publicationModel->listeCommentaires((int) $publicationItem['id']);
         }
+        $likedPublications = ($office === 'front' && AuthC::isLoggedIn())
+            ? $this->publicationModel->likedPublicationIds(AuthC::currentUserId())
+            : [];
         $statistiques = $this->publicationModel->statistiquesPublications();
         $errors = isset($_SESSION['publication_errors']) ? $_SESSION['publication_errors'] : [];
         unset($_SESSION['publication_errors']);
@@ -120,6 +125,19 @@ class PublicationC
         }
 
         header('Location: PublicationC.php?office=front&action=list');
+        exit;
+    }
+
+    private function aimer()
+    {
+        $this->requireLogin();
+
+        $id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
+        if ($id > 0 && $this->publicationModel->getPublicationById($id)) {
+            $this->publicationModel->toggleLike($id, AuthC::currentUserId());
+        }
+
+        header('Location: PublicationC.php?office=front&action=list#publication-' . $id);
         exit;
     }
 

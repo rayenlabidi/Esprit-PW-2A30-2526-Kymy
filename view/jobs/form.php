@@ -6,6 +6,8 @@ $formData = isset($formData) ? $formData : [];
 $errors = isset($errors) ? $errors : [];
 $categories = isset($categories) ? $categories : [];
 $publishers = isset($publishers) ? $publishers : [];
+$successMessage = isset($successMessage) ? $successMessage : '';
+$recommendations = isset($recommendations) ? $recommendations : [];
 $id = $isEdit ? (int) $formData['id'] : 0;
 $action = $isEdit ? 'edit&id=' . $id : 'add';
 include __DIR__ . '/../includes/header.php';
@@ -20,6 +22,10 @@ include __DIR__ . '/../includes/header.php';
 </div>
 
 <form class="form-box" data-validate="job" action="../controller/JobC.php?office=back&action=<?= $action; ?>" method="post">
+    <?php if ($successMessage !== '') { ?>
+        <div class="success-box"><?= htmlspecialchars($successMessage, ENT_QUOTES); ?></div>
+    <?php } ?>
+
     <div class="error-box">
         <?php if (!empty($errors)) { ?>
             <ul>
@@ -86,15 +92,20 @@ include __DIR__ . '/../includes/header.php';
 
         <div>
             <label for="id_publisher">Publie par</label>
-            <select id="id_publisher" name="id_publisher">
-                <option value="">Choisir</option>
-                <?php foreach ($publishers as $publisher) { ?>
-                    <?php $selectedPublisher = isset($formData['publisher_id']) ? $formData['publisher_id'] : (isset($formData['id_publisher']) ? $formData['id_publisher'] : ''); ?>
-                    <option value="<?= (int) $publisher['id']; ?>" <?= ((string) $selectedPublisher === (string) $publisher['id']) ? 'selected' : ''; ?>>
-                        <?= htmlspecialchars($publisher['first_name'] . ' ' . $publisher['last_name'], ENT_QUOTES); ?>
-                    </option>
-                <?php } ?>
-            </select>
+            <?php if (AuthC::currentUserRole() === 'boss') { ?>
+                <input value="<?= htmlspecialchars(AuthC::currentUserName(), ENT_QUOTES); ?>" disabled>
+                <input type="hidden" id="id_publisher" name="id_publisher" value="<?= (int) AuthC::currentUserId(); ?>">
+            <?php } else { ?>
+                <select id="id_publisher" name="id_publisher">
+                    <option value="">Choisir</option>
+                    <?php foreach ($publishers as $publisher) { ?>
+                        <?php $selectedPublisher = isset($formData['publisher_id']) ? $formData['publisher_id'] : (isset($formData['id_publisher']) ? $formData['id_publisher'] : ''); ?>
+                        <option value="<?= (int) $publisher['id']; ?>" <?= ((string) $selectedPublisher === (string) $publisher['id']) ? 'selected' : ''; ?>>
+                            <?= htmlspecialchars($publisher['first_name'] . ' ' . $publisher['last_name'], ENT_QUOTES); ?>
+                        </option>
+                    <?php } ?>
+                </select>
+            <?php } ?>
         </div>
 
         <label class="inline-check field-full">
@@ -109,5 +120,35 @@ include __DIR__ . '/../includes/header.php';
         <a class="btn" href="../controller/JobC.php?office=back&action=list">Annuler</a>
     </div>
 </form>
+
+<?php if (!empty($recommendations)) { ?>
+    <section class="recommendation-panel">
+        <div class="section-head">
+            <div>
+                <p class="eyebrow">Matching intelligent</p>
+                <h2>Freelancers recommandes</h2>
+            </div>
+        </div>
+        <div class="recommendation-grid">
+            <?php foreach ($recommendations as $recommendation) { ?>
+                <article class="recommendation-card">
+                    <span class="match-score"><?= (int) $recommendation['score']; ?>%</span>
+                    <h3><?= htmlspecialchars($recommendation['name'], ENT_QUOTES); ?></h3>
+                    <p class="muted"><?= htmlspecialchars($recommendation['headline'], ENT_QUOTES); ?></p>
+                    <p><?= htmlspecialchars($recommendation['email'], ENT_QUOTES); ?></p>
+                    <?php if (!empty($recommendation['matches'])) { ?>
+                        <div class="card-meta">
+                            <?php foreach ($recommendation['matches'] as $match) { ?>
+                                <span class="badge"><?= htmlspecialchars($match, ENT_QUOTES); ?></span>
+                            <?php } ?>
+                        </div>
+                    <?php } else { ?>
+                        <p class="muted">Profil actif avec des informations exploitables pour cette mission.</p>
+                    <?php } ?>
+                </article>
+            <?php } ?>
+        </div>
+    </section>
+<?php } ?>
 
 <?php include __DIR__ . '/../includes/footer.php'; ?>

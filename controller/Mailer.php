@@ -14,6 +14,7 @@ class WorkifyMailer
 
         $mailPassword = $this->mailPassword();
         if ($mailPassword === '') {
+            $this->logFailure('SMTP password is empty. Define WORKIFY_MAIL_PASSWORD in config.local.php on this machine or hosting server.');
             return false;
         }
 

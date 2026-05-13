@@ -9,7 +9,7 @@ include __DIR__ . '/../includes/header.php';
     <div>
         <p class="eyebrow">Espace prive</p>
         <h2>Centre des messages</h2>
-        <p class="muted">Administration integree dans le MVC principal.</p>
+        <p class="muted">Suivez les conversations, signalez les messages sensibles et gardez l espace propre.</p>
     </div>
 </div>
 

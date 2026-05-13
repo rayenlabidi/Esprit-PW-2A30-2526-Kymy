@@ -1532,6 +1532,178 @@ th {
     gap: 18px;
 }
 
+.social-feed-shell {
+    display: grid;
+    grid-template-columns: minmax(220px, 0.8fr) minmax(0, 1.55fr) minmax(220px, 0.78fr);
+    gap: 18px;
+    align-items: start;
+}
+
+.feed-profile-card,
+.feed-side-panel,
+.social-composer,
+.recommendation-panel {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    box-shadow: var(--shadow-soft);
+    backdrop-filter: blur(16px);
+}
+
+.feed-profile-card {
+    position: sticky;
+    top: 112px;
+    overflow: hidden;
+    padding: 0 18px 18px;
+    text-align: center;
+}
+
+.feed-profile-cover {
+    height: 86px;
+    margin: 0 -18px 0;
+    background:
+        radial-gradient(circle at 18% 35%, rgba(20, 184, 166, 0.38), transparent 28%),
+        linear-gradient(135deg, rgba(37, 99, 235, 0.95), rgba(14, 165, 233, 0.82));
+}
+
+.feed-profile-avatar {
+    margin-top: -28px;
+    border: 4px solid var(--white);
+}
+
+.feed-profile-card h3 {
+    margin: 12px 0 2px;
+}
+
+.feed-profile-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin: 18px 0;
+}
+
+.feed-profile-stats span {
+    padding: 10px 6px;
+    border-radius: 14px;
+    background: rgba(239, 246, 255, 0.86);
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.feed-profile-stats strong {
+    display: block;
+    color: var(--blue-dark);
+    font-size: 20px;
+}
+
+.feed-main-column {
+    display: grid;
+    gap: 16px;
+}
+
+.social-composer {
+    padding: 18px;
+}
+
+.social-composer textarea {
+    margin-top: 14px;
+    min-height: 98px;
+    border-radius: 18px;
+    background: rgba(239, 246, 255, 0.65);
+}
+
+.composer-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.feed-search {
+    margin-bottom: 0;
+}
+
+.social-post-card {
+    animation: feedCardIn 0.5s ease both;
+}
+
+.feed-actions-bar {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid var(--line);
+}
+
+.feed-action-form {
+    margin: 0;
+}
+
+.feed-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    min-height: 38px;
+    padding: 9px 12px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    color: var(--muted);
+    background: rgba(255, 255, 255, 0.74);
+    font-weight: 800;
+    cursor: pointer;
+    transition: transform 0.2s ease, border-color 0.2s ease, color 0.2s ease, background 0.2s ease;
+}
+
+.feed-action svg {
+    width: 17px;
+    height: 17px;
+    fill: currentColor;
+}
+
+.feed-action:hover,
+.feed-action.is-liked {
+    transform: translateY(-2px);
+    border-color: rgba(37, 99, 235, 0.28);
+    color: var(--blue);
+    background: var(--blue-soft);
+}
+
+.feed-action.passive {
+    cursor: default;
+}
+
+.feed-side-panel {
+    position: sticky;
+    top: 112px;
+    padding: 18px;
+    display: grid;
+    gap: 16px;
+}
+
+.trend-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.trend-list span {
+    padding: 9px 11px;
+    border-radius: 999px;
+    background: rgba(219, 234, 254, 0.9);
+    color: var(--blue-dark);
+    font-weight: 800;
+    font-size: 12px;
+}
+
+.side-suggestion {
+    padding: 14px;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.72);
+}
+
 .feed-card,
 .message-panel,
 .message-contacts {
@@ -1623,6 +1795,12 @@ th {
     gap: 18px;
 }
 
+.message-workspace {
+    display: grid;
+    grid-template-columns: minmax(270px, 0.34fr) minmax(0, 1fr);
+    gap: 18px;
+}
+
 .message-contacts,
 .message-panel {
     padding: 18px;
@@ -1632,6 +1810,42 @@ th {
     align-self: start;
     display: grid;
     gap: 10px;
+}
+
+.message-profile-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    border-radius: 18px;
+    background:
+        radial-gradient(circle at 0 0, rgba(37, 99, 235, 0.16), transparent 35%),
+        rgba(255, 255, 255, 0.72);
+}
+
+.message-profile-card h3 {
+    margin: 0;
+}
+
+.message-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+.message-tabs span {
+    text-align: center;
+    padding: 9px 8px;
+    border-radius: 12px;
+    color: var(--muted);
+    background: rgba(241, 245, 249, 0.92);
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.message-tabs span.active {
+    color: var(--white);
+    background: linear-gradient(135deg, var(--blue), var(--sky));
 }
 
 .contact-row {
@@ -1707,6 +1921,123 @@ th {
 
 .message-form textarea {
     min-height: 72px;
+}
+
+.modern-message-panel {
+    min-height: 620px;
+    background:
+        radial-gradient(circle at 85% 0, rgba(37, 99, 235, 0.11), transparent 32%),
+        var(--surface);
+}
+
+.modern-message-form {
+    padding: 10px;
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.74);
+}
+
+.formation-card {
+    overflow: hidden;
+}
+
+.formation-card-media {
+    position: relative;
+    height: 168px;
+    margin: -20px -20px 18px;
+    overflow: hidden;
+    background: var(--blue-soft);
+}
+
+.formation-card-media img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.35s ease;
+}
+
+.formation-card:hover .formation-card-media img {
+    transform: scale(1.05);
+}
+
+.formation-card-media .course-icon {
+    position: absolute;
+    left: 16px;
+    bottom: 14px;
+    box-shadow: 0 14px 24px rgba(15, 23, 42, 0.20);
+}
+
+.formation-image-preview {
+    min-height: 92px;
+    margin-top: 10px;
+    display: grid;
+    place-items: center;
+    border: 1px dashed rgba(37, 99, 235, 0.35);
+    border-radius: 16px;
+    overflow: hidden;
+    color: var(--muted);
+    background: rgba(239, 246, 255, 0.62);
+    font-weight: 800;
+}
+
+.formation-image-preview img {
+    width: 100%;
+    height: 190px;
+    object-fit: cover;
+    display: block;
+}
+
+.detail-hero-image {
+    width: 100%;
+    max-height: 380px;
+    object-fit: cover;
+    display: block;
+    border-radius: 18px;
+    border: 1px solid var(--line);
+    margin: 10px 0 20px;
+}
+
+.recommendation-panel {
+    margin-top: 20px;
+    padding: 20px;
+}
+
+.recommendation-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(190px, 1fr));
+    gap: 14px;
+}
+
+.recommendation-card {
+    position: relative;
+    padding: 18px;
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.72);
+}
+
+.match-score {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    padding: 8px 10px;
+    border-radius: 999px;
+    color: var(--white);
+    background: linear-gradient(135deg, var(--green), var(--sky));
+    font-weight: 900;
+    font-size: 12px;
+}
+
+@keyframes feedCardIn {
+    from {
+        opacity: 0;
+        transform: translateY(14px) scale(0.99);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
 }
 
 .empty-state {
@@ -1886,9 +2217,18 @@ th {
     }
 
     .message-layout,
+    .message-workspace,
+    .social-feed-shell,
     .inline-comment,
-    .message-form {
+    .message-form,
+    .composer-actions,
+    .recommendation-grid {
         grid-template-columns: 1fr;
+    }
+
+    .feed-profile-card,
+    .feed-side-panel {
+        position: static;
     }
 
     .hero-home {

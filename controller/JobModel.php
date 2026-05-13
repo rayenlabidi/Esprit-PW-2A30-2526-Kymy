@@ -99,6 +99,7 @@ class JobModel
                 'status' => $job->getStatut(),
                 'publisher_id' => $job->getIdPublisher()
             ]);
+            return (int) $db->lastInsertId();
         } catch (Exception $e) {
             die('Erreur: ' . $e->getMessage());
         }
@@ -158,6 +159,79 @@ class JobModel
         } catch (Exception $e) {
             die('Erreur: ' . $e->getMessage());
         }
+    }
+
+    public function getCategoryName($id)
+    {
+        $db = config::getConnexion();
+        try {
+            $query = $db->prepare('SELECT name FROM categories WHERE id = :id');
+            $query->execute(['id' => (int) $id]);
+            $row = $query->fetch();
+            return $row ? $row['name'] : '';
+        } catch (Exception $e) {
+            die('Erreur: ' . $e->getMessage());
+        }
+    }
+
+    public function recommanderFreelancersPourJob($data, $limit = 3)
+    {
+        $sql = "SELECT u.*
+                FROM utilisateurs u
+                INNER JOIN roles r ON u.role_id = r.id
+                WHERE r.slug = 'freelancer' AND u.status = 'active'";
+        $db = config::getConnexion();
+
+        try {
+            $freelancers = $db->query($sql)->fetchAll();
+        } catch (Exception $e) {
+            die('Erreur: ' . $e->getMessage());
+        }
+
+        $categoryName = $this->getCategoryName((int) ($data['id_categorie'] ?? $data['category_id'] ?? 0));
+        $jobText = trim(($data['titre'] ?? $data['title'] ?? '') . ' ' . ($data['description'] ?? '') . ' ' . $categoryName);
+        $jobTokens = $this->keywords($jobText);
+        $recommendations = [];
+
+        foreach ($freelancers as $freelancer) {
+            $profileText = trim(
+                ($freelancer['first_name'] ?? '') . ' ' .
+                ($freelancer['last_name'] ?? '') . ' ' .
+                ($freelancer['headline'] ?? '') . ' ' .
+                ($freelancer['bio'] ?? '') . ' ' .
+                ($freelancer['email'] ?? '')
+            );
+            $profileTokens = $this->keywords($profileText);
+            $matches = array_values(array_intersect($jobTokens, $profileTokens));
+            $score = count($matches) * 18;
+
+            if (stripos($profileText, $categoryName) !== false && $categoryName !== '') {
+                $score += 20;
+            }
+
+            if (!empty($freelancer['headline'])) {
+                $score += 8;
+            }
+
+            if (!empty($freelancer['bio'])) {
+                $score += 6;
+            }
+
+            $recommendations[] = [
+                'id' => (int) $freelancer['id'],
+                'name' => trim($freelancer['first_name'] . ' ' . $freelancer['last_name']),
+                'email' => $freelancer['email'],
+                'headline' => $freelancer['headline'],
+                'score' => min(100, $score),
+                'matches' => array_slice($matches, 0, 5)
+            ];
+        }
+
+        usort($recommendations, function ($a, $b) {
+            return $b['score'] <=> $a['score'];
+        });
+
+        return array_slice($recommendations, 0, $limit);
     }
 
     public function listePublishers()
@@ -228,6 +302,23 @@ class JobModel
         $query = $db->query('SELECT COUNT(*) AS total FROM jobs');
         $row = $query->fetch();
         return $row ? (int) $row['total'] : 0;
+    }
+
+    private function keywords($text)
+    {
+        $text = strtolower(preg_replace('/[^a-z0-9]+/i', ' ', (string) $text));
+        $parts = preg_split('/\s+/', trim($text));
+        $stopwords = ['avec', 'pour', 'dans', 'the', 'and', 'une', 'des', 'les', 'sur', 'from', 'this', 'that', 'job', 'workify'];
+        $tokens = [];
+
+        foreach ($parts as $part) {
+            if (strlen($part) < 3 || in_array($part, $stopwords, true)) {
+                continue;
+            }
+            $tokens[$part] = true;
+        }
+
+        return array_keys($tokens);
     }
 }
 ?>

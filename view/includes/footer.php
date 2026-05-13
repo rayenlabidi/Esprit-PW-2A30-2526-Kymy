@@ -48,19 +48,37 @@
     <script src="../assets/js/validation.js"></script>
     <script src="../assets/js/mui-motion.js"></script>
 
-    <?php if (isset($activeModule) && $activeModule === 'formations') { ?>
+    <?php
+    $chatbotModules = [
+        'formations' => [
+            'title' => 'Assistant Formation',
+            'intro' => 'Bonjour ! Je peux vous aider avec les formations, plans, categories et inscriptions.'
+        ],
+        'publications' => [
+            'title' => 'Assistant Publication',
+            'intro' => 'Bonjour ! Je peux vous aider a rediger, ameliorer ou structurer une publication Workify.'
+        ],
+        'messages' => [
+            'title' => 'Assistant Message',
+            'intro' => 'Bonjour ! Je peux vous aider a ecrire une reponse claire et professionnelle.'
+        ]
+    ];
+    $chatbotConfig = (isset($activeModule) && isset($chatbotModules[$activeModule])) ? $chatbotModules[$activeModule] : null;
+    ?>
+
+    <?php if ($chatbotConfig) { ?>
         <div id="chatbot-toggle">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-            Assistant Formation
+            <?= htmlspecialchars($chatbotConfig['title'], ENT_QUOTES); ?>
         </div>
 
         <div id="chatbot-widget">
             <div id="chatbot-header">
-                <span>Assistant Formation</span>
+                <span><?= htmlspecialchars($chatbotConfig['title'], ENT_QUOTES); ?></span>
                 <button id="chatbot-close" type="button" aria-label="Fermer">x</button>
             </div>
             <div id="chatbot-messages">
-                <div class="chat-msg bot">Bonjour ! Je suis l'assistant expert en gestion des formations. Comment puis-je vous aider aujourd'hui ?</div>
+                <div class="chat-msg bot"><?= htmlspecialchars($chatbotConfig['intro'], ENT_QUOTES); ?></div>
             </div>
             <div id="chatbot-input-container">
                 <input type="text" id="chatbot-input" placeholder="Posez une question...">
@@ -69,6 +87,8 @@
         </div>
 
         <script>
+        const workifyChatbotModule = <?= json_encode($activeModule); ?>;
+
         document.getElementById('chatbot-toggle').addEventListener('click', () => {
             document.getElementById('chatbot-widget').style.display = 'flex';
             document.getElementById('chatbot-toggle').style.display = 'none';
@@ -100,7 +120,7 @@
                 const response = await fetch('../controller/ChatbotC.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: msg })
+                    body: JSON.stringify({ message: msg, module: workifyChatbotModule })
                 });
                 const data = await response.json();
 

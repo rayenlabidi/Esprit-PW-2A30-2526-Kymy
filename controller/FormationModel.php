@@ -67,9 +67,9 @@ class FormationModel
     public function addFormation($formation)
     {
         $sql = 'INSERT INTO formation
-                (titre, description, date_debut, date_fin, duree, prix, niveau, statut, mode, places, id_categorie, id_formateur)
+                (titre, description, date_debut, date_fin, duree, prix, niveau, statut, mode, places, id_categorie, id_formateur, image_url)
                 VALUES
-                (:titre, :description, :date_debut, :date_fin, :duree, :prix, :niveau, :statut, :mode, :places, :id_categorie, :id_formateur)';
+                (:titre, :description, :date_debut, :date_fin, :duree, :prix, :niveau, :statut, :mode, :places, :id_categorie, :id_formateur, :image_url)';
         $db = config::getConnexion();
         try {
             $query = $db->prepare($sql);
@@ -85,7 +85,8 @@ class FormationModel
                 'mode' => $formation->getMode(),
                 'places' => $formation->getPlaces(),
                 'id_categorie' => $formation->getIdCategorie(),
-                'id_formateur' => $formation->getIdFormateur()
+                'id_formateur' => $formation->getIdFormateur(),
+                'image_url' => $formation->getImageUrl()
             ]);
         } catch (Exception $e) {
             die('Erreur: ' . $e->getMessage());
@@ -106,7 +107,8 @@ class FormationModel
                     mode = :mode,
                     places = :places,
                     id_categorie = :id_categorie,
-                    id_formateur = :id_formateur
+                    id_formateur = :id_formateur,
+                    image_url = :image_url
                 WHERE id_formation = :id';
         $db = config::getConnexion();
         try {
@@ -124,6 +126,7 @@ class FormationModel
                 'places' => $formation->getPlaces(),
                 'id_categorie' => $formation->getIdCategorie(),
                 'id_formateur' => $formation->getIdFormateur(),
+                'image_url' => $formation->getImageUrl(),
                 'id' => $id
             ]);
         } catch (Exception $e) {

@@ -29,6 +29,13 @@ include __DIR__ . '/../includes/header.php';
                 Ajouter
             </a>
         </div>
+    <?php } elseif (AuthC::isAdmin() || AuthC::currentUserRole() === 'boss') { ?>
+        <div class="actions">
+            <a class="btn btn-primary" href="../controller/JobC.php?office=back&action=add">
+                <svg viewBox="0 0 24 24"><path d="M11 5h2v6h6v2h-6v6h-2v-6H5v-2h6V5z"/></svg>
+                Publier un job
+            </a>
+        </div>
     <?php } ?>
 </div>
 

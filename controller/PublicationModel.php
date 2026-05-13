@@ -6,9 +6,11 @@ class PublicationModel
     public function listePublications($search = '')
     {
         $sql = 'SELECT p.*,
-                       COUNT(c.id) AS comments_count
+                       COUNT(DISTINCT c.id) AS comments_count,
+                       COUNT(DISTINCT l.id) AS likes_count
                 FROM publication p
                 LEFT JOIN comments c ON c.publication_id = p.id
+                LEFT JOIN publication_likes l ON l.publication_id = p.id
                 WHERE 1 = 1';
         $params = [];
 
@@ -132,15 +134,73 @@ class PublicationModel
         }
     }
 
+    public function likedPublicationIds($userId)
+    {
+        $sql = 'SELECT publication_id FROM publication_likes WHERE user_id = :user_id';
+        $db = config::getConnexion();
+        try {
+            $query = $db->prepare($sql);
+            $query->execute(['user_id' => (string) $userId]);
+            $rows = $query->fetchAll();
+            $ids = [];
+            foreach ($rows as $row) {
+                $ids[(int) $row['publication_id']] = true;
+            }
+            return $ids;
+        } catch (Exception $e) {
+            die('Erreur: ' . $e->getMessage());
+        }
+    }
+
+    public function toggleLike($publicationId, $userId)
+    {
+        $db = config::getConnexion();
+
+        try {
+            $db->beginTransaction();
+            $check = $db->prepare('SELECT id FROM publication_likes WHERE publication_id = :publication_id AND user_id = :user_id LIMIT 1');
+            $check->execute([
+                'publication_id' => (int) $publicationId,
+                'user_id' => (string) $userId
+            ]);
+            $existing = $check->fetch();
+
+            if ($existing) {
+                $delete = $db->prepare('DELETE FROM publication_likes WHERE id = :id');
+                $delete->execute(['id' => (int) $existing['id']]);
+                $update = $db->prepare('UPDATE publication SET likes = GREATEST(likes - 1, 0) WHERE id = :id');
+                $update->execute(['id' => (int) $publicationId]);
+                $db->commit();
+                return false;
+            }
+
+            $insert = $db->prepare('INSERT INTO publication_likes (publication_id, user_id) VALUES (:publication_id, :user_id)');
+            $insert->execute([
+                'publication_id' => (int) $publicationId,
+                'user_id' => (string) $userId
+            ]);
+            $update = $db->prepare('UPDATE publication SET likes = likes + 1 WHERE id = :id');
+            $update->execute(['id' => (int) $publicationId]);
+            $db->commit();
+            return true;
+        } catch (Exception $e) {
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
+            die('Erreur: ' . $e->getMessage());
+        }
+    }
+
     public function statistiquesPublications()
     {
         $db = config::getConnexion();
         try {
-            $stats = $db->query('SELECT COUNT(*) AS total, IFNULL(SUM(likes), 0) AS likes FROM publication')->fetch();
+            $stats = $db->query('SELECT COUNT(*) AS total FROM publication')->fetch();
+            $likes = $db->query('SELECT COUNT(*) AS total FROM publication_likes')->fetch();
             $comments = $db->query('SELECT COUNT(*) AS total FROM comments')->fetch();
             return [
                 'total' => $stats ? (int) $stats['total'] : 0,
-                'likes' => $stats ? (int) $stats['likes'] : 0,
+                'likes' => $likes ? (int) $likes['total'] : 0,
                 'comments' => $comments ? (int) $comments['total'] : 0
             ];
         } catch (Exception $e) {

@@ -67,12 +67,14 @@ class JobC
 
     private function ajouter()
     {
-        AuthC::requireAdmin();
+        $this->requireJobPublisher();
         $office = 'back';
         $categories = $this->jobModel->listeCategories();
         $publishers = $this->jobModel->listePublishers();
         $errors = [];
         $formData = [];
+        $recommendations = [];
+        $successMessage = '';
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $formData = $_POST;
@@ -81,8 +83,9 @@ class JobC
             if (empty($errors)) {
                 $job = $this->construireJob($_POST);
                 $this->jobModel->addJob($job);
-                header('Location: JobC.php?office=back&action=list');
-                exit;
+                $recommendations = $this->jobModel->recommanderFreelancersPourJob($_POST);
+                $successMessage = 'Job publie. Voici les freelancers les plus adaptes a cette mission.';
+                $formData = [];
             }
         }
 
@@ -225,9 +228,13 @@ class JobC
 
     private function construireJob($data)
     {
-        $publisherId = isset($data['id_publisher']) && (int) $data['id_publisher'] > 0
-            ? (int) $data['id_publisher']
-            : $this->jobModel->getDefaultPublisherId();
+        if (AuthC::currentUserRole() === 'boss') {
+            $publisherId = AuthC::currentUserId();
+        } elseif (isset($data['id_publisher']) && (int) $data['id_publisher'] > 0) {
+            $publisherId = (int) $data['id_publisher'];
+        } else {
+            $publisherId = $this->jobModel->getDefaultPublisherId();
+        }
 
         return new job(
             trim($data['titre']),
@@ -277,6 +284,17 @@ class JobC
         }
 
         return $errors;
+    }
+
+    private function requireJobPublisher()
+    {
+        AuthC::startSession();
+
+        if (!AuthC::isAdmin() && AuthC::currentUserRole() !== 'boss') {
+            $_SESSION['redirect_after_login'] = isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : 'JobC.php?office=back&action=add';
+            header('Location: AuthController.php?action=login');
+            exit;
+        }
     }
 
     private function validerCandidature($data)

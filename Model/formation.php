@@ -14,8 +14,9 @@ class formation
     private $places;
     private $idCategorie;
     private $idFormateur;
+    private $imageUrl;
 
-    public function __construct(string $titre, string $description, string $dateDebut, string $dateFin, int $duree, float $prix, string $niveau, string $statut, string $mode, int $places, int $idCategorie, int $idFormateur)
+    public function __construct(string $titre, string $description, string $dateDebut, string $dateFin, int $duree, float $prix, string $niveau, string $statut, string $mode, int $places, int $idCategorie, int $idFormateur, string $imageUrl = '')
     {
         $this->titre = $titre;
         $this->description = $description;
@@ -29,6 +30,7 @@ class formation
         $this->places = $places;
         $this->idCategorie = $idCategorie;
         $this->idFormateur = $idFormateur;
+        $this->imageUrl = $imageUrl;
     }
 
     public function getId()
@@ -159,6 +161,16 @@ class formation
     public function setIdFormateur($idFormateur)
     {
         $this->idFormateur = $idFormateur;
+    }
+
+    public function getImageUrl()
+    {
+        return $this->imageUrl;
+    }
+
+    public function setImageUrl($imageUrl)
+    {
+        $this->imageUrl = $imageUrl;
     }
 }
 ?>

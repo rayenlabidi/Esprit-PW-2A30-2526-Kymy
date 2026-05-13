@@ -392,6 +392,8 @@ document.addEventListener('DOMContentLoaded', function () {
     var title = document.getElementById('titre');
     var description = document.getElementById('description');
     var duree = document.getElementById('duree');
+    var imageUrl = document.getElementById('image_url');
+    var imagePreview = document.getElementById('formationImagePreview');
 
     if (!btn || !title || !description || !duree) {
         return;
@@ -417,5 +419,44 @@ document.addEventListener('DOMContentLoaded', function () {
             '- Mini-projet ou cas reel Workify\n' +
             '- Evaluation finale et feedback\n\n' +
             'Charge horaire estimee : ' + hours + ' heures.';
+
+        if (imageUrl) {
+            imageUrl.value = pickFormationImage(courseTitle);
+            renderFormationImagePreview(imagePreview, imageUrl.value, courseTitle);
+        }
     });
 });
+
+function pickFormationImage(title) {
+    var text = String(title || '').toLowerCase();
+
+    if (text.indexOf('mysql') !== -1 || text.indexOf('data') !== -1 || text.indexOf('sql') !== -1) {
+        return 'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=1200&q=80';
+    }
+
+    if (text.indexOf('ui') !== -1 || text.indexOf('ux') !== -1 || text.indexOf('design') !== -1) {
+        return 'https://images.unsplash.com/photo-1559028012-481c04fa702d?auto=format&fit=crop&w=1200&q=80';
+    }
+
+    if (text.indexOf('marketing') !== -1 || text.indexOf('content') !== -1) {
+        return 'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=1200&q=80';
+    }
+
+    if (text.indexOf('php') !== -1 || text.indexOf('mvc') !== -1 || text.indexOf('web') !== -1) {
+        return 'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?auto=format&fit=crop&w=1200&q=80';
+    }
+
+    return 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1200&q=80';
+}
+
+function renderFormationImagePreview(container, url, title) {
+    if (!container || !url) {
+        return;
+    }
+
+    container.innerHTML = '';
+    var image = document.createElement('img');
+    image.src = url;
+    image.alt = title || 'Apercu formation';
+    container.appendChild(image);
+}

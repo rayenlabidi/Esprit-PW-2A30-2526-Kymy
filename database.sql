@@ -171,7 +171,7 @@ CREATE TABLE `comments` (
 
 LOCK TABLES `comments` WRITE;
 /*!40000 ALTER TABLE `comments` DISABLE KEYS */;
-INSERT INTO `comments` VALUES (6,8,'You','YO','av-blue','HEYYYY',0,NULL,'2026-04-23 08:30:03'),(7,7,'You','YO','av-blue','heyy',0,NULL,'2026-04-23 09:01:49'),(8,8,'You','YO','av-blue','hhhhhhhhhhhh',0,NULL,'2026-04-23 09:10:00'),(9,8,'You','YO','av-blue','ggg',0,6,'2026-04-23 09:10:11'),(10,9,'You','YO','av-blue','hahahahahaha',1,NULL,'2026-04-25 11:24:41'),(11,9,'You','YO','av-blue','hahahahahaha',0,10,'2026-04-25 11:24:50'),(13,8,'Sarah K.','YO','av-blue','hh',0,6,'2026-04-25 16:44:16'),(14,7,'You','YO','av-blue','dddd',0,7,'2026-04-25 16:45:44'),(15,9,'You','YO','av-blue','heyy',0,10,'2026-04-25 16:57:10'),(16,9,'You','YO','av-blue','kkk',0,10,'2026-04-25 16:57:21');
+INSERT INTO `comments` VALUES (6,8,'Sami Freelancer','SF','av-blue','Je suis interesse, je peux envoyer mon portfolio aujourd hui.',0,NULL,'2026-04-23 08:30:03'),(7,7,'Lina Boss','LB','av-blue','Merci pour le partage, votre experience front-end est interessante.',0,NULL,'2026-04-23 09:01:49'),(8,8,'Equipe Workify','EW','av-blue','Pensez a completer votre profil avant de postuler.',0,NULL,'2026-04-23 09:10:00'),(9,8,'Aziz Messaoud','AM','av-blue','Je peux aider sur la partie SQL si besoin.',0,6,'2026-04-23 09:10:11'),(10,9,'Sami Freelancer','SF','av-blue','Bonne idee, je vais ajouter mes disponibilites.',1,NULL,'2026-04-25 11:24:41'),(11,9,'Lina Boss','LB','av-blue','Un portfolio clair fait vraiment la difference.',0,10,'2026-04-25 11:24:50'),(13,8,'Equipe Workify','EW','av-blue','Publication utile pour les nouveaux membres.',0,6,'2026-04-25 16:44:16'),(14,7,'Aziz Messaoud','AM','av-blue','Je confirme, les projets MVC sont tres demandes.',0,7,'2026-04-25 16:45:44'),(15,9,'Sami Freelancer','SF','av-blue','Disponible pour echanger cette semaine.',0,10,'2026-04-25 16:57:10'),(16,9,'Lina Boss','LB','av-blue','Merci, je vous contacte en message prive.',0,10,'2026-04-25 16:57:21');
 /*!40000 ALTER TABLE `comments` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -320,6 +320,7 @@ CREATE TABLE `formation` (
   `places` int(11) NOT NULL DEFAULT 20,
   `id_categorie` int(11) NOT NULL,
   `id_formateur` int(11) NOT NULL,
+  `image_url` longtext DEFAULT NULL,
   PRIMARY KEY (`id_formation`),
   KEY `fk_formation_categorie` (`id_categorie`),
   KEY `fk_formation_formateur` (`id_formateur`),
@@ -334,7 +335,7 @@ CREATE TABLE `formation` (
 
 LOCK TABLES `formation` WRITE;
 /*!40000 ALTER TABLE `formation` DISABLE KEYS */;
-INSERT INTO `formation` VALUES (1,'PHP MVC avec PDO','Objectif general : construire une application MVC simple avec PHP, OOP, PDO, validations JS et structure professor-friendly.','2026-05-02','2026-05-08',18,120.00,'Intermediaire','planifiee','Hybride',24,1,1),(2,'MySQL et jointures','Formation pratique sur les cles primaires, cles etrangeres, relations one-to-many et entites de jointure many-to-many.','2026-05-12','2026-05-14',9,80.00,'Debutant','planifiee','Presentiel',18,2,3),(3,'UI Workify Blue White','Ateliers pour creer des interfaces modernes et coherentes avec sidebar, header, cards et tables lisibles.','2026-05-20','2026-05-22',12,95.00,'Debutant','en_cours','En ligne',30,3,2);
+INSERT INTO `formation` VALUES (1,'PHP MVC avec PDO','Objectif general : construire une application MVC simple avec PHP, OOP, PDO, validations JS et structure professor-friendly.','2026-05-02','2026-05-08',18,120.00,'Intermediaire','planifiee','Hybride',24,1,1,'https://images.unsplash.com/photo-1461749280684-dccba630e2f6?auto=format&fit=crop&w=1200&q=80'),(2,'MySQL et jointures','Formation pratique sur les cles primaires, cles etrangeres, relations one-to-many et entites de jointure many-to-many.','2026-05-12','2026-05-14',9,80.00,'Debutant','planifiee','Presentiel',18,2,3,'https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=1200&q=80'),(3,'UI Workify Blue White','Ateliers pour creer des interfaces modernes et coherentes avec sidebar, header, cards et tables lisibles.','2026-05-20','2026-05-22',12,95.00,'Debutant','en_cours','En ligne',30,3,2,'https://images.unsplash.com/photo-1559028012-481c04fa702d?auto=format&fit=crop&w=1200&q=80');
 /*!40000 ALTER TABLE `formation` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -444,7 +445,7 @@ CREATE TABLE `messages` (
 
 LOCK TABLES `messages` WRITE;
 /*!40000 ALTER TABLE `messages` DISABLE KEYS */;
-INSERT INTO `messages` VALUES (4,'james_o','current_user','James Ortega','You','JO','YO','av-blue','av-blue',NULL,'Hey! Just checking in on the project status.',1,0,'2026-04-22 18:38:45','2026-04-22 19:12:48'),(5,'current_user','james_o','You','James Ortega','YO','JO','av-blue','av-blue',NULL,'Almost done! Will send by tomorrow.',1,0,'2026-04-22 18:38:45','2026-04-22 18:38:45'),(25,'leo_c','sarah_k','Leo Chen','Sarah K.','LC','SK','av-teal','av-blue',NULL,'heyyyyyyyyyyyyyyyyyy',1,0,'2026-04-25 13:25:20','2026-04-25 13:27:02'),(26,'sarah_k','leo_c','Sarah K.','Leo Chen','SK','LC','av-blue','av-teal',NULL,'hello there',1,0,'2026-04-25 13:27:06','2026-04-25 13:27:29');
+INSERT INTO `messages` VALUES (4,'3','2','Lina Boss','Sami Freelancer','LB','SF','av-blue','av-blue',NULL,'Bonjour Sami, votre profil correspond a notre mission React. Etes-vous disponible cette semaine ?',1,0,'2026-04-22 18:38:45','2026-05-13 11:30:23'),(5,'2','3','Sami Freelancer','Lina Boss','SF','LB','av-blue','av-blue',NULL,'Bonjour Lina, oui je suis disponible. Je peux envoyer mon portfolio et un court planning ce soir.',1,0,'2026-04-22 18:38:45','2026-05-13 11:30:23'),(25,'8','2','Aziz Messaoud','Sami Freelancer','AM','SF','av-teal','av-blue',NULL,'Salut Sami, tu peux me partager ton retour sur la structure MVC utilisee dans ton dernier projet ?',1,0,'2026-04-25 13:25:20','2026-05-13 11:30:23'),(26,'2','8','Sami Freelancer','Aziz Messaoud','SF','AM','av-blue','av-teal',NULL,'Bien sur Aziz, je te prepare un exemple propre avec modeles, controleurs et vues separes.',1,0,'2026-04-25 13:27:06','2026-05-13 11:30:23');
 /*!40000 ALTER TABLE `messages` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -478,7 +479,7 @@ CREATE TABLE `publication` (
 
 LOCK TABLES `publication` WRITE;
 /*!40000 ALTER TABLE `publication` DISABLE KEYS */;
-INSERT INTO `publication` VALUES (3,'other_user','Leo Chen','LC','Client','av-teal','We\'re hiring a senior React developer for a 3-month contract starting next month. Remote, competitive rate, interesting product in the logistics space.\r\n\r\nDrop your portfolio in the comments or DM me directly 👇\r\n\r\n#Hiring #ReactJS #Remote #Freelance',0,NULL,0,'2026-04-22 18:38:26','2026-04-25 16:56:24'),(4,'current_user','You','YO','Freelancer','av-blue','Welcome to Workify! Share your thoughts, projects, and opportunities with the community.',0,NULL,0,'2026-04-22 18:38:26','2026-04-25 16:56:01'),(5,'admin','mouhamed','MH','Client','av-purple','ssssssssssssssssssssssss',0,'',0,'2026-04-22 23:52:14','2026-04-25 16:56:01'),(7,'admin','deli','DL','Freelancer','av-teal','fddddddddddddddddddd',0,'',1,'2026-04-23 00:09:09','2026-04-25 16:45:40'),(8,'admin','OMAR','OM','Client','av-green','ASLEMA ENA OMAR',0,'',2,'2026-04-23 08:19:02','2026-04-25 16:57:25'),(9,'admin','raghed','RH','Client','av-pink','aslema ena raghed lmoghta',0,'',2,'2026-04-25 11:24:33','2026-04-25 16:57:04');
+INSERT INTO `publication` VALUES (3,'3','Lina Boss','LB','Client','av-teal','Nous cherchons un developpeur React disponible pour une mission de 3 mois. Le projet touche a la logistique, au suivi client et a la qualite des interfaces. Les profils avec portfolio peuvent nous contacter directement.',0,NULL,0,'2026-04-22 18:38:26','2026-05-13 11:30:23'),(4,'2','Sami Freelancer','SF','Freelancer','av-blue','Je viens de terminer une interface responsive pour un tableau de bord client. Disponible cette semaine pour des missions front-end, integration PHP MVC et amelioration UX.',0,NULL,0,'2026-04-22 18:38:26','2026-05-13 11:30:23'),(5,'1','Equipe Workify','EW','Client','av-purple','Bienvenue sur le feed Workify. Partagez vos opportunites, vos questions et vos disponibilites avec la communaute.',0,NULL,0,'2026-04-22 23:52:14','2026-05-13 11:30:23'),(7,'8','Aziz Messaoud','AM','Freelancer','av-teal','Disponible pour aider sur des formations web, creation de supports et correction de bugs PHP. Je peux aussi accompagner les apprenants sur SQL et MVC.',0,NULL,1,'2026-04-23 00:09:09','2026-05-13 11:30:23'),(8,'3','Lina Boss','LB','Client','av-green','Nous preparons une mission UI pour une startup locale. Besoin d un profil capable de transformer des maquettes simples en pages propres et animees.',0,NULL,2,'2026-04-23 08:19:02','2026-05-13 11:30:23'),(9,'2','Sami Freelancer','SF','Freelancer','av-pink','Conseil du jour: pour une candidature Workify, ajoutez un message court, un lien portfolio et une disponibilite claire. Cela aide les clients a repondre plus vite.',0,NULL,2,'2026-04-25 11:24:33','2026-05-13 11:30:23');
 /*!40000 ALTER TABLE `publication` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -585,4 +586,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-05-13  0:16:43
+-- Dump completed on 2026-05-13 12:30:31
