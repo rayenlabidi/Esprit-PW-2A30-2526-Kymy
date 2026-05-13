@@ -27,6 +27,7 @@ $links = [
     ['jobs', '#', 'Jobs', 'M10 4h4a2 2 0 0 1 2 2v2h4v12H4V8h4V6a2 2 0 0 1 2-2zm4 4V6h-4v2h4z'],
     ['publications', '../../feed/views/back/admin.php', 'Publication', 'M4 5h16v2H4V5zm0 6h16v2H4v-2zm0 6h10v2H4v-2z'],
     ['events', 'index.php?module=events&action=list', 'Evenement', 'M7 2h2v3h6V2h2v3h3v17H4V5h3V2zm11 8H6v10h12V10z'],
+    ['user-view', '../public/index.php', 'Vue utilisateur', 'M10 6 4 12l6 6v-4h10v-4H10V6z'],
     ['messages', '../../feed/views/back/admin_messages.php', 'Message', 'M4 4h16v12H7l-3 4V4z'],
     ['categories', 'index.php?module=categories&action=list', 'Categories', 'M3 5a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5z'],
     ['formations', '../../controller/FormationC.php?office=back&action=list', 'Formation', 'M4 4h16v14H7l-3 3V4zm4 4v2h8V8H8zm0 4v2h6v-2H8z'],
