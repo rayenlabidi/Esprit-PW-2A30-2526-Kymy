@@ -1,67 +1,274 @@
-# Workify — Système de gestion d'événements (v2)
+# Workify
 
-## Architecture MVC PHP
+## Overview
 
+Workify is a PHP/MySQL web platform developed as part of the Projet Web (PW) - 2A30 program at **Esprit School of Engineering - Tunisia** during the 2025-2026 academic year.
+
+The project provides one unified workspace for freelancers, trainers, recruiters and learners. It combines user management, jobs, formations, publications and messages in a single MVC-based application with a shared database and a consistent front-office/back-office template.
+
+## Table of Contents
+
+- [Features](#features)
+- [Tech Stack](#tech-stack)
+- [Architecture](#architecture)
+- [Database](#database)
+- [Getting Started](#getting-started)
+- [Mail Configuration](#mail-configuration)
+- [Usage](#usage)
+- [Security](#security)
+- [Deployment](#deployment)
+- [Contributors](#contributors)
+- [Academic Context](#academic-context)
+- [Acknowledgments](#acknowledgments)
+- [License](#license)
+
+## Features
+
+- Animated public home page with sections for services, about, projects, testimonials, contact and useful navigation.
+- Public account creation and login with a picture-based captcha.
+- Private back-office access protected by PHP sessions and role checks.
+- Unified users module based on the `utilisateurs` table.
+- Jobs module with job listing, details, applications and publisher relations.
+- Formations module with categories, trainers, inscription management and email receipts.
+- Publication and message modules integrated in the main MVC folders with the same Workify header, sidebar, typography and database.
+- Contact form with backend validation and database storage.
+- Forgot-password flow using email delivery through SMTP.
+- QR contact generation for users in the private users area.
+- Responsive layout for desktop, tablet and mobile.
+
+## Tech Stack
+
+### Frontend
+
+- HTML
+- CSS3
+- JavaScript
+- Responsive CSS layout
+- Lightweight motion and reveal animations
+- QR code JavaScript library
+
+### Backend
+
+- PHP
+- MySQL/MariaDB
+- PDO prepared statements
+- PHP sessions
+- SMTP mail sending
+
+### Tools
+
+- XAMPP
+- phpMyAdmin or MySQL CLI
+- Git and GitHub
+
+## Architecture
+
+The project follows an MVC-inspired structure:
+
+```text
+Workify/
+|-- assets/
+|   |-- css/
+|   `-- js/
+|-- controller/
+|   |-- AuthController.php
+|   |-- FormationC.php
+|   |-- JobC.php
+|   |-- MessageC.php
+|   |-- PublicationC.php
+|   |-- UtilisateurC.php
+|   `-- ...
+|-- Model/
+|   |-- formation.php
+|   |-- inscriptionFormation.php
+|   |-- job.php
+|   |-- message.php
+|   |-- publication.php
+|   |-- utilisateur.php
+|   `-- ...
+|-- view/
+|   |-- front/
+|   |-- users/
+|   |-- jobs/
+|   |-- formations/
+|   |-- messages/
+|   |-- publications/
+|   `-- includes/
+|-- config.php
+|-- database.sql
+`-- index.php
 ```
-workify/
-├── admin/                     ← Interface admin (index.php)
-├── public/                    ← Interface utilisateur (index.php)
-├── config/
-│   └── database.php           ← Singleton PDO
-├── Model/
-│   ├── Event.php
-│   └── EventCategory.php
-├── Controller/
-│   ├── AdminEventController.php      ← CRUD + tri + filtre catégorie
-│   ├── AdminCategoryController.php   ← CRUD + tri
-│   ├── AdminDashboardController.php  ← Statistiques avancées ★ NOUVEAU
-│   └── UserEventController.php       ← CRUD + tri + filtre catégorie
-└── View/
-    ├── shared/
-    │   ├── _sidebar.php         ← Sidebar admin réutilisable ★ NOUVEAU
-    │   ├── _nav.php             ← Nav public réutilisable ★ NOUVEAU
-    │   └── _styles_admin.php    ← CSS partagé admin ★ NOUVEAU
-    ├── admin/
-    │   ├── dashboard.php        ← Tableau de bord + 5 graphiques ★ NOUVEAU
-    │   ├── listEvent.php        ← Liste + tri + export PDF ★ AMÉLIORÉ
-    │   ├── listCategories.php   ← Liste + tri + barre % ★ AMÉLIORÉ
-    │   ├── eventForm.php        ★ AMÉLIORÉ
-    │   └── categoryForm.php     ★ AMÉLIORÉ
-    └── public/
-        ├── listEvents.php       ← Cartes + tri + filtre catégorie ★ AMÉLIORÉ
-        ├── eventDetail.php      ★ AMÉLIORÉ
-        └── eventForm.php        ★ AMÉLIORÉ
 
-## Fonctionnalités ajoutées (v2)
+Publications and messages are part of the main MVC structure. Their controllers live in `controller/`, their entities live in `Model/`, and their pages live in `view/`.
 
-### 🔗 Intégration User/Admin
-- Templates partagés : sidebar admin et nav public (partiels PHP)
-- Lien « Vue utilisateur » dans le panneau admin
-- Lien « ⚙️ Admin » dans la nav publique
-- Design tokens CSS unifiés
+## Database
 
-### 🔽 Tri (Sorting)
-- Admin & Public : tri par titre, date, statut, participants
-- En-têtes de colonnes cliquables avec indicateurs ↑ ↓ ↕
-- Paramètres GET : ?sort=title&order=asc
+The shared database is named `WORKIFY`.
 
-### 📊 Statistiques (Dashboard Admin)
-- KPIs : total, par statut, en ligne, capacité totale, catégories
-- Graphique donut : répartition par statut
-- Graphique bar : événements par catégorie
-- Graphique ligne : timeline mensuelle
-- Graphique donut : en ligne vs présentiel
-- Graphique bar horizontal : capacité par catégorie
-- Tableau des 5 derniers événements
-- Bibliothèque : Chart.js 4.4 (CDN)
+Main shared tables include:
 
-### 📄 Export PDF (Admin)
-- Export jsPDF + autoTable via CDN
-- En-tête colorée Workify, pied de page numéroté
-- Toutes les données visibles dans la liste courante
-- Respecte les filtres actifs
+- `roles`
+- `utilisateurs`
+- `jobs`
+- `candidatures`
+- `formation`
+- `categorie_formation`
+- `formateur`
+- `inscription_formation`
+- `publication`
+- `messages`
+- `contact_messages`
+- `event_categories`
+- `events`
 
-### 🔍 Filtres avancés
-- Filtre par statut (pills) + filtre par catégorie (select)
-- Combinables entre eux et avec la recherche
-- Indicateur « X résultats trouvés »
+The formations module now links inscriptions directly to `utilisateurs.id` through `inscription_formation.user_id`. This avoids duplicate user tables and keeps the users, jobs, formations, publications and messages modules on the same identity source.
+
+The SQL dump is available here:
+
+```text
+database.sql
+```
+
+## Getting Started
+
+### Prerequisites
+
+- XAMPP with Apache and MySQL enabled
+- PHP 8.x recommended
+- MySQL or MariaDB
+- A browser
+
+### Installation
+
+1. Clone or copy the project into the XAMPP web directory:
+
+```bash
+C:\xampp\htdocs\Workify
+```
+
+2. Start Apache and MySQL from the XAMPP control panel.
+
+3. Import the database:
+
+```bash
+mysql -u root < database.sql
+```
+
+You can also import `database.sql` through phpMyAdmin.
+
+4. Check the database connection in `config.php`:
+
+```php
+'mysql:host=localhost;dbname=WORKIFY'
+```
+
+If your local database is created with another name, update this value in `config.php`.
+
+5. Open the project in the browser:
+
+```text
+http://localhost/Workify/
+```
+
+If your folder name contains spaces, use the encoded URL generated by the browser, for example:
+
+```text
+http://localhost/workify%20main%20without%20events/
+```
+
+## Mail Configuration
+
+Email is used for:
+
+- Forgot-password messages
+- Formation registration receipts
+
+Create a local `config.local.php` file at the project root. This file is ignored by Git and must not be committed.
+
+```php
+<?php
+define('WORKIFY_MAIL_HOST', 'smtp.gmail.com');
+define('WORKIFY_MAIL_PORT', 587);
+define('WORKIFY_MAIL_USERNAME', 'your-gmail-address@gmail.com');
+define('WORKIFY_MAIL_PASSWORD', 'your-google-app-password');
+define('WORKIFY_MAIL_FROM', WORKIFY_MAIL_USERNAME);
+define('WORKIFY_MAIL_FROM_NAME', 'Workify');
+?>
+```
+
+Use a Google app password, not the normal Gmail password. The application automatically removes spaces from the app password before SMTP authentication.
+
+## Usage
+
+### Front Office
+
+- Open the home page.
+- Create an account or log in.
+- Browse jobs and submit a candidature.
+- Browse formations and submit an inscription request.
+- Receive a formation registration receipt by email.
+- Use publications and messages with the same account identity.
+- Use the contact section to send a message to the platform team.
+
+### Private Area
+
+- Log in with an account that has the private management role.
+- Manage users, jobs and formations.
+- View formation inscriptions.
+- Access user QR contact cards.
+- Access publication/message administration from the same private sidebar.
+
+## Security
+
+- Passwords are stored using `password_hash`.
+- Login checks use `password_verify`.
+- Database queries use PDO prepared statements.
+- Private pages are protected with PHP sessions.
+- Inputs are validated and sanitized on the backend.
+- Mail credentials must stay in `config.local.php`.
+- Public users cannot register for jobs or formations without logging in.
+
+## Deployment
+
+For a free classroom demo, the project can be hosted on a PHP/MySQL-compatible free host such as InfinityFree or AwardSpace. GitHub Pages is not enough for this project because it does not run PHP or MySQL.
+
+Deployment checklist:
+
+- Upload all project files except private local files.
+- Import `database.sql` into the hosting MySQL database.
+- Update database credentials in `config.php`.
+- Create a secure `config.local.php` on the server for SMTP.
+- Change all demo passwords before public deployment.
+- Test login, signup, forgot password, formations, jobs, publications and messages.
+
+## Contributors
+
+- Rayen Labidi - Workify integration , formations, database unification and MVC coordination.
+- Yassine Chaouachi - Users Management
+- Koussay Ftouhi - Feed and Messages management
+- Montassar Benrejeb - Jobs Management
+- Ranim Elleuch - Events Management
+- Workify Team - module development and academic project collaboration.
+
+## Academic Context
+
+This project was developed as part of the Projet Web (PW) - 2A30 program at **Esprit School of Engineering - Tunisia** for the academic year 2025-2026.
+
+Recommended GitHub repository topics:
+
+- `esprit-school-of-engineering`
+- `academic-project`
+- `esprit-pw`
+- `2025-2026`
+- `php`
+- `mysql`
+- `mvc`
+- `workify`
+
+## Acknowledgments
+
+Thanks to Esprit School of Engineering and the Projet Web teaching team for the academic supervision, technical guidance and integration requirements.
+
+## License
+
+This project is intended for academic use. Before public reuse or redistribution, define the final license with the project team and academic supervisor.

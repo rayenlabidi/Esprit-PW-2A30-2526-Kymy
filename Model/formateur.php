@@ -1,0 +1,56 @@
+<?php
+class formateur
+{
+    private $idFormateur;
+    private $nom;
+    private $email;
+    private $specialite;
+
+    public function __construct(string $nom, string $email, string $specialite)
+    {
+        $this->nom = $nom;
+        $this->email = $email;
+        $this->specialite = $specialite;
+    }
+
+    public function getIdFormateur()
+    {
+        return $this->idFormateur;
+    }
+
+    public function setIdFormateur($idFormateur)
+    {
+        $this->idFormateur = $idFormateur;
+    }
+
+    public function getNom()
+    {
+        return $this->nom;
+    }
+
+    public function setNom($nom)
+    {
+        $this->nom = $nom;
+    }
+
+    public function getEmail()
+    {
+        return $this->email;
+    }
+
+    public function setEmail($email)
+    {
+        $this->email = $email;
+    }
+
+    public function getSpecialite()
+    {
+        return $this->specialite;
+    }
+
+    public function setSpecialite($specialite)
+    {
+        $this->specialite = $specialite;
+    }
+}
+?>
