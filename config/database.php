@@ -1,6 +1,11 @@
 <?php
 // config/database.php
 
+$rootConfig = dirname(__DIR__, 2) . '/config.php';
+if (file_exists($rootConfig)) {
+    require_once $rootConfig;
+}
+
 class Database
 {
     private static ?Database $instance = null;
@@ -8,11 +13,11 @@ class Database
 
     private function __construct()
     {
-        $host    = 'localhost';
-        $dbname  = 'workify_db';
-        $user    = 'root';
-        $pass    = '';
-        $charset = 'utf8mb4';
+        $host    = defined('WORKIFY_DB_HOST') ? WORKIFY_DB_HOST : (getenv('WORKIFY_DB_HOST') ?: 'localhost');
+        $dbname  = defined('WORKIFY_DB_NAME') ? WORKIFY_DB_NAME : (getenv('WORKIFY_DB_NAME') ?: 'workify');
+        $user    = defined('WORKIFY_DB_USERNAME') ? WORKIFY_DB_USERNAME : (getenv('WORKIFY_DB_USERNAME') ?: 'root');
+        $pass    = defined('WORKIFY_DB_PASSWORD') ? WORKIFY_DB_PASSWORD : (getenv('WORKIFY_DB_PASSWORD') ?: '');
+        $charset = defined('WORKIFY_DB_CHARSET') ? WORKIFY_DB_CHARSET : (getenv('WORKIFY_DB_CHARSET') ?: 'utf8mb4');
 
         $dsn = "mysql:host=$host;dbname=$dbname;charset=$charset";
 

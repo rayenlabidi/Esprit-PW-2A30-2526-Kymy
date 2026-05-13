@@ -3,6 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="../public/assets/workify-template.css">
 <title>Workify Admin — <?= isset($category)?'Modifier':'Créer' ?> une Catégorie</title>
 <?php require BASE_PATH . '/View/shared/_styles_admin.php'; ?>
 <style>
@@ -23,6 +29,19 @@ textarea{resize:vertical;min-height:100px;}
 .field-error.show{display:block;}
 input.invalid,textarea.invalid{border-color:var(--danger);}
 .form-footer{display:flex;justify-content:flex-end;gap:10px;padding-top:16px;border-top:1px solid var(--border);}
+
+/* Reference template skin for this admin form */
+.form-wrap{max-width:680px;}
+.form-card{background:rgba(255,255,255,.88);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.65);border-radius:26px;box-shadow:0 24px 60px rgba(15,23,42,.10);}
+.form-header{background:linear-gradient(135deg,rgba(29,78,216,.94),rgba(15,118,110,.90)),url('https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&w=1200&q=80') center/cover;padding:32px;}
+.form-header-icon{width:54px;height:54px;border-radius:18px;background:rgba(255,255,255,.18);display:grid;place-items:center;font-size:1.45rem;}
+.form-header h1{font-size:1.6rem;font-weight:800;margin:0;letter-spacing:0;}
+.form-header p{font-size:.96rem;opacity:.82;margin:4px 0 0;}
+.form-body{padding:32px;}
+.form-group{gap:8px;margin-bottom:20px;}
+label{font-size:.9rem;font-weight:800;}
+input[type="text"],textarea{padding:13px 16px;border:1px solid var(--border);border-radius:14px;font-size:.94rem;background:rgba(255,255,255,.94);}
+input:focus,textarea:focus{border-color:rgba(37,99,235,.7);box-shadow:0 0 0 4px rgba(37,99,235,.12);}
 </style>
 </head>
 <body>
@@ -68,6 +87,7 @@ input.invalid,textarea.invalid{border-color:var(--danger);}
     </div>
   </main>
 </div>
+<script src="../public/assets/workify-template.js"></script>
 <script>
 (function(){
   function vf(id,err,fn){var el=document.getElementById(id);var v=el.value.trim();if(!fn(v)){el.classList.add('invalid');document.getElementById(err).classList.add('show');return false;}el.classList.remove('invalid');document.getElementById(err).classList.remove('show');return true;}

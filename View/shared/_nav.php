@@ -1,49 +1,44 @@
 <?php
 /**
- * View/shared/_nav.php
- * Barre de navigation partagée côté public.
- * Variable attendue : $activeNav (string)
+ * Public Workify shell for the Events module.
+ * Keep this file layout-only so event pages can be merged independently.
  */
 $activeNav = $activeNav ?? 'events';
+
+if (!function_exists('workifyIcon')) {
+    function workifyIcon(string $path): string
+    {
+        return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="' . htmlspecialchars($path, ENT_QUOTES) . '"/></svg>';
+    }
+}
+
+$publicLinks = [
+    ['key' => 'jobs', 'label' => 'Jobs', 'href' => '#', 'icon' => 'M10 4h4a2 2 0 0 1 2 2v2h4v12H4V8h4V6a2 2 0 0 1 2-2zm4 4V6h-4v2h4z'],
+    ['key' => 'publications', 'label' => 'Publication', 'href' => '../../feed/public/index.php', 'icon' => 'M4 5h16v2H4V5zm0 6h16v2H4v-2zm0 6h10v2H4v-2z'],
+    ['key' => 'events', 'label' => 'Evenement', 'href' => 'index.php', 'icon' => 'M7 2h2v3h6V2h2v3h3v17H4V5h3V2zm11 8H6v10h12V10z'],
+    ['key' => 'calendar', 'label' => 'Calendrier', 'href' => 'index.php?action=calendar', 'icon' => 'M5 4h1V2h2v2h8V2h2v2h1a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm14 7H5v9h14v-9z'],
+    ['key' => 'formations', 'label' => 'Formation', 'href' => '../../controller/FormationC.php?office=front&action=list', 'icon' => 'M4 4h16v14H7l-3 3V4zm4 4v2h8V8H8zm0 4v2h6v-2H8z'],
+];
 ?>
-<nav class="pub-nav">
-  <a href="index.php" class="pub-brand">Work<span>ify</span></a>
-  <div class="pub-nav-links">
-    <a href="index.php" class="<?= $activeNav==='events'?'active':'' ?>">📋 Événements</a>
-    <a href="index.php?action=calendar" class="<?= $activeNav==='calendar'?'active':'' ?>">📅 Calendrier</a>
-    <a href="#" class="<?= $activeNav==='jobs'?'active':'' ?>">💼 Jobs</a>
-    <a href="#" class="<?= $activeNav==='formations'?'active':'' ?>">🎓 Formations</a>
-    <div class="pub-nav-sep"></div>
-    <a href="index.php?action=create" class="pub-btn-create">＋ Créer un événement</a>
-    <a href="../admin/index.php" class="pub-btn-admin" target="_blank" title="Interface admin">⚙️</a>
-  </div>
-</nav>
-<style>
-.pub-nav {
-  background: #fff;
-  border-bottom: 1px solid #e5e7eb;
-  padding: 0 32px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: 64px;
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  box-shadow: 0 2px 12px rgba(108,99,255,.07);
-}
-.pub-brand { font-size: 1.4rem; font-weight: 800; color: #6c63ff; text-decoration: none; }
-.pub-brand span { color: #ff6584; }
-.pub-nav-links { display: flex; gap: 6px; align-items: center; }
-.pub-nav-links a { text-decoration: none; color: #6b7280; font-size: .88rem; font-weight: 500; transition: .18s; padding: 6px 10px; border-radius: 7px; }
-.pub-nav-links a:hover, .pub-nav-links a.active { color: #6c63ff; background: #f0eeff; }
-.pub-nav-sep { width: 1px; height: 20px; background: #e5e7eb; margin: 0 6px; }
-.pub-btn-create { background: #6c63ff !important; color: #fff !important; padding: 8px 16px !important; border-radius: 8px !important; font-weight: 700 !important; }
-.pub-btn-create:hover { background: #574fd6 !important; }
-.pub-btn-admin { background: #f4f3ff !important; color: #6c63ff !important; border: 1.5px solid #ddd8ff !important; padding: 7px 12px !important; border-radius: 8px !important; font-size:.95rem !important; }
-.pub-btn-admin:hover { background: #6c63ff !important; color: #fff !important; }
-@media(max-width:600px) {
-  .pub-nav { padding: 0 16px; }
-  .pub-nav-links a:not(.pub-btn-create):not(.pub-btn-admin) { display: none; }
-}
-</style>
+<header class="public-header events-public-header">
+    <a class="public-brand" href="../../controller/HomeC.php">
+        <span class="brand-mark brand-briefcase" aria-hidden="true">
+            <?= workifyIcon('M10 5h4a2 2 0 0 1 2 2v2h4v10H4V9h4V7a2 2 0 0 1 2-2zm4 4V7h-4v2h4zm-8 4v4h12v-4h-3v2H9v-2H6z'); ?>
+        </span>
+        <span class="brand-text">Workify</span>
+    </a>
+
+    <nav class="public-nav" aria-label="Navigation principale">
+        <?php foreach ($publicLinks as $link): ?>
+            <a class="<?= $activeNav === $link['key'] ? 'active' : ''; ?>" data-module="<?= htmlspecialchars($link['key'], ENT_QUOTES); ?>" href="<?= htmlspecialchars($link['href'], ENT_QUOTES); ?>">
+                <?= workifyIcon($link['icon']); ?>
+                <?= htmlspecialchars($link['label'], ENT_QUOTES); ?>
+            </a>
+        <?php endforeach; ?>
+    </nav>
+
+    <div class="public-actions">
+        <a class="btn" href="index.php?action=create"><?= workifyIcon('M12 5v14m-7-7h14'); ?> Creer</a>
+        <a class="btn btn-primary" href="../admin/index.php"><?= workifyIcon('M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm8.7 4a7.9 7.9 0 0 0-.2-1.7l2-1.5-2-3.4-2.4 1a8 8 0 0 0-1.5-.9L16.3 3h-4l-.4 2.5a8 8 0 0 0-1.5.9l-2.4-1-2 3.4 2 1.5A7.9 7.9 0 0 0 7.8 12c0 .6.1 1.2.2 1.7l-2 1.5 2 3.4 2.4-1c.5.4 1 .7 1.5.9l.4 2.5h4l.4-2.5c.5-.2 1-.5 1.5-.9l2.4 1 2-3.4-2-1.5c.1-.5.2-1.1.2-1.7z'); ?> Admin</a>
+    </div>
+</header>

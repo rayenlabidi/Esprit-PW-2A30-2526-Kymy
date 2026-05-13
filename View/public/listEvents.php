@@ -3,236 +3,213 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Workify — Événements</title>
+<title>Workify - Evenements</title>
+<link rel="stylesheet" href="assets/workify-template.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-:root{
-  --primary:#6c63ff;--primary-dark:#574fd6;--accent:#ff6584;
-  --success:#22c55e;--warning:#f59e0b;--danger:#ef4444;--info:#3b82f6;
-  --bg:#f4f3ff;--surface:#fff;--border:#e5e7eb;--text:#1e1b4b;--muted:#6b7280;
-  --radius:14px;--shadow:0 4px 24px rgba(108,99,255,.09);
-}
-body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
-
-/* Hero */
-.hero{background:linear-gradient(135deg,var(--primary) 0%,#4338ca 100%);color:#fff;text-align:center;padding:60px 24px 80px;}
-.hero h1{font-size:2.4rem;font-weight:800;margin-bottom:10px;}
-.hero p{font-size:1rem;opacity:.85;max-width:480px;margin:0 auto 28px;}
-.hero-search{display:flex;max-width:500px;margin:0 auto;background:#fff;border-radius:50px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.18);}
-.hero-search input{flex:1;border:none;outline:none;padding:14px 20px;font-size:.95rem;color:var(--text);}
-.hero-search button{background:var(--accent);border:none;color:#fff;padding:14px 24px;font-weight:700;font-size:.9rem;cursor:pointer;transition:.2s;white-space:nowrap;}
-.hero-search button:hover{opacity:.88;}
-
-/* Container */
-.container{max-width:1120px;margin:0 auto;padding:36px 24px;}
-
-/* Stats strip */
-.stats-strip{display:flex;gap:10px;margin-bottom:28px;flex-wrap:wrap;}
-.stat-pill{background:var(--surface);border-radius:50px;padding:7px 18px;font-size:.82rem;font-weight:600;box-shadow:var(--shadow);display:flex;align-items:center;gap:8px;}
-.dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
-.dot-upcoming{background:var(--info);}.dot-ongoing{background:var(--success);}.dot-completed{background:var(--muted);}.dot-cancelled{background:var(--danger);}
-
-/* Toolbar */
-.pub-toolbar{display:flex;gap:10px;margin-bottom:22px;flex-wrap:wrap;align-items:center;}
-.filter-btn{padding:7px 16px;border-radius:50px;font-size:.8rem;font-weight:600;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;text-decoration:none;color:var(--text);transition:.18s;}
-.filter-btn:hover,.filter-btn.active{background:var(--primary);color:#fff;border-color:var(--primary);}
-.filter-select{padding:7px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:.83rem;outline:none;cursor:pointer;background:var(--surface);color:var(--text);}
-.filter-select:focus{border-color:var(--primary);}
-.sort-select{padding:7px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:.83rem;outline:none;background:var(--surface);color:var(--text);cursor:pointer;}
-
-/* Grid */
-.cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:22px;}
-.card{background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column;transition:transform .2s,box-shadow .2s;}
-.card:hover{transform:translateY(-4px);box-shadow:0 14px 44px rgba(108,99,255,.15);}
-.card-img{width:100%;height:180px;background:linear-gradient(135deg,#ede9fe,#c7d2fe);display:flex;align-items:center;justify-content:center;font-size:3rem;position:relative;overflow:hidden;}
-.card-img img{width:100%;height:100%;object-fit:cover;}
-.card-img-badge{position:absolute;top:10px;right:10px;}
-.card-body{padding:18px;flex:1;display:flex;flex-direction:column;gap:8px;}
-.card-category{font-size:.72rem;font-weight:700;color:var(--primary);text-transform:uppercase;letter-spacing:.5px;}
-.card-title{font-size:1.02rem;font-weight:700;line-height:1.35;}
-.card-meta{display:flex;flex-direction:column;gap:3px;font-size:.8rem;color:var(--muted);}
-.card-meta span{display:flex;align-items:center;gap:5px;}
-.card-desc{font-size:.82rem;color:var(--muted);line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
-.card-footer{padding:14px 18px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px;}
-.badge{display:inline-block;padding:3px 10px;border-radius:50px;font-size:.72rem;font-weight:700;}
-.badge-upcoming{background:#dbeafe;color:#1d4ed8;}.badge-ongoing{background:#dcfce7;color:#15803d;}
-.badge-completed{background:#f3f4f6;color:#6b7280;}.badge-cancelled{background:#fee2e2;color:#b91c1c;}
-.badge-online{background:#ede9fe;color:#7c3aed;}.badge-onsite{background:#fef3c7;color:#b45309;}
-.btn-detail{display:inline-flex;align-items:center;gap:5px;padding:7px 16px;background:var(--primary);color:#fff;border-radius:8px;font-size:.82rem;font-weight:600;text-decoration:none;transition:.18s;}
-.btn-detail:hover{background:var(--primary-dark);}
-.card-actions{display:flex;gap:5px;}
-.btn-sm-action{display:inline-flex;align-items:center;padding:7px 10px;border-radius:7px;font-size:.82rem;font-weight:600;text-decoration:none;border:none;cursor:pointer;transition:.18s;}
-.btn-edit-pub{background:#f0eeff;color:var(--primary);}.btn-edit-pub:hover{background:var(--primary);color:#fff;}
-.btn-del-pub{background:#fee2e2;color:var(--danger);}.btn-del-pub:hover{background:var(--danger);color:#fff;}
-
-.empty{text-align:center;padding:80px 20px;color:var(--muted);}
-.empty-icon{font-size:3rem;margin-bottom:12px;}
-.alert{padding:12px 18px;border-radius:8px;margin-bottom:18px;font-size:.88rem;font-weight:500;}
-.alert-success{background:#dcfce7;color:#166534;}.alert-error{background:#fee2e2;color:#991b1b;}
-footer{text-align:center;padding:36px 24px;color:var(--muted);font-size:.8rem;border-top:1px solid var(--border);margin-top:40px;}
-@media(max-width:600px){.hero h1{font-size:1.7rem;}.cards-grid{grid-template-columns:1fr;}}
+.event-stats-row{display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin:30px 0 24px}
+.event-stat-pill{display:inline-flex;align-items:center;gap:10px;min-height:58px;padding:0 26px;border-radius:22px;background:rgba(255,255,255,.9);border:1px solid rgba(219,229,243,.96);box-shadow:0 18px 34px rgba(15,23,42,.07);font-weight:850;color:#111827}
+.event-stat-pill.total{margin-left:auto}
+.stat-dot{width:12px;height:12px;border-radius:999px;display:inline-block}
+.dot-upcoming{background:#2f66f5}.dot-ongoing{background:#0f766e}.dot-completed{background:#64748b}.dot-cancelled{background:#ef4444}
+.filters-panel{padding:26px;border-radius:26px;background:rgba(255,255,255,.86);border:1px solid rgba(219,229,243,.96);box-shadow:0 20px 45px rgba(37,87,217,.08);margin-bottom:28px}
+.filter-status-row,.filter-control-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.filter-control-row{margin-top:16px}
+.filter-chip,.filter-select-pill{min-height:54px;display:inline-flex;align-items:center;gap:9px;padding:0 22px;border-radius:999px;border:1px solid #dbe5f3;background:rgba(255,255,255,.96);color:#0f172a;font-weight:850;text-decoration:none;box-shadow:0 10px 22px rgba(15,23,42,.04);transition:.2s ease}
+.filter-chip:hover,.filter-select-pill:hover{transform:translateY(-1px);border-color:rgba(47,102,245,.42);color:#2f66f5}
+.filter-chip.active{background:#2f66f5;color:#fff;border-color:#2f66f5;box-shadow:0 14px 28px rgba(47,102,245,.24)}
+.filter-ico{font-size:1rem;line-height:1}
+.filter-select-pill{position:relative;padding:0 18px;min-width:260px}
+.filter-select-pill select{width:100%;height:52px;border:0;background:transparent;font:inherit;font-weight:850;color:inherit;outline:none;padding-left:4px;cursor:pointer}
+.filter-order{min-width:160px;justify-content:center}
+.filter-spacer{flex:1}
+.event-card{display:grid;grid-template-rows:auto 1fr;min-height:100%;transition:transform .2s ease,box-shadow .2s ease}
+.event-card:hover{transform:translateY(-3px);box-shadow:0 22px 48px rgba(15,23,42,.1)}
+.event-card .course-media{min-height:190px;position:relative}
+.event-card .course-media::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(15,23,42,0),rgba(15,23,42,.48))}
+.event-status-chip{position:absolute;right:14px;top:14px;z-index:1;background:rgba(255,255,255,.92);backdrop-filter:blur(12px)}
+.event-card-title{margin:14px 0 8px;font-size:1.08rem;line-height:1.35}
+.event-card-desc{min-height:50px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.event-meta-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:18px 0}
+.event-meta-item{display:flex;gap:9px;align-items:flex-start;padding:11px;border-radius:14px;background:#f7faff}
+.event-meta-item i{color:var(--brand);width:16px;text-align:center;margin-top:2px}
+.event-meta-item span{display:block;color:var(--ink-500);font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.04em}
+.event-meta-item strong{display:block;color:var(--ink-950);font-size:.84rem;line-height:1.35}
+.event-actions{justify-content:space-between;border-top:1px solid var(--line);padding-top:16px}
+@media(max-width:640px){.event-meta-grid{grid-template-columns:1fr}.event-actions{justify-content:flex-start}.event-stat-pill.total{margin-left:0}.filter-select-pill{min-width:100%;width:100%}}
 </style>
 </head>
 <body>
 
 <?php $activeNav = 'events'; require BASE_PATH . '/View/shared/_nav.php'; ?>
 
-<!-- Hero -->
-<div class="hero">
-  <h1>Découvrez nos Événements</h1>
-  <p>Workshops, conférences, meetups — restez connecté aux opportunités professionnelles.</p>
-  <form class="hero-search" action="index.php" method="GET">
-    <input type="hidden" name="action" value="search">
-    <input type="text" name="q" placeholder="Rechercher un événement…" value="<?= htmlspecialchars($_GET['q']??'') ?>">
-    <button type="submit">🔍 Rechercher</button>
-  </form>
-</div>
-
-<div class="container">
-  <?php if(!empty($_GET['success'])): ?>
-    <div class="alert alert-success">✅ <?= match($_GET['success']){'created'=>'Événement créé.','updated'=>'Événement mis à jour.','deleted'=>'Événement supprimé.',default=>'OK.'} ?></div>
-  <?php endif; ?>
-  <?php if(!empty($_GET['error'])): ?>
-    <div class="alert alert-error">❌ Événement introuvable.</div>
-  <?php endif; ?>
-
-  <!-- Stats strip -->
-  <?php
-    $statLabels=['upcoming'=>'À venir','ongoing'=>'En cours','completed'=>'Terminés','cancelled'=>'Annulés'];
-    $stats=$stats??['upcoming'=>0,'ongoing'=>0,'completed'=>0,'cancelled'=>0];
-  ?>
-  <div class="stats-strip">
-    <?php foreach($statLabels as $key=>$label): ?>
-      <div class="stat-pill"><span class="dot dot-<?= $key ?>"></span><?= $stats[$key]??0 ?> <?= $label ?></div>
-    <?php endforeach; ?>
-    <div class="stat-pill" style="margin-left:auto;"><span>📅</span><?= array_sum($stats) ?> total</div>
-  </div>
-
-  <!-- Toolbar -->
-  <?php
-    $currentSort   = $_GET['sort']     ?? 'event_date';
-    $currentOrder  = $_GET['order']    ?? 'desc';
-    $currentStatus = $_GET['status']   ?? '';
-    $currentCat    = $_GET['category'] ?? '';
-    $currentQ      = $_GET['q']        ?? '';
-    $currentAction = $_GET['action']   ?? 'list';
-    $categories    = $categories ?? [];
-  ?>
-  <div class="pub-toolbar">
-    <!-- Filtre statut -->
-    <a href="index.php?action=list&sort=<?= $currentSort ?>&order=<?= $currentOrder ?>"
-       class="filter-btn <?= ($currentAction==='list'&&!$currentStatus)?'active':'' ?>">Tous</a>
-    <?php foreach(['upcoming'=>'🔜 À venir','ongoing'=>'▶️ En cours','completed'=>'✅ Terminés','cancelled'=>'❌ Annulés'] as $s=>$lbl): ?>
-      <a href="index.php?action=filter&status=<?= $s ?>&sort=<?= $currentSort ?>&order=<?= $currentOrder ?>&category=<?= $currentCat ?>"
-         class="filter-btn <?= $currentStatus===$s?'active':'' ?>"><?= $lbl ?></a>
-    <?php endforeach; ?>
-
-    <!-- Filtre catégorie -->
-    <form method="GET" action="index.php" style="margin-left:auto;">
-      <input type="hidden" name="action" value="filter">
-      <input type="hidden" name="status" value="<?= htmlspecialchars($currentStatus) ?>">
-      <input type="hidden" name="sort" value="<?= htmlspecialchars($currentSort) ?>">
-      <input type="hidden" name="order" value="<?= htmlspecialchars($currentOrder) ?>">
-      <select name="category" class="filter-select" onchange="this.form.submit()">
-        <option value="">📁 Toutes catégories</option>
-        <?php foreach($categories as $cat): ?>
-          <option value="<?= $cat['id'] ?>" <?= $currentCat==$cat['id']?'selected':'' ?>><?= htmlspecialchars($cat['name']) ?></option>
+<main class="page-shell">
+  <div class="container">
+    <section class="hero">
+      <div>
+        <span class="eyebrow">Evenements Workify</span>
+        <h1>Decouvrez nos evenements professionnels.</h1>
+        <p class="hero-text">Workshops, conferences et meetups pour rester connecte aux opportunites professionnelles.</p>
+        <form class="hero-actions" action="index.php" method="GET">
+          <input type="hidden" name="action" value="search">
+          <input class="form-control" type="text" name="q" placeholder="Rechercher un evenement..." value="<?= htmlspecialchars($_GET['q'] ?? '') ?>">
+          <button type="submit" class="btn btn-primary">Rechercher</button>
+        </form>
+      </div>
+      <div class="hero-panel">
+        <?php
+          $stats = $stats ?? ['upcoming'=>0,'ongoing'=>0,'completed'=>0,'cancelled'=>0];
+          $heroStats = [
+            ['A venir', $stats['upcoming'] ?? 0],
+            ['En cours', $stats['ongoing'] ?? 0],
+            ['Termines', $stats['completed'] ?? 0],
+            ['Annules', $stats['cancelled'] ?? 0],
+          ];
+        ?>
+        <?php foreach ($heroStats as [$label, $value]): ?>
+          <div class="mini-card">
+            <span class="stat-label"><?= htmlspecialchars($label) ?></span>
+            <strong style="display:block;font-size:2rem;margin-top:6px;"><?= (int)$value ?></strong>
+          </div>
         <?php endforeach; ?>
-      </select>
-    </form>
+      </div>
+    </section>
 
-    <!-- Tri -->
-    <form method="GET" action="index.php">
-      <input type="hidden" name="action" value="<?= htmlspecialchars($currentAction) ?>">
-      <input type="hidden" name="status" value="<?= htmlspecialchars($currentStatus) ?>">
-      <input type="hidden" name="category" value="<?= htmlspecialchars($currentCat) ?>">
-      <input type="hidden" name="q" value="<?= htmlspecialchars($currentQ) ?>">
-      <select name="sort" class="sort-select" onchange="
-        var o = this.form.querySelector('[name=order]');
-        o.value = 'asc';
-        this.form.submit();">
-        <option value="event_date" <?= $currentSort==='event_date'?'selected':'' ?>>📅 Trier par date</option>
-        <option value="title"       <?= $currentSort==='title'?'selected':'' ?>>🔤 Trier par titre</option>
-        <option value="max_participants" <?= $currentSort==='max_participants'?'selected':'' ?>>👥 Participants</option>
-        <option value="status"      <?= $currentSort==='status'?'selected':'' ?>>🏷 Statut</option>
-      </select>
-      <input type="hidden" name="order" value="<?= htmlspecialchars($currentOrder) ?>">
-    </form>
+    <?php if (!empty($_GET['success'])): ?>
+      <div class="flash flash-success"><?= match($_GET['success']) { 'created'=>'Evenement cree.','updated'=>'Evenement mis a jour.','deleted'=>'Evenement supprime.', default=>'Operation reussie.' } ?></div>
+    <?php endif; ?>
+    <?php if (!empty($_GET['error'])): ?>
+      <div class="flash flash-error">Evenement introuvable.</div>
+    <?php endif; ?>
 
-    <!-- Ordre -->
-    <a href="index.php?<?= http_build_query(array_merge($_GET,['order'=>$currentOrder==='asc'?'desc':'asc'])) ?>"
-       class="filter-btn" title="Inverser l'ordre">
-      <?= $currentOrder==='asc'?'↑ Croissant':'↓ Décroissant' ?>
-    </a>
-  </div>
+    <?php
+      $currentSort   = $_GET['sort']     ?? 'event_date';
+      $currentOrder  = $_GET['order']    ?? 'desc';
+      $currentStatus = $_GET['status']   ?? '';
+      $currentCat    = $_GET['category'] ?? '';
+      $currentQ      = $_GET['q']        ?? '';
+      $currentAction = $_GET['action']   ?? 'list';
+      $categories    = $categories ?? [];
+    ?>
 
-  <!-- Résumé -->
-  <div style="font-size:.8rem;color:var(--muted);margin-bottom:14px;">
-    <?= count($events) ?> événement<?= count($events)>1?'s':'' ?>
-    <?php if($currentQ): ?> — Recherche : «&nbsp;<?= htmlspecialchars($currentQ) ?>&nbsp;»<?php endif; ?>
-    <?php if($currentStatus): ?> — Statut : <b><?= ucfirst($currentStatus) ?></b><?php endif; ?>
-    <?php if($currentQ||$currentStatus||$currentCat): ?>
-      — <a href="index.php?action=list" style="color:var(--primary);">Effacer les filtres</a>
+    <div class="event-stats-row">
+      <span class="event-stat-pill"><span class="stat-dot dot-upcoming"></span><?= (int)($stats['upcoming'] ?? 0) ?> A venir</span>
+      <span class="event-stat-pill"><span class="stat-dot dot-ongoing"></span><?= (int)($stats['ongoing'] ?? 0) ?> En cours</span>
+      <span class="event-stat-pill"><span class="stat-dot dot-completed"></span><?= (int)($stats['completed'] ?? 0) ?> Termines</span>
+      <span class="event-stat-pill"><span class="stat-dot dot-cancelled"></span><?= (int)($stats['cancelled'] ?? 0) ?> Annules</span>
+      <span class="event-stat-pill total"><span class="filter-ico">🗓️</span><?= array_sum($stats) ?> total</span>
+    </div>
+
+    <section class="filters-panel">
+      <div class="filter-status-row">
+        <a href="index.php?action=list&sort=<?= urlencode($currentSort) ?>&order=<?= urlencode($currentOrder) ?>&category=<?= urlencode($currentCat) ?>&q=<?= urlencode($currentQ) ?>"
+           class="filter-chip <?= ($currentAction === 'list' && !$currentStatus) ? 'active' : '' ?>">Tous</a>
+        <?php foreach(['upcoming'=>'↪️ A venir','ongoing'=>'▶️ En cours','completed'=>'✅ Termines','cancelled'=>'❌ Annules'] as $s=>$lbl): ?>
+          <a href="index.php?action=filter&status=<?= $s ?>&sort=<?= urlencode($currentSort) ?>&order=<?= urlencode($currentOrder) ?>&category=<?= urlencode($currentCat) ?>&q=<?= urlencode($currentQ) ?>"
+             class="filter-chip <?= $currentStatus === $s ? 'active' : '' ?>"><?= $lbl ?></a>
+        <?php endforeach; ?>
+      </div>
+
+      <div class="filter-control-row">
+        <form method="GET" action="index.php" class="filter-select-pill">
+          <span class="filter-ico">📁</span>
+          <input type="hidden" name="action" value="filter">
+          <input type="hidden" name="status" value="<?= htmlspecialchars($currentStatus) ?>">
+          <input type="hidden" name="sort" value="<?= htmlspecialchars($currentSort) ?>">
+          <input type="hidden" name="order" value="<?= htmlspecialchars($currentOrder) ?>">
+          <input type="hidden" name="q" value="<?= htmlspecialchars($currentQ) ?>">
+          <select name="category" onchange="this.form.submit()">
+            <option value="">Toutes categories</option>
+            <?php foreach($categories as $cat): ?>
+              <option value="<?= $cat['id'] ?>" <?= $currentCat == $cat['id'] ? 'selected' : '' ?>><?= htmlspecialchars($cat['name']) ?></option>
+            <?php endforeach; ?>
+          </select>
+        </form>
+
+        <form method="GET" action="index.php" class="filter-select-pill">
+          <span class="filter-ico">🗓️</span>
+          <input type="hidden" name="action" value="<?= htmlspecialchars($currentAction) ?>">
+          <input type="hidden" name="status" value="<?= htmlspecialchars($currentStatus) ?>">
+          <input type="hidden" name="category" value="<?= htmlspecialchars($currentCat) ?>">
+          <input type="hidden" name="order" value="<?= htmlspecialchars($currentOrder) ?>">
+          <input type="hidden" name="q" value="<?= htmlspecialchars($currentQ) ?>">
+          <select name="sort" onchange="this.form.submit()">
+            <option value="event_date" <?= $currentSort === 'event_date' ? 'selected' : '' ?>>Trier par date</option>
+            <option value="title" <?= $currentSort === 'title' ? 'selected' : '' ?>>Trier par titre</option>
+            <option value="max_participants" <?= $currentSort === 'max_participants' ? 'selected' : '' ?>>Participants</option>
+            <option value="status" <?= $currentSort === 'status' ? 'selected' : '' ?>>Statut</option>
+          </select>
+        </form>
+
+        <a class="filter-chip filter-order" href="index.php?<?= http_build_query(array_merge($_GET, ['order' => $currentOrder === 'asc' ? 'desc' : 'asc'])) ?>">
+          <?= $currentOrder === 'asc' ? '↑ Croissant' : '↓ Decroissant' ?>
+        </a>
+      </div>
+
+      <?php if ($currentQ || $currentStatus || $currentCat): ?>
+        <div style="margin-top:14px;">
+          <a class="ghost-link" href="index.php?action=list">Effacer les filtres</a>
+        </div>
+      <?php endif; ?>
+    </section>
+
+    <div class="section-head">
+      <div>
+        <span class="eyebrow">Catalogue</span>
+        <h2><?= count($events) ?> evenement<?= count($events) > 1 ? 's' : '' ?></h2>
+      </div>
+      <a href="index.php?action=create" class="btn btn-primary">Nouvel evenement</a>
+    </div>
+
+    <?php if (empty($events)): ?>
+      <section class="section-card empty-card">
+        <p class="empty-copy">Aucun evenement trouve.</p>
+      </section>
+    <?php else: ?>
+      <section class="card-grid">
+        <?php foreach ($events as $e): ?>
+          <article class="course-card event-card">
+            <a href="index.php?action=show&id=<?= $e['id'] ?>" class="course-media" style="display:block;background-image:url('<?= htmlspecialchars(!empty($e['image_url']) ? $e['image_url'] : 'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=900&q=80') ?>');">
+              <span class="badge badge-info event-status-chip">
+                <i class="fa-solid fa-circle-dot"></i>
+                <?= match($e['status']) { 'upcoming'=>'A venir', 'ongoing'=>'En cours', 'completed'=>'Termine', 'cancelled'=>'Annule', default=>ucfirst($e['status']) } ?>
+              </span>
+            </a>
+            <div class="course-body">
+              <div class="chip-row">
+                <span class="badge badge-info"><i class="fa-solid fa-folder-open"></i><?= htmlspecialchars($e['category_name'] ?? 'Categorie') ?></span>
+                <span class="badge <?= $e['is_online'] ? 'badge-success' : 'badge-warning' ?>"><i class="fa-solid <?= $e['is_online'] ? 'fa-globe' : 'fa-location-dot' ?>"></i><?= $e['is_online'] ? 'En ligne' : 'Presentiel' ?></span>
+              </div>
+              <h3 class="event-card-title"><?= htmlspecialchars($e['title']) ?></h3>
+              <p class="card-copy event-card-desc"><?= htmlspecialchars($e['description']) ?></p>
+              <div class="event-meta-grid">
+                <div class="event-meta-item"><i class="fa-regular fa-calendar"></i><div><span>Date</span><strong><?= date('d/m/Y H:i', strtotime($e['event_date'])) ?></strong></div></div>
+                <div class="event-meta-item"><i class="fa-solid fa-location-dot"></i><div><span>Lieu</span><strong><?= htmlspecialchars($e['location']) ?></strong></div></div>
+                <div class="event-meta-item"><i class="fa-solid fa-user-tie"></i><div><span>Organisateur</span><strong><?= htmlspecialchars($e['organizer_name']) ?></strong></div></div>
+                <div class="event-meta-item"><i class="fa-solid fa-users"></i><div><span>Places</span><strong><?= (int)$e['max_participants'] ?> participants</strong></div></div>
+              </div>
+              <div class="card-actions event-actions">
+                <a href="index.php?action=show&id=<?= $e['id'] ?>" class="btn btn-primary btn-small"><i class="fa-solid fa-eye"></i>Voir</a>
+                <div class="card-actions">
+                  <a href="index.php?action=edit&id=<?= $e['id'] ?>" class="btn btn-outline btn-small" title="Modifier"><i class="fa-solid fa-pen"></i></a>
+                  <button onclick="confirmDelete(<?= $e['id'] ?>, '<?= addslashes(htmlspecialchars($e['title'])) ?>')" class="btn btn-danger btn-small" type="button" title="Supprimer"><i class="fa-solid fa-trash"></i></button>
+                </div>
+              </div>
+            </div>
+          </article>
+        <?php endforeach; ?>
+      </section>
     <?php endif; ?>
   </div>
+</main>
 
-  <!-- Cards -->
-  <?php if(empty($events)): ?>
-    <div class="empty">
-      <div class="empty-icon">📭</div>
-      <p>Aucun événement trouvé.</p>
-    </div>
-  <?php else: ?>
-    <div class="cards-grid">
-      <?php foreach($events as $e): ?>
-      <div class="card">
-        <div class="card-img">
-          <?php if(!empty($e['image_url'])): ?>
-            <img src="<?= htmlspecialchars($e['image_url']) ?>" alt="<?= htmlspecialchars($e['title']) ?>">
-          <?php else: ?>
-            📅
-          <?php endif; ?>
-          <span class="card-img-badge">
-            <span class="badge badge-<?= $e['status'] ?>"><?= match($e['status']){'upcoming'=>'🔜','ongoing'=>'▶️','completed'=>'✅','cancelled'=>'❌',default=>''} ?> <?= ucfirst($e['status']) ?></span>
-          </span>
-        </div>
-        <div class="card-body">
-          <span class="card-category"><?= htmlspecialchars($e['category_name']??'') ?></span>
-          <div class="card-title"><?= htmlspecialchars($e['title']) ?></div>
-          <div class="card-meta">
-            <span>🗓 <?= date('d/m/Y à H:i', strtotime($e['event_date'])) ?></span>
-            <span>📍 <?= htmlspecialchars($e['location']) ?></span>
-            <span>👤 <?= htmlspecialchars($e['organizer_name']) ?></span>
-            <span>👥 <?= $e['max_participants'] ?> participants max</span>
-          </div>
-          <p class="card-desc"><?= htmlspecialchars($e['description']) ?></p>
-        </div>
-        <div class="card-footer">
-          <div>
-            <span class="badge <?= $e['is_online']?'badge-online':'badge-onsite' ?>">
-              <?= $e['is_online']?'🌐 En ligne':'📍 Présentiel' ?>
-            </span>
-          </div>
-          <div class="card-actions">
-            <a href="index.php?action=show&id=<?= $e['id'] ?>" class="btn-detail">Voir →</a>
-            <a href="index.php?action=edit&id=<?= $e['id'] ?>" class="btn-sm-action btn-edit-pub" title="Modifier">✏️</a>
-            <button onclick="confirmDelete(<?= $e['id'] ?>, '<?= addslashes(htmlspecialchars($e['title'])) ?>')" class="btn-sm-action btn-del-pub" title="Supprimer">🗑️</button>
-          </div>
-        </div>
-      </div>
-      <?php endforeach; ?>
-    </div>
-  <?php endif; ?>
-</div>
-
-<div id="delModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:999;align-items:center;justify-content:center;">
-  <div style="background:#fff;border-radius:14px;padding:32px;max-width:360px;width:90%;text-align:center;box-shadow:0 24px 60px rgba(0,0,0,.25);">
-    <div style="font-size:2.5rem;margin-bottom:10px;">⚠️</div>
-    <h3 style="margin-bottom:8px;">Supprimer l'événement ?</h3>
-    <p id="delModalTitle" style="color:#6b7280;font-size:.88rem;margin-bottom:22px;"></p>
-    <div style="display:flex;gap:10px;justify-content:center;">
-      <button onclick="document.getElementById('delModal').style.display='none'" style="padding:9px 20px;border-radius:8px;border:1.5px solid #ddd;background:#fff;cursor:pointer;font-weight:600;">Annuler</button>
-      <button onclick="document.getElementById('pubDelForm').submit()" style="padding:9px 20px;border-radius:8px;background:#ef4444;color:#fff;border:none;cursor:pointer;font-weight:600;">🗑️ Supprimer</button>
+<div id="delModal" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,.48);z-index:999;align-items:center;justify-content:center;padding:20px;">
+  <div class="auth-card" style="max-width:420px;">
+    <h2>Supprimer l'evenement ?</h2>
+    <p id="delModalTitle" class="muted"></p>
+    <div class="hero-actions">
+      <button onclick="document.getElementById('delModal').style.display='none'" class="btn btn-outline" type="button">Annuler</button>
+      <button onclick="document.getElementById('pubDelForm').submit()" class="btn btn-danger" type="button">Supprimer</button>
     </div>
   </div>
 </div>
@@ -241,16 +218,16 @@ footer{text-align:center;padding:36px 24px;color:var(--muted);font-size:.8rem;bo
   <input type="hidden" name="id" id="pubDelId" value="">
 </form>
 
-<footer>© <?= date('Y') ?> Workify — Tous droits réservés.</footer>
+<?php require BASE_PATH . '/View/shared/_footer.php'; ?>
 
+<script src="assets/workify-template.js"></script>
 <script>
 function confirmDelete(id, title) {
   document.getElementById('pubDelId').value = id;
-  document.getElementById('delModalTitle').textContent = '«\u00a0' + title + '\u00a0» sera supprimé définitivement.';
+  document.getElementById('delModalTitle').textContent = '"' + title + '" sera supprime definitivement.';
   document.getElementById('delModal').style.display = 'flex';
 }
 document.getElementById('delModal').addEventListener('click', function(e){ if(e.target===this) this.style.display='none'; });
-document.querySelectorAll('.alert').forEach(function(el){ setTimeout(function(){el.style.transition='opacity .5s';el.style.opacity='0';setTimeout(function(){el.remove();},500);},4500); });
 </script>
 </body>
 </html>
