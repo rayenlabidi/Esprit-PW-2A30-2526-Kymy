@@ -23,6 +23,8 @@ class EventC
             $this->supprimer();
         } elseif ($action === 'detail') {
             $this->detail();
+        } elseif ($action === 'register') {
+            $this->register();
         } elseif ($action === 'calendar') {
             $this->calendar();
         } elseif ($action === 'calendar_json') {
@@ -266,7 +268,9 @@ class EventC
         $_SESSION['event_flash'] = 'Votre participation a ete enregistree.';
         header('Location: EventC.php?office=front&action=detail&id=' . $id);
         exit;
-    }    private function authorize($office)
+    }
+
+    private function authorize($office)
     {
         AuthC::startSession();
 

@@ -5,10 +5,12 @@ class EventModel
 {
     public function listeEvents($search = '', $category = '', $status = '', $sort = 'date_desc')
     {
-        $sql = 'SELECT e.*, c.name AS category_name, CONCAT(u.first_name, " ", u.last_name) AS organizer_name
+        $sql = 'SELECT e.*, c.name AS category_name, CONCAT(u.first_name, " ", u.last_name) AS organizer_name,
+                    COUNT(er.id) AS registrations_count
                 FROM events e
                 INNER JOIN utilisateurs u ON e.organizer_id = u.id
                 LEFT JOIN event_categories c ON e.event_category_id = c.id
+                LEFT JOIN event_registrations er ON er.event_id = e.id
                 WHERE 1 = 1';
         $params = [];
 
@@ -27,10 +29,14 @@ class EventModel
             $params['status'] = $status;
         }
 
+        $sql .= ' GROUP BY e.id';
+
         if ($sort === 'title') {
             $sql .= ' ORDER BY e.title ASC';
         } elseif ($sort === 'capacity') {
             $sql .= ' ORDER BY e.max_participants DESC';
+        } elseif ($sort === 'registered') {
+            $sql .= ' ORDER BY registrations_count DESC, e.event_date ASC';
         } elseif ($sort === 'date_asc') {
             $sql .= ' ORDER BY e.event_date ASC';
         } else {
@@ -45,11 +51,14 @@ class EventModel
 
     public function getEventById($id)
     {
-        $sql = 'SELECT e.*, c.name AS category_name, CONCAT(u.first_name, " ", u.last_name) AS organizer_name
+        $sql = 'SELECT e.*, c.name AS category_name, CONCAT(u.first_name, " ", u.last_name) AS organizer_name,
+                    COUNT(er.id) AS registrations_count
                 FROM events e
                 INNER JOIN utilisateurs u ON e.organizer_id = u.id
                 LEFT JOIN event_categories c ON e.event_category_id = c.id
-                WHERE e.id = :id';
+                LEFT JOIN event_registrations er ON er.event_id = e.id
+                WHERE e.id = :id
+                GROUP BY e.id';
         $db = config::getConnexion();
         $query = $db->prepare($sql);
         $query->execute(['id' => (int) $id]);
@@ -199,7 +208,9 @@ class EventModel
             CONSTRAINT fk_event_registrations_event FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE ON UPDATE CASCADE,
             CONSTRAINT fk_event_registrations_user FOREIGN KEY (user_id) REFERENCES utilisateurs(id) ON DELETE CASCADE ON UPDATE CASCADE
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
-    }    private function payload($data)
+    }
+
+    private function payload($data)
     {
         return [
             'title' => trim($data['title']),

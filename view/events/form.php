@@ -10,6 +10,8 @@ $action = $isEdit ? 'edit&id=' . $id : 'add';
 include __DIR__ . '/../includes/header.php';
 ?>
 
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
 <div class="toolbar">
     <div>
         <p class="eyebrow">Workify events</p>
@@ -90,12 +92,18 @@ include __DIR__ . '/../includes/header.php';
 
         <div>
             <label for="latitude">Latitude</label>
-            <input id="latitude" name="latitude" value="<?= htmlspecialchars($formData['latitude'] ?? '', ENT_QUOTES); ?>">
+            <input id="latitude" name="latitude" data-event-lat value="<?= htmlspecialchars($formData['latitude'] ?? '', ENT_QUOTES); ?>">
         </div>
 
         <div>
             <label for="longitude">Longitude</label>
-            <input id="longitude" name="longitude" value="<?= htmlspecialchars($formData['longitude'] ?? '', ENT_QUOTES); ?>">
+            <input id="longitude" name="longitude" data-event-lng value="<?= htmlspecialchars($formData['longitude'] ?? '', ENT_QUOTES); ?>">
+        </div>
+
+        <div class="field-full">
+            <label>Position sur la carte</label>
+            <div class="event-map-picker" data-event-map-picker></div>
+            <p class="muted">Cliquez sur la carte pour enregistrer les coordonnees GPS de l evenement.</p>
         </div>
 
         <label class="inline-check field-full">
@@ -109,5 +117,49 @@ include __DIR__ . '/../includes/header.php';
         <a class="btn" href="../controller/EventC.php?office=back&action=list">Annuler</a>
     </div>
 </form>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var mapBox = document.querySelector('[data-event-map-picker]');
+    var latInput = document.querySelector('[data-event-lat]');
+    var lngInput = document.querySelector('[data-event-lng]');
+
+    if (!mapBox || !latInput || !lngInput || typeof L === 'undefined') {
+        return;
+    }
+
+    var lat = parseFloat(latInput.value);
+    var lng = parseFloat(lngInput.value);
+    var hasCoords = !isNaN(lat) && !isNaN(lng);
+    var center = hasCoords ? [lat, lng] : [36.8065, 10.1815];
+    var map = L.map(mapBox).setView(center, hasCoords ? 13 : 7);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap'
+    }).addTo(map);
+
+    var marker = L.marker(center, { draggable: true }).addTo(map);
+
+    function setCoords(position) {
+        latInput.value = position.lat.toFixed(7);
+        lngInput.value = position.lng.toFixed(7);
+        marker.setLatLng(position);
+    }
+
+    marker.on('dragend', function () {
+        setCoords(marker.getLatLng());
+    });
+
+    map.on('click', function (event) {
+        setCoords(event.latlng);
+    });
+
+    setTimeout(function () {
+        map.invalidateSize();
+    }, 250);
+});
+</script>
 
 <?php include __DIR__ . '/../includes/footer.php'; ?>

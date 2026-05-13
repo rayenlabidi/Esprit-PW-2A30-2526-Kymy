@@ -19,6 +19,7 @@ include __DIR__ . '/../includes/header.php';
     </div>
     <?php if ($office === 'back') { ?>
         <div class="toolbar-actions">
+            <a class="btn" href="../controller/EventC.php?office=front&action=list">Vue front</a>
             <a class="btn" href="../controller/EventC.php?office=back&action=categories">Categories</a>
             <a class="btn" href="../controller/EventC.php?office=back&action=calendar">Calendrier</a>
             <a class="btn btn-primary" href="../controller/EventC.php?office=back&action=add">
@@ -57,12 +58,15 @@ include __DIR__ . '/../includes/header.php';
     <select name="sort">
         <option value="date_desc" <?= $sort === 'date_desc' ? 'selected' : ''; ?>>Dates recentes</option>
         <option value="date_asc" <?= $sort === 'date_asc' ? 'selected' : ''; ?>>Dates proches</option>
+        <option value="registered" <?= $sort === 'registered' ? 'selected' : ''; ?>>Plus inscrits</option>
         <option value="title" <?= $sort === 'title' ? 'selected' : ''; ?>>Titre</option>
         <option value="capacity" <?= $sort === 'capacity' ? 'selected' : ''; ?>>Capacite</option>
     </select>
     <button class="btn btn-green" type="submit">Filtrer</button>
     <a class="btn" href="../controller/EventC.php?office=<?= htmlspecialchars($office, ENT_QUOTES); ?>&action=list">Initialiser</a>
 </form>
+
+<?php include __DIR__ . '/calendar_widget.php'; ?>
 
 <?php if ($office === 'back') { ?>
     <div class="table-box">
@@ -73,7 +77,7 @@ include __DIR__ . '/../includes/header.php';
                     <th>Categorie</th>
                     <th>Date</th>
                     <th>Lieu</th>
-                    <th>Capacite</th>
+                    <th>Inscrits</th>
                     <th>Statut</th>
                     <th>Actions</th>
                 </tr>
@@ -88,7 +92,7 @@ include __DIR__ . '/../includes/header.php';
                         <td data-label="Categorie"><?= htmlspecialchars($event['category_name'], ENT_QUOTES); ?></td>
                         <td data-label="Date"><?= htmlspecialchars($event['event_date'], ENT_QUOTES); ?></td>
                         <td data-label="Lieu"><?= $event['is_online'] ? 'En ligne' : htmlspecialchars($event['location'], ENT_QUOTES); ?></td>
-                        <td data-label="Capacite"><?= (int) $event['max_participants']; ?></td>
+                        <td data-label="Inscrits"><?= (int) ($event['registrations_count'] ?? 0); ?> / <?= (int) $event['max_participants']; ?></td>
                         <td data-label="Statut"><span class="badge"><?= htmlspecialchars($event['status'], ENT_QUOTES); ?></span></td>
                         <td data-label="Actions" class="actions">
                             <a class="btn" href="../controller/EventC.php?office=back&action=detail&id=<?= (int) $event['id']; ?>">Details</a>
@@ -123,7 +127,7 @@ include __DIR__ . '/../includes/header.php';
                     <span class="badge badge-amber"><?= $event['is_online'] ? 'En ligne' : 'Presentiel'; ?></span>
                 </div>
                 <p><strong><?= htmlspecialchars(date('d/m/Y H:i', strtotime($event['event_date'])), ENT_QUOTES); ?></strong></p>
-                <p class="muted"><?= htmlspecialchars($event['location'], ENT_QUOTES); ?> - <?= (int) $event['max_participants']; ?> places</p>
+                <p class="muted"><?= htmlspecialchars($event['location'], ENT_QUOTES); ?> - <?= (int) ($event['registrations_count'] ?? 0); ?> / <?= (int) $event['max_participants']; ?> places</p>
                 <a class="btn btn-primary" href="../controller/EventC.php?office=front&action=detail&id=<?= (int) $event['id']; ?>">Voir details</a>
             </article>
         <?php } ?>

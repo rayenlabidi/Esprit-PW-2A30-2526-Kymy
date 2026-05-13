@@ -2471,10 +2471,43 @@ th {
 
 .calendar-shell {
     background: rgba(255, 255, 255, 0.92);
-    border: 1px solid var(--border);
+    border: 1px solid var(--line);
     border-radius: 24px;
     box-shadow: var(--shadow-soft);
     padding: 18px;
+}
+
+.calendar-widget {
+    background: rgba(255, 255, 255, 0.92);
+    border: 1px solid var(--line);
+    border-radius: 24px;
+    box-shadow: var(--shadow-soft);
+    margin-bottom: 22px;
+    padding: 18px;
+}
+
+.calendar-widget-head {
+    align-items: center;
+    display: flex;
+    gap: 14px;
+    justify-content: space-between;
+    margin-bottom: 14px;
+}
+
+.calendar-widget-head h3 {
+    margin: 0;
+}
+
+.calendar-widget-controls {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+.calendar-grid.compact .calendar-day {
+    min-height: 94px;
 }
 
 .calendar-header {
@@ -2507,7 +2540,7 @@ th {
 
 .calendar-day {
     min-height: 126px;
-    border: 1px solid var(--border);
+    border: 1px solid var(--line);
     border-radius: 18px;
     padding: 10px;
     background: rgba(248, 251, 255, 0.88);
@@ -2565,6 +2598,25 @@ th {
     color: var(--muted);
     font-size: 0.75rem;
     margin-top: 2px;
+}
+
+.event-map-picker,
+.event-detail-map {
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    box-shadow: var(--shadow-soft);
+    min-height: 340px;
+    overflow: hidden;
+    width: 100%;
+}
+
+.event-detail-map {
+    margin: 18px 0;
+    min-height: 360px;
+}
+
+.leaflet-container {
+    font-family: inherit;
 }
 
 @media (max-width: 860px) {

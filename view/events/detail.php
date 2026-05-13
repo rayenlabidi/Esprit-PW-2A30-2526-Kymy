@@ -8,6 +8,10 @@ $flash = isset($_SESSION['event_flash']) ? $_SESSION['event_flash'] : '';
 unset($_SESSION['event_flash']);
 ?>
 
+<?php if (!empty($event['latitude']) && !empty($event['longitude'])) { ?>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<?php } ?>
+
 <div class="detail-box">
     <div class="toolbar">
         <div>
@@ -32,6 +36,11 @@ unset($_SESSION['event_flash']);
     <p><strong>Lieu:</strong> <?= htmlspecialchars($event['location'], ENT_QUOTES); ?></p>
     <?php if (!empty($event['latitude']) && !empty($event['longitude'])) { ?>
         <p><strong>GPS:</strong> <?= htmlspecialchars($event['latitude'], ENT_QUOTES); ?>, <?= htmlspecialchars($event['longitude'], ENT_QUOTES); ?></p>
+        <div class="event-detail-map"
+             data-event-detail-map
+             data-lat="<?= htmlspecialchars($event['latitude'], ENT_QUOTES); ?>"
+             data-lng="<?= htmlspecialchars($event['longitude'], ENT_QUOTES); ?>"
+             data-title="<?= htmlspecialchars($event['title'], ENT_QUOTES); ?>"></div>
     <?php } ?>
 
     <?php if ($flash !== '') { ?><div class="success-box"><?= htmlspecialchars($flash, ENT_QUOTES); ?></div><?php } ?>
@@ -50,5 +59,34 @@ unset($_SESSION['event_flash']);
         <?php } ?>
     </div>
 </div>
+
+<?php if (!empty($event['latitude']) && !empty($event['longitude'])) { ?>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var mapBox = document.querySelector('[data-event-detail-map]');
+        if (!mapBox || typeof L === 'undefined') {
+            return;
+        }
+
+        var lat = parseFloat(mapBox.dataset.lat);
+        var lng = parseFloat(mapBox.dataset.lng);
+        if (isNaN(lat) || isNaN(lng)) {
+            return;
+        }
+
+        var map = L.map(mapBox, { scrollWheelZoom: false }).setView([lat, lng], 14);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; OpenStreetMap'
+        }).addTo(map);
+        L.marker([lat, lng]).addTo(map).bindPopup(mapBox.dataset.title || 'Evenement').openPopup();
+
+        setTimeout(function () {
+            map.invalidateSize();
+        }, 250);
+    });
+    </script>
+<?php } ?>
 
 <?php include __DIR__ . '/../includes/footer.php'; ?>
