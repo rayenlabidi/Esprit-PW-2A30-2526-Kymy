@@ -3,6 +3,7 @@ require_once __DIR__ . '/../Model/publication.php';
 require_once __DIR__ . '/PublicationModel.php';
 require_once __DIR__ . '/UtilisateurModel.php';
 require_once __DIR__ . '/AuthC.php';
+require_once __DIR__ . '/BadWordGuard.php';
 
 class PublicationC
 {
@@ -23,6 +24,8 @@ class PublicationC
             $this->ajouter();
         } elseif ($action === 'like') {
             $this->aimer();
+        } elseif ($action === 'comment_like') {
+            $this->aimerCommentaire();
         } elseif ($action === 'comment') {
             $this->commenter();
         } elseif ($action === 'delete') {
@@ -48,13 +51,17 @@ class PublicationC
         }
 
         $search = isset($_GET['search']) ? trim($_GET['search']) : '';
-        $publications = $this->publicationModel->listePublications($search);
+        $sort = isset($_GET['sort']) ? trim($_GET['sort']) : 'recent';
+        $publications = $this->publicationModel->listePublications($search, $sort);
         $commentaires = [];
         foreach ($publications as $publicationItem) {
             $commentaires[(int) $publicationItem['id']] = $this->publicationModel->listeCommentaires((int) $publicationItem['id']);
         }
         $likedPublications = ($office === 'front' && AuthC::isLoggedIn())
             ? $this->publicationModel->likedPublicationIds(AuthC::currentUserId())
+            : [];
+        $likedComments = ($office === 'front' && AuthC::isLoggedIn())
+            ? $this->publicationModel->likedCommentIds(AuthC::currentUserId())
             : [];
         $statistiques = $this->publicationModel->statistiquesPublications();
         $errors = isset($_SESSION['publication_errors']) ? $_SESSION['publication_errors'] : [];
@@ -109,22 +116,29 @@ class PublicationC
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $publicationId = isset($_POST['publication_id']) ? (int) $_POST['publication_id'] : 0;
+            $parentId = isset($_POST['parent_id']) ? (int) $_POST['parent_id'] : 0;
             $comment = trim($_POST['comment'] ?? '');
             $publication = $this->publicationModel->getPublicationById($publicationId);
 
             if ($publication && strlen($comment) >= 2) {
+                if (BadWordGuard::containsBadWords($comment)) {
+                    $_SESSION['publication_errors'] = [BadWordGuard::message()];
+                    header('Location: PublicationC.php?office=front&action=list#publication-' . $publicationId);
+                    exit;
+                }
                 $payload = $this->userPayload($this->currentUser());
                 $this->publicationModel->addCommentaire(
                     $publicationId,
                     $payload['name'],
                     $payload['init'],
                     $payload['avatar'],
-                    $this->clean($comment)
+                    $this->clean($comment),
+                    $parentId > 0 ? $parentId : null
                 );
             }
         }
 
-        header('Location: PublicationC.php?office=front&action=list');
+        header('Location: PublicationC.php?office=front&action=list#publication-' . (isset($publicationId) ? (int) $publicationId : 0));
         exit;
     }
 
@@ -138,6 +152,21 @@ class PublicationC
         }
 
         header('Location: PublicationC.php?office=front&action=list#publication-' . $id);
+        exit;
+    }
+
+    private function aimerCommentaire()
+    {
+        $this->requireLogin();
+
+        $commentId = isset($_GET['id']) ? (int) $_GET['id'] : 0;
+        $publicationId = isset($_GET['publication_id']) ? (int) $_GET['publication_id'] : 0;
+
+        if ($commentId > 0) {
+            $this->publicationModel->toggleCommentLike($commentId, AuthC::currentUserId());
+        }
+
+        header('Location: PublicationC.php?office=front&action=list#publication-' . $publicationId);
         exit;
     }
 
@@ -199,14 +228,18 @@ class PublicationC
             $initials .= strtoupper(substr($lastName, 0, 1));
         }
 
-        $avatars = ['av-blue', 'av-green', 'av-orange', 'av-purple', 'av-pink', 'av-teal'];
+        $avatar = !empty($user['avatar_url']) ? $user['avatar_url'] : '';
+        if ($avatar === '') {
+            $avatars = ['av-blue', 'av-green', 'av-orange', 'av-purple', 'av-pink', 'av-teal'];
+            $avatar = $avatars[((int) $user['id']) % count($avatars)];
+        }
 
         return [
             'id' => (string) $user['id'],
             'name' => $name !== '' ? $name : $user['email'],
             'init' => $initials !== '' ? $initials : 'WK',
             'role' => $user['role_slug'] === 'boss' ? 'Client' : 'Freelancer',
-            'avatar' => $avatars[((int) $user['id']) % count($avatars)]
+            'avatar' => $avatar
         ];
     }
 

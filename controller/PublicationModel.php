@@ -3,7 +3,7 @@ require_once __DIR__ . '/../config.php';
 
 class PublicationModel
 {
-    public function listePublications($search = '')
+    public function listePublications($search = '', $sort = 'recent')
     {
         $sql = 'SELECT p.*,
                        COUNT(DISTINCT c.id) AS comments_count,
@@ -19,7 +19,15 @@ class PublicationModel
             $params['search'] = '%' . $search . '%';
         }
 
-        $sql .= ' GROUP BY p.id ORDER BY p.created_at DESC, p.id DESC';
+        $sql .= ' GROUP BY p.id';
+
+        if ($sort === 'liked') {
+            $sql .= ' ORDER BY likes_count DESC, p.created_at DESC';
+        } elseif ($sort === 'commented') {
+            $sql .= ' ORDER BY comments_count DESC, p.created_at DESC';
+        } else {
+            $sql .= ' ORDER BY p.created_at DESC, p.id DESC';
+        }
 
         $db = config::getConnexion();
         try {
@@ -82,10 +90,12 @@ class PublicationModel
 
     public function listeCommentaires($publicationId)
     {
-        $sql = 'SELECT *
-                FROM comments
-                WHERE publication_id = :publication_id
-                ORDER BY created_at ASC, id ASC';
+        $sql = 'SELECT c.*, COUNT(cl.id) AS likes_count
+                FROM comments c
+                LEFT JOIN comment_likes cl ON cl.comment_id = c.id
+                WHERE c.publication_id = :publication_id
+                GROUP BY c.id
+                ORDER BY c.parent_id ASC, c.created_at ASC, c.id ASC';
         $db = config::getConnexion();
         try {
             $query = $db->prepare($sql);
@@ -115,10 +125,10 @@ class PublicationModel
         }
     }
 
-    public function addCommentaire($publicationId, $userName, $userInit, $userAvatar, $comment)
+    public function addCommentaire($publicationId, $userName, $userInit, $userAvatar, $comment, $parentId = null)
     {
-        $sql = 'INSERT INTO comments (publication_id, user_name, user_init, user_avatar, comment, likes)
-                VALUES (:publication_id, :user_name, :user_init, :user_avatar, :comment, 0)';
+        $sql = 'INSERT INTO comments (publication_id, user_name, user_init, user_avatar, comment, likes, parent_id)
+                VALUES (:publication_id, :user_name, :user_init, :user_avatar, :comment, 0, :parent_id)';
         $db = config::getConnexion();
         try {
             $query = $db->prepare($sql);
@@ -127,7 +137,8 @@ class PublicationModel
                 'user_name' => $userName,
                 'user_init' => $userInit,
                 'user_avatar' => $userAvatar,
-                'comment' => $comment
+                'comment' => $comment,
+                'parent_id' => $parentId ? (int) $parentId : null
             ]);
         } catch (Exception $e) {
             die('Erreur: ' . $e->getMessage());
@@ -145,6 +156,24 @@ class PublicationModel
             $ids = [];
             foreach ($rows as $row) {
                 $ids[(int) $row['publication_id']] = true;
+            }
+            return $ids;
+        } catch (Exception $e) {
+            die('Erreur: ' . $e->getMessage());
+        }
+    }
+
+    public function likedCommentIds($userId)
+    {
+        $sql = 'SELECT comment_id FROM comment_likes WHERE user_id = :user_id';
+        $db = config::getConnexion();
+        try {
+            $query = $db->prepare($sql);
+            $query->execute(['user_id' => (string) $userId]);
+            $rows = $query->fetchAll();
+            $ids = [];
+            foreach ($rows as $row) {
+                $ids[(int) $row['comment_id']] = true;
             }
             return $ids;
         } catch (Exception $e) {
@@ -181,6 +210,45 @@ class PublicationModel
             ]);
             $update = $db->prepare('UPDATE publication SET likes = likes + 1 WHERE id = :id');
             $update->execute(['id' => (int) $publicationId]);
+            $db->commit();
+            return true;
+        } catch (Exception $e) {
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
+            die('Erreur: ' . $e->getMessage());
+        }
+    }
+
+    public function toggleCommentLike($commentId, $userId)
+    {
+        $db = config::getConnexion();
+
+        try {
+            $db->beginTransaction();
+            $check = $db->prepare('SELECT id FROM comment_likes WHERE comment_id = :comment_id AND user_id = :user_id LIMIT 1');
+            $check->execute([
+                'comment_id' => (int) $commentId,
+                'user_id' => (string) $userId
+            ]);
+            $existing = $check->fetch();
+
+            if ($existing) {
+                $delete = $db->prepare('DELETE FROM comment_likes WHERE id = :id');
+                $delete->execute(['id' => (int) $existing['id']]);
+                $update = $db->prepare('UPDATE comments SET likes = GREATEST(likes - 1, 0) WHERE id = :id');
+                $update->execute(['id' => (int) $commentId]);
+                $db->commit();
+                return false;
+            }
+
+            $insert = $db->prepare('INSERT INTO comment_likes (comment_id, user_id) VALUES (:comment_id, :user_id)');
+            $insert->execute([
+                'comment_id' => (int) $commentId,
+                'user_id' => (string) $userId
+            ]);
+            $update = $db->prepare('UPDATE comments SET likes = likes + 1 WHERE id = :id');
+            $update->execute(['id' => (int) $commentId]);
             $db->commit();
             return true;
         } catch (Exception $e) {

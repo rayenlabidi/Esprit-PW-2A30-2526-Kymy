@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', function () {
     var forms = document.querySelectorAll('[data-validate]');
     setupCustomCaptchas();
+    setupReplyToggles();
 
     for (var i = 0; i < forms.length; i++) {
         forms[i].addEventListener('submit', function (event) {
@@ -13,6 +14,13 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 });
+
+var workifyBadWords = [
+    'fuck', 'shit', 'bitch', 'asshole', 'slut', 'whore', 'dick', 'pussy',
+    'faggot', 'nigger', 'kys', 'kill yourself', 'merde', 'putain',
+    'salope', 'connard', 'pute', 'zebi', 'nik', 'nique', 'kos',
+    'zabour', 'kahba', 'nayek', 'nayak'
+];
 
 function validateForm(form) {
     clearErrors(form);
@@ -60,6 +68,27 @@ function validateForm(form) {
 
     if (module === 'candidature') {
         validateText(form, 'message', 20, 'Le message doit contenir au moins 20 caracteres.', errors);
+        validateCleanText(form, 'message', errors);
+    }
+
+    if (module === 'comment') {
+        validateText(form, 'comment', 2, 'Le commentaire doit contenir au moins 2 caracteres.', errors);
+        validateCleanText(form, 'comment', errors);
+    }
+
+    if (module === 'message') {
+        validateText(form, 'content', 2, 'Le message doit contenir au moins 2 caracteres.', errors);
+        validateCleanText(form, 'content', errors);
+    }
+
+    if (module === 'event') {
+        validateText(form, 'title', 3, 'Le titre doit contenir au moins 3 caracteres.', errors);
+        validateText(form, 'description', 10, 'La description doit contenir au moins 10 caracteres.', errors);
+        validateDateTime(form, 'event_date', 'La date de l evenement est obligatoire.', errors);
+        validateText(form, 'location', 2, 'La localisation doit contenir au moins 2 caracteres.', errors);
+        validateInteger(form, 'max_participants', 1, 'Le nombre de participants doit etre positif.', errors);
+        validateSelect(form, 'status', 'Veuillez choisir un statut.', errors);
+        validateSelect(form, 'category_id', 'Veuillez choisir une categorie.', errors);
     }
 
     if (module === 'user') {
@@ -95,6 +124,7 @@ function validateForm(form) {
         validateEmail(form, 'email', 'Veuillez saisir un email valide.', errors);
         validateText(form, 'subject', 4, 'Le sujet doit contenir au moins 4 caracteres.', errors);
         validateText(form, 'message', 20, 'Le message doit contenir au moins 20 caracteres.', errors);
+        validateCleanText(form, 'message', errors);
     }
 
     return errors;
@@ -292,6 +322,13 @@ function validateDate(form, name, message, errors) {
     }
 }
 
+function validateDateTime(form, name, message, errors) {
+    if (getValue(form, name) === '') {
+        addFieldError(form, name, message);
+        errors.push(message);
+    }
+}
+
 function validateNumber(form, name, min, message, errors) {
     var value = getValue(form, name);
 
@@ -330,6 +367,33 @@ function validateInteger(form, name, min, message, errors) {
     }
 }
 
+function validateCleanText(form, name, errors) {
+    var value = getValue(form, name);
+
+    if (containsBadWord(value)) {
+        addFieldError(form, name, 'Votre texte contient des mots inappropries.');
+        errors.push('Votre texte contient des mots inappropries. Merci de reformuler.');
+    }
+}
+
+function containsBadWord(value) {
+    var normalized = String(value || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').replace(/\s+/g, ' ').trim();
+
+    for (var i = 0; i < workifyBadWords.length; i++) {
+        var word = workifyBadWords[i].toLowerCase();
+        var pattern = new RegExp('(^|\\s)' + escapeRegExp(word) + '(\\s|$)');
+        if (pattern.test(normalized)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+function escapeRegExp(value) {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function getValue(form, name) {
     if (!form.elements[name]) {
         return '';
@@ -357,6 +421,7 @@ function showErrors(form, errors) {
     var box = form.querySelector('.error-box');
 
     if (!box) {
+        showTopValidationWindow(errors);
         return;
     }
 
@@ -366,6 +431,48 @@ function showErrors(form, errors) {
     }
     html += '</ul>';
     box.innerHTML = html;
+    showTopValidationWindow(errors);
+}
+
+function showTopValidationWindow(errors) {
+    if (!errors || errors.length === 0) {
+        return;
+    }
+
+    var existing = document.querySelector('.validation-toast');
+    if (existing) {
+        existing.parentNode.removeChild(existing);
+    }
+
+    var toast = document.createElement('div');
+    toast.className = 'validation-toast';
+    toast.setAttribute('role', 'alert');
+    toast.innerHTML = '<strong>Controle de saisie</strong><span>' + errors[0] + '</span>';
+    document.body.appendChild(toast);
+
+    window.setTimeout(function () {
+        toast.classList.add('is-hiding');
+        window.setTimeout(function () {
+            if (toast.parentNode) {
+                toast.parentNode.removeChild(toast);
+            }
+        }, 260);
+    }, 4300);
+}
+
+function setupReplyToggles() {
+    document.addEventListener('click', function (event) {
+        var trigger = event.target.closest('[data-reply-toggle]');
+        if (!trigger) {
+            return;
+        }
+
+        var selector = trigger.getAttribute('data-reply-toggle');
+        var target = selector ? document.querySelector(selector) : null;
+        if (target) {
+            target.classList.toggle('is-open');
+        }
+    });
 }
 
 function clearErrors(form) {

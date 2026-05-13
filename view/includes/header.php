@@ -6,13 +6,14 @@ $pageTitle = isset($pageTitle) ? $pageTitle : 'Workify';
 $office = isset($office) ? $office : 'front';
 $activeModule = isset($activeModule) ? $activeModule : '';
 $isAdmin = AuthC::isAdmin();
+$isBoss = AuthC::currentUserRole() === 'boss';
 $isLoggedIn = AuthC::isLoggedIn();
-$isBackOffice = $office === 'back' && $isAdmin;
+$isBackOffice = $office === 'back' && ($isAdmin || $isBoss);
 
 $frontLinks = [
     ['key' => 'jobs', 'label' => 'Jobs', 'href' => '../controller/JobC.php?office=front&action=list', 'icon' => 'M10 4h4a2 2 0 0 1 2 2v2h4v12H4V8h4V6a2 2 0 0 1 2-2zm4 4V6h-4v2h4z'],
     ['key' => 'publications', 'label' => 'Publication', 'href' => '../controller/PublicationC.php?office=front&action=list', 'icon' => 'M4 5h16v2H4V5zm0 6h16v2H4v-2zm0 6h10v2H4v-2z'],
-    ['key' => 'events', 'label' => 'Evenement', 'href' => '../controller/HomeC.php#services', 'icon' => 'M7 2h2v3h6V2h2v3h3v17H4V5h3V2zm11 8H6v10h12V10z'],
+    ['key' => 'events', 'label' => 'Evenement', 'href' => '../controller/EventC.php?office=front&action=list', 'icon' => 'M7 2h2v3h6V2h2v3h3v17H4V5h3V2zm11 8H6v10h12V10z'],
     ['key' => 'messages', 'label' => 'Message', 'href' => '../controller/MessageC.php?office=front&action=list', 'icon' => 'M4 4h16v12H7l-3 4V4z'],
     ['key' => 'formations', 'label' => 'Formation', 'href' => '../controller/FormationC.php?office=front&action=list', 'icon' => 'M4 4h16v14H7l-3 3V4zm4 4v2h8V8H8zm0 4v2h6v-2H8z']
 ];
@@ -21,7 +22,7 @@ $backLinks = [
     ['key' => 'dashboard', 'label' => 'Dashboard', 'href' => '../controller/BackDashboardC.php', 'icon' => 'M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z'],
     ['key' => 'jobs', 'label' => 'Jobs', 'href' => '../controller/JobC.php?office=back&action=list', 'icon' => 'M10 4h4a2 2 0 0 1 2 2v2h4v12H4V8h4V6a2 2 0 0 1 2-2zm4 4V6h-4v2h4z'],
     ['key' => 'publications', 'label' => 'Publication', 'href' => '../controller/PublicationC.php?office=back&action=list', 'icon' => 'M4 5h16v2H4V5zm0 6h16v2H4v-2zm0 6h10v2H4v-2z'],
-    ['key' => 'events', 'label' => 'Evenement', 'href' => '#events', 'icon' => 'M7 2h2v3h6V2h2v3h3v17H4V5h3V2zm11 8H6v10h12V10z'],
+    ['key' => 'events', 'label' => 'Evenement', 'href' => '../controller/EventC.php?office=back&action=list', 'icon' => 'M7 2h2v3h6V2h2v3h3v17H4V5h3V2zm11 8H6v10h12V10z'],
     ['key' => 'messages', 'label' => 'Message', 'href' => '../controller/MessageC.php?office=back&action=list', 'icon' => 'M4 4h16v12H7l-3 4V4z'],
     ['key' => 'formations', 'label' => 'Formation', 'href' => '../controller/FormationC.php?office=back&action=list', 'icon' => 'M4 4h16v14H7l-3 3V4zm4 4v2h8V8H8zm0 4v2h6v-2H8z'],
     ['key' => 'users', 'label' => 'Users', 'href' => '../controller/UtilisateurC.php?action=list', 'icon' => 'M12 12c2.2 0 4-1.8 4-4s-1.8-4-4-4-4 1.8-4 4 1.8 4 4 4zm0 2c-2.7 0-8 1.4-8 4.2V20h16v-1.8c0-2.8-5.3-4.2-8-4.2z'],
@@ -49,6 +50,7 @@ $backLinks = [
 
                 <div class="nav-title">Navigation</div>
                 <?php foreach ($backLinks as $link) { ?>
+                    <?php if (!$isAdmin && $link['key'] !== 'events') { continue; } ?>
                     <a class="nav-link <?= $activeModule === $link['key'] ? 'active' : ''; ?>" data-module="<?= htmlspecialchars($link['key'], ENT_QUOTES); ?>" href="<?= htmlspecialchars($link['href'], ENT_QUOTES); ?>">
                         <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="<?= htmlspecialchars($link['icon'], ENT_QUOTES); ?>"/></svg></span>
                         <?= htmlspecialchars($link['label'], ENT_QUOTES); ?>

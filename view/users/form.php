@@ -18,7 +18,7 @@ include __DIR__ . '/../includes/header.php';
     <a class="btn" href="../controller/UtilisateurC.php?action=list">Retour</a>
 </div>
 
-<form class="form-box" data-validate="user" action="../controller/UtilisateurC.php?action=<?= $action; ?>" method="post">
+<form class="form-box" data-validate="user" action="../controller/UtilisateurC.php?action=<?= $action; ?>" method="post" enctype="multipart/form-data">
     <div class="error-box">
         <?php if (!empty($errors)) { ?>
             <ul>
@@ -80,6 +80,17 @@ include __DIR__ . '/../includes/header.php';
         <div>
             <label for="headline">Titre</label>
             <input id="headline" name="headline" value="<?= htmlspecialchars(isset($formData['headline']) ? $formData['headline'] : '', ENT_QUOTES); ?>">
+        </div>
+
+        <div>
+            <label for="avatar_file">Photo de profil</label>
+            <input id="avatar_file" name="avatar_file" type="file" accept="image/jpeg,image/png,image/webp">
+            <?php if (!empty($formData['avatar_url'])) { ?>
+                <div class="profile-preview">
+                    <img src="../<?= htmlspecialchars($formData['avatar_url'], ENT_QUOTES); ?>" alt="Photo de profil">
+                    <span>Image actuelle</span>
+                </div>
+            <?php } ?>
         </div>
 
         <div class="field-full">

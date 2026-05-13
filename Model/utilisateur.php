@@ -10,9 +10,10 @@ class utilisateur
     private $password;
     private $headline;
     private $bio;
+    private $avatarUrl;
     private $status;
 
-    public function __construct($roleId, $firstName, $lastName, $email, $phone, $password, $headline, $bio, $status)
+    public function __construct($roleId, $firstName, $lastName, $email, $phone, $password, $headline, $bio, $status, $avatarUrl = '')
     {
         $this->roleId = $roleId;
         $this->firstName = $firstName;
@@ -22,6 +23,7 @@ class utilisateur
         $this->password = $password;
         $this->headline = $headline;
         $this->bio = $bio;
+        $this->avatarUrl = $avatarUrl;
         $this->status = $status;
     }
 
@@ -113,6 +115,16 @@ class utilisateur
     public function setBio($bio)
     {
         $this->bio = $bio;
+    }
+
+    public function getAvatarUrl()
+    {
+        return $this->avatarUrl;
+    }
+
+    public function setAvatarUrl($avatarUrl)
+    {
+        $this->avatarUrl = $avatarUrl;
     }
 
     public function getStatus()

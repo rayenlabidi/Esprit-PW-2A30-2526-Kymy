@@ -5,13 +5,24 @@ $publications = isset($publications) ? $publications : [];
 $commentaires = isset($commentaires) ? $commentaires : [];
 $statistiques = isset($statistiques) ? $statistiques : [];
 $search = isset($search) ? $search : '';
+$sort = isset($sort) ? $sort : 'recent';
 $errors = isset($errors) ? $errors : [];
 $likedPublications = isset($likedPublications) ? $likedPublications : [];
+$likedComments = isset($likedComments) ? $likedComments : [];
 $currentDisplayName = AuthC::currentUserName() !== '' ? AuthC::currentUserName() : 'Workify';
 $nameParts = preg_split('/\s+/', trim($currentDisplayName));
 $currentInitials = strtoupper(substr($nameParts[0], 0, 1) . (isset($nameParts[1]) ? substr($nameParts[1], 0, 1) : ''));
 if ($currentInitials === '') {
     $currentInitials = 'WK';
+}
+
+function workifyAvatar($avatar, $initials, $class = '')
+{
+    $safeClass = trim('avatar-pill ' . $class);
+    if (!empty($avatar) && strpos($avatar, 'uploads/') === 0) {
+        return '<span class="' . htmlspecialchars($safeClass, ENT_QUOTES) . ' avatar-image"><img src="../' . htmlspecialchars($avatar, ENT_QUOTES) . '" alt=""></span>';
+    }
+    return '<span class="' . htmlspecialchars($safeClass, ENT_QUOTES) . '">' . htmlspecialchars($initials, ENT_QUOTES) . '</span>';
 }
 include __DIR__ . '/../includes/header.php';
 ?>
@@ -130,6 +141,11 @@ include __DIR__ . '/../includes/header.php';
                 <input type="hidden" name="office" value="<?= htmlspecialchars($office, ENT_QUOTES); ?>">
                 <input type="hidden" name="action" value="list">
                 <input name="search" placeholder="Search publications..." value="<?= htmlspecialchars($search, ENT_QUOTES); ?>">
+                <select name="sort">
+                    <option value="recent" <?= $sort === 'recent' ? 'selected' : ''; ?>>Plus recents</option>
+                    <option value="liked" <?= $sort === 'liked' ? 'selected' : ''; ?>>Plus aimes</option>
+                    <option value="commented" <?= $sort === 'commented' ? 'selected' : ''; ?>>Plus commentes</option>
+                </select>
                 <button class="btn" type="submit">Search</button>
             </form>
 
@@ -149,7 +165,7 @@ include __DIR__ . '/../includes/header.php';
                     ?>
                     <article id="publication-<?= $publicationId; ?>" class="feed-card social-post-card">
                         <div class="feed-author">
-                            <span class="avatar-pill"><?= htmlspecialchars($publicationItem['user_init'], ENT_QUOTES); ?></span>
+                            <?= workifyAvatar($publicationItem['user_avatar'], $publicationItem['user_init']); ?>
                             <div>
                                 <strong><?= htmlspecialchars($publicationItem['user_name'], ENT_QUOTES); ?></strong>
                                 <p class="muted"><?= htmlspecialchars($publicationItem['user_role'], ENT_QUOTES); ?> - <?= htmlspecialchars($publicationItem['created_at'], ENT_QUOTES); ?></p>
@@ -167,7 +183,7 @@ include __DIR__ . '/../includes/header.php';
                             <form class="feed-action-form" action="../controller/PublicationC.php?office=front&action=like&id=<?= $publicationId; ?>" method="post">
                                 <button class="feed-action <?= $isLiked ? 'is-liked' : ''; ?>" type="submit">
                                     <svg viewBox="0 0 24 24"><path d="M12 21s-7-4.4-9.5-8A5.7 5.7 0 0 1 12 6.2 5.7 5.7 0 0 1 21.5 13C19 16.6 12 21 12 21z"/></svg>
-                                    <?= $likesCount; ?> Like<?= $likesCount > 1 ? 's' : ''; ?>
+                                    <?= $likesCount; ?> Reaction<?= $likesCount > 1 ? 's' : ''; ?>
                                 </button>
                             </form>
                             <span class="feed-action passive">
@@ -177,15 +193,55 @@ include __DIR__ . '/../includes/header.php';
                         </div>
 
                         <div class="comment-list">
-                            <?php foreach (($commentaires[$publicationId] ?? []) as $commentItem) { ?>
-                                <div class="comment-item">
-                                    <span class="avatar-pill small"><?= htmlspecialchars($commentItem['user_init'], ENT_QUOTES); ?></span>
-                                    <p><strong><?= htmlspecialchars($commentItem['user_name'], ENT_QUOTES); ?></strong><br><?= htmlspecialchars($commentItem['comment'], ENT_QUOTES); ?></p>
+                            <?php
+                            $topComments = [];
+                            $replies = [];
+                            foreach (($commentaires[$publicationId] ?? []) as $commentItem) {
+                                if (!empty($commentItem['parent_id'])) {
+                                    $replies[(int) $commentItem['parent_id']][] = $commentItem;
+                                } else {
+                                    $topComments[] = $commentItem;
+                                }
+                            }
+                            ?>
+                            <?php foreach ($topComments as $commentItem) { ?>
+                                <?php $commentId = (int) $commentItem['id']; ?>
+                                <div class="comment-thread">
+                                    <div class="comment-item">
+                                        <?= workifyAvatar($commentItem['user_avatar'], $commentItem['user_init'], 'small'); ?>
+                                        <div class="comment-body">
+                                            <p><strong><?= htmlspecialchars($commentItem['user_name'], ENT_QUOTES); ?></strong><br><?= htmlspecialchars($commentItem['comment'], ENT_QUOTES); ?></p>
+                                            <div class="comment-actions">
+                                                <form action="../controller/PublicationC.php?office=front&action=comment_like&id=<?= $commentId; ?>&publication_id=<?= $publicationId; ?>" method="post">
+                                                    <button class="comment-action <?= !empty($likedComments[$commentId]) ? 'is-liked' : ''; ?>" type="submit"><?= (int) $commentItem['likes_count']; ?> reaction</button>
+                                                </form>
+                                                <button class="comment-action" type="button" data-reply-toggle="#reply-<?= $commentId; ?>">Repondre</button>
+                                            </div>
+                                            <form id="reply-<?= $commentId; ?>" class="inline-comment reply-form" data-validate="comment" action="../controller/PublicationC.php?action=comment" method="post">
+                                                <input type="hidden" name="publication_id" value="<?= $publicationId; ?>">
+                                                <input type="hidden" name="parent_id" value="<?= $commentId; ?>">
+                                                <input name="comment" placeholder="Repondre a ce commentaire..." required>
+                                                <button class="btn" type="submit">Repondre</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                    <?php foreach (($replies[$commentId] ?? []) as $replyItem) { ?>
+                                        <?php $replyId = (int) $replyItem['id']; ?>
+                                        <div class="comment-item reply-item">
+                                            <?= workifyAvatar($replyItem['user_avatar'], $replyItem['user_init'], 'small'); ?>
+                                            <div class="comment-body">
+                                                <p><strong><?= htmlspecialchars($replyItem['user_name'], ENT_QUOTES); ?></strong><br><?= htmlspecialchars($replyItem['comment'], ENT_QUOTES); ?></p>
+                                                <form action="../controller/PublicationC.php?office=front&action=comment_like&id=<?= $replyId; ?>&publication_id=<?= $publicationId; ?>" method="post">
+                                                    <button class="comment-action <?= !empty($likedComments[$replyId]) ? 'is-liked' : ''; ?>" type="submit"><?= (int) $replyItem['likes_count']; ?> reaction</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    <?php } ?>
                                 </div>
                             <?php } ?>
                         </div>
 
-                        <form class="inline-comment" action="../controller/PublicationC.php?action=comment" method="post">
+                        <form class="inline-comment" data-validate="comment" action="../controller/PublicationC.php?action=comment" method="post">
                             <input type="hidden" name="publication_id" value="<?= $publicationId; ?>">
                             <input name="comment" placeholder="Write a comment..." required>
                             <button class="btn" type="submit">Commenter</button>

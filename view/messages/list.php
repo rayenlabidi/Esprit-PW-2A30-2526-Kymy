@@ -7,6 +7,15 @@ $selectedUser = isset($selectedUser) ? $selectedUser : null;
 $currentUser = isset($currentUser) ? $currentUser : [];
 $errors = isset($errors) ? $errors : [];
 include __DIR__ . '/../includes/header.php';
+
+function messageAvatar($avatar, $initials, $class = '')
+{
+    $safeClass = trim('avatar-pill ' . $class);
+    if (!empty($avatar) && strpos($avatar, 'uploads/') === 0) {
+        return '<span class="' . htmlspecialchars($safeClass, ENT_QUOTES) . ' avatar-image"><img src="../' . htmlspecialchars($avatar, ENT_QUOTES) . '" alt=""></span>';
+    }
+    return '<span class="' . htmlspecialchars($safeClass, ENT_QUOTES) . '">' . htmlspecialchars($initials, ENT_QUOTES) . '</span>';
+}
 ?>
 
 <div class="toolbar">
@@ -30,7 +39,7 @@ include __DIR__ . '/../includes/header.php';
 <div class="message-workspace">
     <aside class="message-contacts">
         <div class="message-profile-card">
-            <span class="avatar-pill"><?= htmlspecialchars(strtoupper(substr($currentUser['first_name'], 0, 1) . substr($currentUser['last_name'], 0, 1)), ENT_QUOTES); ?></span>
+            <?= messageAvatar(isset($currentUser['avatar_url']) ? $currentUser['avatar_url'] : '', strtoupper(substr($currentUser['first_name'], 0, 1) . substr($currentUser['last_name'], 0, 1))); ?>
             <div>
                 <h3><?= htmlspecialchars($currentUser['first_name'] . ' ' . $currentUser['last_name'], ENT_QUOTES); ?></h3>
                 <p class="muted"><?= htmlspecialchars($currentUser['email'], ENT_QUOTES); ?></p>
@@ -49,7 +58,7 @@ include __DIR__ . '/../includes/header.php';
         <?php } ?>
         <?php foreach ($contacts as $contactItem) { ?>
             <a class="contact-row <?= $selectedUser && (int) $selectedUser['id'] === (int) $contactItem['id'] ? 'active' : ''; ?>" href="../controller/MessageC.php?office=front&action=list&with=<?= (int) $contactItem['id']; ?>">
-                <span class="avatar-pill small"><?= htmlspecialchars(strtoupper(substr($contactItem['first_name'], 0, 1) . substr($contactItem['last_name'], 0, 1)), ENT_QUOTES); ?></span>
+                <?= messageAvatar(isset($contactItem['avatar_url']) ? $contactItem['avatar_url'] : '', strtoupper(substr($contactItem['first_name'], 0, 1) . substr($contactItem['last_name'], 0, 1)), 'small'); ?>
                 <span>
                     <strong><?= htmlspecialchars($contactItem['first_name'] . ' ' . $contactItem['last_name'], ENT_QUOTES); ?></strong>
                     <small><?= htmlspecialchars($contactItem['role_name'], ENT_QUOTES); ?></small>
@@ -87,7 +96,8 @@ include __DIR__ . '/../includes/header.php';
                 <?php } ?>
             </div>
 
-            <form class="message-form modern-message-form" action="../controller/MessageC.php?office=front&action=send" method="post">
+            <form class="message-form modern-message-form" data-validate="message" action="../controller/MessageC.php?office=front&action=send" method="post">
+                <div class="error-box field-full"></div>
                 <input type="hidden" name="receiver_id" value="<?= (int) $selectedUser['id']; ?>">
                 <textarea name="content" placeholder="Write a message..." required></textarea>
                 <button class="btn btn-primary" type="submit">

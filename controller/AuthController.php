@@ -54,7 +54,11 @@ class AuthController
                         exit;
                     }
 
-                    $redirect = $this->frontRedirect($storedRedirect);
+                    if ($user['role_slug'] === 'boss' && strpos($storedRedirect, 'EventC.php') !== false && strpos($storedRedirect, 'office=back') !== false) {
+                        $redirect = $storedRedirect;
+                    } else {
+                        $redirect = $this->frontRedirect($storedRedirect);
+                    }
                     header('Location: ' . $redirect);
                     exit;
                 }

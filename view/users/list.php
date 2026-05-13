@@ -68,7 +68,14 @@ include __DIR__ . '/../includes/header.php';
             <?php } ?>
             <?php foreach ($liste as $utilisateurItem) { ?>
                 <tr>
-                    <td data-label="Utilisateur"><strong><?= htmlspecialchars($utilisateurItem['first_name'] . ' ' . $utilisateurItem['last_name'], ENT_QUOTES); ?></strong><br><span class="muted"><?= htmlspecialchars($utilisateurItem['headline'], ENT_QUOTES); ?></span></td>
+                    <td data-label="Utilisateur">
+                        <div class="user-cell">
+                            <?php if (!empty($utilisateurItem['avatar_url'])) { ?>
+                                <span class="avatar-pill small avatar-image"><img src="../<?= htmlspecialchars($utilisateurItem['avatar_url'], ENT_QUOTES); ?>" alt=""></span>
+                            <?php } ?>
+                            <span><strong><?= htmlspecialchars($utilisateurItem['first_name'] . ' ' . $utilisateurItem['last_name'], ENT_QUOTES); ?></strong><br><span class="muted"><?= htmlspecialchars($utilisateurItem['headline'], ENT_QUOTES); ?></span></span>
+                        </div>
+                    </td>
                     <td data-label="Role"><?= htmlspecialchars($utilisateurItem['role_name'], ENT_QUOTES); ?></td>
                     <td data-label="Email"><?= htmlspecialchars($utilisateurItem['email'], ENT_QUOTES); ?></td>
                     <td data-label="Telephone"><?= htmlspecialchars(isset($utilisateurItem['phone']) ? $utilisateurItem['phone'] : '', ENT_QUOTES); ?></td>

@@ -54,7 +54,8 @@ class UtilisateurC
             $errors = $this->validerUtilisateur($_POST, 0, true);
 
             if (empty($errors)) {
-                $utilisateur = $this->construireUtilisateur($_POST);
+                $avatarUrl = $this->sauverAvatar('avatar_file');
+                $utilisateur = $this->construireUtilisateur($_POST, true, $avatarUrl);
                 $this->utilisateurModel->addUtilisateur($utilisateur);
                 header('Location: UtilisateurC.php?action=list');
                 exit;
@@ -84,7 +85,11 @@ class UtilisateurC
             $errors = $this->validerUtilisateur($_POST, $id, false);
 
             if (empty($errors)) {
-                $utilisateurObjet = $this->construireUtilisateur($_POST, false);
+                $avatarUrl = $this->sauverAvatar('avatar_file');
+                if ($avatarUrl === '' && isset($utilisateur['avatar_url'])) {
+                    $avatarUrl = $utilisateur['avatar_url'];
+                }
+                $utilisateurObjet = $this->construireUtilisateur($_POST, false, $avatarUrl);
                 $this->utilisateurModel->updateUtilisateur($utilisateurObjet, $id);
                 header('Location: UtilisateurC.php?action=list');
                 exit;
@@ -106,7 +111,7 @@ class UtilisateurC
         exit;
     }
 
-    private function construireUtilisateur($data)
+    private function construireUtilisateur($data, $passwordRequired = true, $avatarUrl = '')
     {
         return new utilisateur(
             (int) $data['role_id'],
@@ -117,7 +122,8 @@ class UtilisateurC
             isset($data['password']) ? trim($data['password']) : '',
             trim($data['headline']),
             trim($data['bio']),
-            trim($data['status'])
+            trim($data['status']),
+            $avatarUrl
         );
     }
 
@@ -164,6 +170,30 @@ class UtilisateurC
         }
 
         return $errors;
+    }
+
+    private function sauverAvatar($fieldName)
+    {
+        if (empty($_FILES[$fieldName]['name']) || $_FILES[$fieldName]['error'] !== UPLOAD_ERR_OK) {
+            return '';
+        }
+
+        $extension = strtolower(pathinfo($_FILES[$fieldName]['name'], PATHINFO_EXTENSION));
+        if (!in_array($extension, ['jpg', 'jpeg', 'png', 'webp'])) {
+            return '';
+        }
+
+        $uploadDir = __DIR__ . '/../uploads/profiles/';
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0777, true);
+        }
+
+        $fileName = 'profile_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $extension;
+        if (move_uploaded_file($_FILES[$fieldName]['tmp_name'], $uploadDir . $fileName)) {
+            return 'uploads/profiles/' . $fileName;
+        }
+
+        return '';
     }
 }
 

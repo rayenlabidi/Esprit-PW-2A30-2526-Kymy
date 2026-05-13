@@ -260,7 +260,7 @@ CREATE TABLE `events` (
   KEY `idx_events_category` (`event_category_id`),
   CONSTRAINT `fk_events_category` FOREIGN KEY (`event_category_id`) REFERENCES `event_categories` (`id`) ON DELETE SET NULL,
   CONSTRAINT `fk_events_organizer` FOREIGN KEY (`organizer_id`) REFERENCES `utilisateurs` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -269,6 +269,7 @@ CREATE TABLE `events` (
 
 LOCK TABLES `events` WRITE;
 /*!40000 ALTER TABLE `events` DISABLE KEYS */;
+INSERT INTO `events` VALUES (1,'Workify AI Career Night','Session pratique pour comprendre comment utiliser l IA dans les candidatures, portfolios et missions freelance.','2026-06-02 18:00:00','Esprit, Ariana',0,80,'upcoming',3,1,'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=1200&q=80',36.8997000,10.1899000,'2026-05-13 16:54:43','2026-05-13 16:54:43'),(2,'UX Portfolio Sprint','Atelier intensif pour transformer un projet etudiant en portfolio clair, moderne et presentable aux clients.','2026-06-10 10:00:00','Online Workshop',1,120,'upcoming',3,8,'https://images.unsplash.com/photo-1559028012-481c04fa702d?auto=format&fit=crop&w=1200&q=80',NULL,NULL,'2026-05-13 16:54:43','2026-05-13 16:54:43'),(3,'Cloud DevOps Meetup','Rencontre autour du deploiement, des environnements de test et des bonnes pratiques pour livrer plus vite.','2026-06-18 15:30:00','Technopole El Ghazala',0,60,'upcoming',3,4,'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1200&q=80',36.8951000,10.1885000,'2026-05-13 16:54:43','2026-05-13 16:54:43');
 /*!40000 ALTER TABLE `events` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -286,7 +287,7 @@ CREATE TABLE `formateur` (
   `specialite` varchar(120) NOT NULL,
   PRIMARY KEY (`id_formateur`),
   UNIQUE KEY `unique_formateur_email` (`email`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -326,7 +327,7 @@ CREATE TABLE `formation` (
   KEY `fk_formation_formateur` (`id_formateur`),
   CONSTRAINT `fk_formation_categorie` FOREIGN KEY (`id_categorie`) REFERENCES `categorie_formation` (`id_categorie`) ON UPDATE CASCADE,
   CONSTRAINT `fk_formation_formateur` FOREIGN KEY (`id_formateur`) REFERENCES `formateur` (`id_formateur`) ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -364,7 +365,7 @@ CREATE TABLE `inscription_formation` (
 
 LOCK TABLES `inscription_formation` WRITE;
 /*!40000 ALTER TABLE `inscription_formation` DISABLE KEYS */;
-INSERT INTO `inscription_formation` VALUES (6,2,'2026-05-12 18:19:24','en_attente'),(8,1,'2026-05-12 22:25:05','en_attente'),(8,2,'2026-05-12 22:25:01','en_attente'),(8,3,'2026-05-12 22:24:55','en_attente'),(9,1,'2026-05-12 14:45:45','acceptee'),(10,1,'2026-05-12 14:45:45','en_attente'),(10,2,'2026-05-12 14:45:45','en_attente');
+INSERT INTO `inscription_formation` VALUES (1,3,'2026-05-13 17:24:15','en_attente'),(6,2,'2026-05-12 18:19:24','en_attente'),(8,1,'2026-05-12 22:25:05','en_attente'),(8,2,'2026-05-12 22:25:01','en_attente'),(8,3,'2026-05-12 22:24:55','en_attente'),(9,1,'2026-05-12 14:45:45','acceptee'),(10,1,'2026-05-12 14:45:45','en_attente'),(10,2,'2026-05-12 14:45:45','en_attente');
 /*!40000 ALTER TABLE `inscription_formation` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -392,7 +393,7 @@ CREATE TABLE `jobs` (
   KEY `fk_jobs_publisher` (`publisher_id`),
   CONSTRAINT `fk_jobs_category` FOREIGN KEY (`category_id`) REFERENCES `categories` (`id`) ON UPDATE CASCADE,
   CONSTRAINT `fk_jobs_publisher` FOREIGN KEY (`publisher_id`) REFERENCES `utilisateurs` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -401,7 +402,7 @@ CREATE TABLE `jobs` (
 
 LOCK TABLES `jobs` WRITE;
 /*!40000 ALTER TABLE `jobs` DISABLE KEYS */;
-INSERT INTO `jobs` VALUES (1,'Developpeur PHP MVC pour plateforme locale','Nous cherchons un freelancer capable de finaliser un projet PHP MVC avec sessions, CRUD, jointures et validations JS.',900.00,1,'Tunis',1,'Freelance','open',3,'2026-05-12 14:45:45'),(2,'UX Designer pour espace formation premium','Mission sur une interface moderne pour une section de catalogue de formations avec cartes, filtres et details.',650.00,2,'Sousse',1,'Part-time','open',3,'2026-05-12 14:45:45'),(3,'Assistant marketing junior','Suivi de campagnes digitales et production de contenu pour une startup locale.',550.00,3,'Remote',1,'Stage','draft',1,'2026-05-12 14:45:45');
+INSERT INTO `jobs` VALUES (1,'Developpeur PHP MVC pour plateforme locale','Nous cherchons un freelancer capable de finaliser un projet PHP MVC avec sessions, CRUD, jointures et validations JS.',900.00,1,'Tunis',1,'Freelance','open',3,'2026-05-12 14:45:45'),(2,'UX Designer pour espace formation premium','Mission sur une interface moderne pour une section de catalogue de formations avec cartes, filtres et details.',650.00,2,'Sousse',1,'Part-time','open',3,'2026-05-12 14:45:45'),(3,'Assistant marketing junior','Suivi de campagnes digitales et production de contenu pour une startup locale.',550.00,3,'Remote',1,'Stage','draft',1,'2026-05-12 14:45:45'),(4,'sdfsfsd','sdfsddfqdsfqd qdf sdf qdfqf qdfqdfq df qds fqdf',989456.00,5,'qqdsfqs fq',0,'Full-time','open',12,'2026-05-13 17:33:51');
 /*!40000 ALTER TABLE `jobs` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -527,7 +528,7 @@ CREATE TABLE `roles` (
   `description` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `slug` (`slug`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -536,7 +537,7 @@ CREATE TABLE `roles` (
 
 LOCK TABLES `roles` WRITE;
 /*!40000 ALTER TABLE `roles` DISABLE KEYS */;
-INSERT INTO `roles` VALUES (1,'Admin','admin','Gere toute la plateforme'),(2,'Freelancer','freelancer','Suit les formations et postule aux jobs'),(3,'Boss','boss','Publie des jobs et recrute des freelances');
+INSERT INTO `roles` VALUES (1,'Admin','admin','Gere toute la plateforme'),(2,'Freelancer','freelancer','Suit les formations et postule aux jobs'),(3,'Boss','boss','Publie des jobs et recrute des freelances'),(4,'Enterprise','enterprise','Publie et gere les evenements professionnels');
 /*!40000 ALTER TABLE `roles` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -564,7 +565,7 @@ CREATE TABLE `utilisateurs` (
   UNIQUE KEY `email` (`email`),
   KEY `fk_utilisateurs_role` (`role_id`),
   CONSTRAINT `fk_utilisateurs_role` FOREIGN KEY (`role_id`) REFERENCES `roles` (`id`) ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -573,7 +574,7 @@ CREATE TABLE `utilisateurs` (
 
 LOCK TABLES `utilisateurs` WRITE;
 /*!40000 ALTER TABLE `utilisateurs` DISABLE KEYS */;
-INSERT INTO `utilisateurs` VALUES (1,1,'Equipe','Workify','admin@workify.com','22822870','$2y$10$7ALOQvIWzngQAJ/eN3NsS.7HpVWVUVLlxv7KblJL4McnOLEJIKus6','Responsable espace prive','Compte de gestion pour suivre les modules Workify.','','active','2026-05-12 14:45:45'),(2,2,'Sami','Freelancer','freelancer@workify.com','20606058','$2y$10$8zrsqRyUqyEqdh3xLvEOW.wNgPVfdGPdSFThS54XdcyVY4Oc3b/JO','Front-end freelancer','Freelancer de demo pour tester les candidatures.','','active','2026-05-12 14:45:45'),(3,3,'Lina','Boss','boss@workify.com','55123456','$2y$10$HLpAbAB5hkZFjJmYnlsqNeBUQS186KVB.uhsU8RBO5LyC0WLyzBai','Talent recruiter','Boss de demo pour publier des jobs et recruter des profils.','','active','2026-05-12 14:45:45'),(4,1,'rayen','laabidi','rayanlabidi.rl@gmail.com','52574198','$2y$10$A3GRoO40P2DnuTDGFBY6keYCphIYWke1Eo.PccJKEGxcDFzRw3TT6','test','zklmfslkfjsldfnslkjfnsdklf',NULL,'active','2026-05-12 14:46:36'),(6,2,'azeaze','azezae','rayanlabidi.rl@icloud.com','541113353','$2y$10$wYihqIK4alJiqgJ0FkMv3.u1vrrDyGKbefge3l1Ir.x/Somvwplwu','zefdzedz','Compte cree depuis l inscription publique Workify.',NULL,'active','2026-05-12 18:18:32'),(7,2,'wassim','byk','wassoubenyakhlef@gmail.com','13451531323','$2y$10$4572QhNJiTVTZMpYVlQLpOhyxNLYIii4HoNlgNMYK7PEU/Kt35lzq','4545646545','Compte cree depuis l inscription publique Workify.',NULL,'active','2026-05-12 22:21:20'),(8,2,'aziz','messaoud','messaoudaziz900@gmail.com','456431325','$2y$10$I2snUNrn0YU5rNLkcFjEQOYpR4YDbbOJigtEUyQYmqwt/rYD2JlDC','Talent Workify','Compte cree depuis l inscription publique Workify.',NULL,'active','2026-05-12 22:24:04'),(9,2,'Membre','Test','membre.test@workify.tn','22123456','$2y$10$8zrsqRyUqyEqdh3xLvEOW.wNgPVfdGPdSFThS54XdcyVY4Oc3b/JO','Apprenant Workify','Compte migre depuis les inscriptions formation.','','active','2026-05-12 22:52:32'),(10,2,'Etudiant','Workify','etudiant@workify.tn','55123456','$2y$10$8zrsqRyUqyEqdh3xLvEOW.wNgPVfdGPdSFThS54XdcyVY4Oc3b/JO','Apprenant Workify','Compte migre depuis les inscriptions formation.','','active','2026-05-12 22:52:32');
+INSERT INTO `utilisateurs` VALUES (1,1,'Equipe','Workify','admin@workify.com','22822870','$2y$10$7ALOQvIWzngQAJ/eN3NsS.7HpVWVUVLlxv7KblJL4McnOLEJIKus6','Responsable espace prive','Compte de gestion pour suivre les modules Workify.','','active','2026-05-12 14:45:45'),(2,2,'Sami','Freelancer','freelancer@workify.com','20606058','$2y$10$8zrsqRyUqyEqdh3xLvEOW.wNgPVfdGPdSFThS54XdcyVY4Oc3b/JO','Front-end freelancer','Freelancer de demo pour tester les candidatures.','','active','2026-05-12 14:45:45'),(3,3,'Lina','Boss','boss@workify.com','55123456','$2y$10$HLpAbAB5hkZFjJmYnlsqNeBUQS186KVB.uhsU8RBO5LyC0WLyzBai','Talent recruiter','Boss de demo pour publier des jobs et recruter des profils.','','active','2026-05-12 14:45:45'),(4,1,'rayen','laabidi','rayanlabidi.rl@gmail.com','52574198','$2y$10$A3GRoO40P2DnuTDGFBY6keYCphIYWke1Eo.PccJKEGxcDFzRw3TT6','test','zklmfslkfjsldfnslkjfnsdklf',NULL,'active','2026-05-12 14:46:36'),(6,2,'azeaze','azezae','rayanlabidi.rl@icloud.com','541113353','$2y$10$CWYVE8MrPBA6bxkI/A1ACeA0bIabbkscgBahFjsq1fDObve7Hsr8y','zefdzedz','Compte cree depuis l inscription publique Workify.',NULL,'active','2026-05-12 18:18:32'),(7,2,'wassim','byk','wassoubenyakhlef@gmail.com','13451531323','$2y$10$4572QhNJiTVTZMpYVlQLpOhyxNLYIii4HoNlgNMYK7PEU/Kt35lzq','4545646545','Compte cree depuis l inscription publique Workify.',NULL,'active','2026-05-12 22:21:20'),(8,2,'aziz','messaoud','messaoudaziz900@gmail.com','456431325','$2y$10$I2snUNrn0YU5rNLkcFjEQOYpR4YDbbOJigtEUyQYmqwt/rYD2JlDC','Talent Workify','Compte cree depuis l inscription publique Workify.',NULL,'active','2026-05-12 22:24:04'),(9,2,'Membre','Test','membre.test@workify.tn','22123456','$2y$10$8zrsqRyUqyEqdh3xLvEOW.wNgPVfdGPdSFThS54XdcyVY4Oc3b/JO','Apprenant Workify','Compte migre depuis les inscriptions formation.','','active','2026-05-12 22:52:32'),(10,2,'Etudiant','Workify','etudiant@workify.tn','55123456','$2y$10$8zrsqRyUqyEqdh3xLvEOW.wNgPVfdGPdSFThS54XdcyVY4Oc3b/JO','Apprenant Workify','Compte migre depuis les inscriptions formation.','','active','2026-05-12 22:52:32'),(12,3,'azeaze','azeaze','azer@ty.com','4546541651','$2y$10$SbAQVGsDzdUb.WVuTRGfhukYqK.iE197e6WFnXv6nQ.QL3RWoogkG','azeazeaz','Compte cree depuis l inscription publique Workify.',NULL,'active','2026-05-13 17:33:02');
 /*!40000 ALTER TABLE `utilisateurs` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -586,4 +587,33 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-05-13 12:30:31
+-- Dump completed on 2026-05-13 17:56:13
+
+--
+-- Table structure for table `event_registrations`
+--
+
+DROP TABLE IF EXISTS `event_registrations`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `event_registrations` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `event_id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_event_user` (`event_id`,`user_id`),
+  KEY `fk_event_registrations_user` (`user_id`),
+  CONSTRAINT `fk_event_registrations_event` FOREIGN KEY (`event_id`) REFERENCES `events` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_event_registrations_user` FOREIGN KEY (`user_id`) REFERENCES `utilisateurs` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `event_registrations`
+--
+
+LOCK TABLES `event_registrations` WRITE;
+/*!40000 ALTER TABLE `event_registrations` DISABLE KEYS */;
+/*!40000 ALTER TABLE `event_registrations` ENABLE KEYS */;
+UNLOCK TABLES;

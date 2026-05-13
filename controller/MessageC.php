@@ -3,6 +3,7 @@ require_once __DIR__ . '/../Model/message.php';
 require_once __DIR__ . '/MessageModel.php';
 require_once __DIR__ . '/UtilisateurModel.php';
 require_once __DIR__ . '/AuthC.php';
+require_once __DIR__ . '/BadWordGuard.php';
 
 class MessageC
 {
@@ -83,6 +84,12 @@ class MessageC
             exit;
         }
 
+        if (BadWordGuard::containsBadWords($content)) {
+            $_SESSION['message_errors'] = [BadWordGuard::message()];
+            header('Location: MessageC.php?office=front&action=list&with=' . (int) $receiver['id']);
+            exit;
+        }
+
         $senderPayload = $this->userPayload($currentUser);
         $receiverPayload = $this->userPayload($receiver);
         $message = new message(
@@ -152,13 +159,17 @@ class MessageC
             $initials .= strtoupper(substr($lastName, 0, 1));
         }
 
-        $avatars = ['av-blue', 'av-green', 'av-orange', 'av-purple', 'av-pink', 'av-teal'];
+        $avatar = !empty($user['avatar_url']) ? $user['avatar_url'] : '';
+        if ($avatar === '') {
+            $avatars = ['av-blue', 'av-green', 'av-orange', 'av-purple', 'av-pink', 'av-teal'];
+            $avatar = $avatars[((int) $user['id']) % count($avatars)];
+        }
 
         return [
             'id' => (string) $user['id'],
             'name' => $name !== '' ? $name : $user['email'],
             'init' => $initials !== '' ? $initials : 'WK',
-            'avatar' => $avatars[((int) $user['id']) % count($avatars)]
+            'avatar' => $avatar
         ];
     }
 

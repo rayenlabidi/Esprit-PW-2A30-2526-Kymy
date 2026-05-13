@@ -117,9 +117,9 @@ class UtilisateurModel
     public function addUtilisateur($utilisateur)
     {
         $sql = 'INSERT INTO utilisateurs
-                (role_id, first_name, last_name, email, phone, password, headline, bio, status)
+                (role_id, first_name, last_name, email, phone, password, headline, bio, avatar_url, status)
                 VALUES
-                (:role_id, :first_name, :last_name, :email, :phone, :password, :headline, :bio, :status)';
+                (:role_id, :first_name, :last_name, :email, :phone, :password, :headline, :bio, :avatar_url, :status)';
         $db = config::getConnexion();
         try {
             $query = $db->prepare($sql);
@@ -132,6 +132,7 @@ class UtilisateurModel
                 'password' => password_hash($utilisateur->getPassword(), PASSWORD_DEFAULT),
                 'headline' => $utilisateur->getHeadline(),
                 'bio' => $utilisateur->getBio(),
+                'avatar_url' => $utilisateur->getAvatarUrl(),
                 'status' => $utilisateur->getStatus()
             ]);
         } catch (Exception $e) {
@@ -149,6 +150,7 @@ class UtilisateurModel
             'phone' => $utilisateur->getPhone(),
             'headline' => $utilisateur->getHeadline(),
             'bio' => $utilisateur->getBio(),
+            'avatar_url' => $utilisateur->getAvatarUrl(),
             'status' => $utilisateur->getStatus(),
             'id' => $id
         ];
@@ -167,6 +169,7 @@ class UtilisateurModel
                     phone = :phone,
                     headline = :headline,
                     bio = :bio,
+                    avatar_url = :avatar_url,
                     status = :status' . $passwordSql . '
                 WHERE id = :id';
         $db = config::getConnexion();

@@ -79,7 +79,11 @@ class AuthC
         return isset($_SESSION['user_role']) ? $_SESSION['user_role'] : '';
     }
 
-    public static function requireAdmin()
+    public static function hasRole($roles)
+    {
+        $roles = array_map('strtolower', (array) $roles);
+        return in_array(strtolower((string) self::currentUserRole()), $roles, true);
+    }    public static function requireAdmin()
     {
         self::startSession();
 
